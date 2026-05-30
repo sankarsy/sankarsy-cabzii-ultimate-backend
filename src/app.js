@@ -12,24 +12,32 @@ const { errorHandler, notFoundHandler } = require("./middlewares/errorHandler");
 
 const app = express();
 
+// Normalise allowed origins (drop trailing slashes) so cabzii.in and the
+// admin panel (served from the same origin at /admin) are matched reliably.
 const allowedOrigins = env.frontendUrl
   .split(",")
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
+      // No Origin header = same-origin, server-to-server or curl — always allow.
+      if (!origin) return callback(null, true);
+      const normalized = origin.replace(/\/$/, "");
+      if (allowedOrigins.length === 0 || allowedOrigins.includes(normalized)) {
+        return callback(null, true);
       }
-      callback(new Error("CORS origin not allowed"));
+      // Disallowed: respond without CORS headers instead of throwing a 500.
+      return callback(null, false);
     },
-    credentials: true
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
-); 
-app.use(helmet());
+);
+// Allow uploaded images to be embedded on the frontend origin (api.cabzii.in -> cabzii.in).
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(compression());
 app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
 app.use(
