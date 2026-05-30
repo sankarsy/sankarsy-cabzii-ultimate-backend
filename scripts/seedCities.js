@@ -1,26 +1,47 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const { City } = require("../src/models/City");
-const { Location } = require("../src/models/Location");
 
-const CITIES = [
-  { name: "Bengaluru", state: "Karnataka", sortOrder: 1 },
-  { name: "Mumbai", state: "Maharashtra", sortOrder: 2 },
-  { name: "Delhi", state: "Delhi", sortOrder: 3 },
-  { name: "Chennai", state: "Tamil Nadu", sortOrder: 4 },
-  { name: "Hyderabad", state: "Telangana", sortOrder: 5 },
-  { name: "Pune", state: "Maharashtra", sortOrder: 6 },
-  { name: "Kolkata", state: "West Bengal", sortOrder: 7 },
-  { name: "Jaipur", state: "Rajasthan", sortOrder: 8 }
+const TAMIL_NADU_CITIES = [
+  "Chennai",
+  "Coimbatore",
+  "Madurai",
+  "Tiruchirappalli",
+  "Salem",
+  "Tirunelveli",
+  "Tiruppur",
+  "Erode",
+  "Vellore",
+  "Thoothukudi",
+  "Dindigul",
+  "Thanjavur",
+  "Ranipet",
+  "Sivakasi",
+  "Karur",
+  "Udhagamandalam",
+  "Hosur",
+  "Nagercoil",
+  "Kanchipuram",
+  "Kumbakonam",
+  "Cuddalore",
+  "Tiruvannamalai",
+  "Pollachi",
+  "Nagapattinam",
+  "Krishnagiri",
+  "Dharmapuri",
+  "Namakkal",
+  "Virudhunagar",
+  "Ramanathapuram",
+  "Theni",
+  "Chengalpattu",
+  "Villupuram",
+  "Tirupati"
 ];
 
-const SAMPLE_LOCATIONS = [
-  { cityName: "Bengaluru", name: "MG Road", address: "MG Road, Bengaluru" },
-  { cityName: "Bengaluru", name: "Kempegowda Airport T1", address: "KIAL Road, Devanahalli" },
-  { cityName: "Mumbai", name: "Andheri East", address: "Andheri East, Mumbai" },
-  { cityName: "Mumbai", name: "CSMIA Terminal 2", address: "Sahar, Andheri East" },
-  { cityName: "Delhi", name: "Connaught Place", address: "Connaught Place, New Delhi" },
-  { cityName: "Delhi", name: "IGI Airport T3", address: "Indira Gandhi International Airport" }
+const OTHER_CITIES = [
+  { name: "Bengaluru", state: "Karnataka", sortOrder: 1 },
+  { name: "Mumbai", state: "Maharashtra", sortOrder: 2 },
+  { name: "Hyderabad", state: "Telangana", sortOrder: 3 }
 ];
 
 async function run() {
@@ -28,36 +49,25 @@ async function run() {
   if (!uri) throw new Error("MONGODB_URI required");
   await mongoose.connect(uri);
 
-  for (const city of CITIES) {
-    await City.findOneAndUpdate({ name: city.name, state: city.state }, { $set: city }, { upsert: true, new: true });
-  }
-
-  const cityMap = {};
-  const allCities = await City.find().lean();
-  allCities.forEach((c) => {
-    cityMap[c.name] = c;
-  });
-
-  for (const loc of SAMPLE_LOCATIONS) {
-    const city = cityMap[loc.cityName.split(",")[0]] || allCities.find((c) => c.name === loc.cityName);
-    if (!city) continue;
-    const cityName = city.state ? `${city.name}, ${city.state}` : city.name;
-    await Location.findOneAndUpdate(
-      { city: city._id, name: loc.name },
-      {
-        $set: {
-          city: city._id,
-          cityName,
-          name: loc.name,
-          address: loc.address,
-          isActive: true
-        }
-      },
+  let order = 0;
+  for (const name of TAMIL_NADU_CITIES) {
+    order += 1;
+    await City.findOneAndUpdate(
+      { name, state: "Tamil Nadu" },
+      { $set: { name, state: "Tamil Nadu", sortOrder: order, isActive: true } },
       { upsert: true, new: true }
     );
   }
 
-  console.log("Cities and sample locations seeded.");
+  for (const city of OTHER_CITIES) {
+    await City.findOneAndUpdate(
+      { name: city.name, state: city.state },
+      { $set: { ...city, isActive: true } },
+      { upsert: true, new: true }
+    );
+  }
+
+  console.log(`Seeded ${TAMIL_NADU_CITIES.length} Tamil Nadu cities + ${OTHER_CITIES.length} other cities.`);
   await mongoose.disconnect();
 }
 

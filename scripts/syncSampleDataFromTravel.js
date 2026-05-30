@@ -1,14 +1,14 @@
 "use strict";
 
 /**
- * Regenerates scripts/sampleData.js from cabzii-ultimate/src/data/travelData.js (cabs, packages, driverServices).
- * Run after editing travelData so the DB seed stays aligned.
+ * Regenerates scripts/sampleData.js from scripts/contentData.js (legacy sync).
+ * Prefer editing contentData.js directly for seed data.
  */
 
 const fs = require("fs");
 const path = require("path");
 
-const travelPath = path.join(__dirname, "..", "..", "cabzii-ultimate", "src", "data", "travelData.js");
+const travelPath = path.join(__dirname, "contentData.js");
 const outPath = path.join(__dirname, "sampleData.js");
 
 let s = fs.readFileSync(travelPath, "utf8");

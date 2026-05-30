@@ -24,11 +24,41 @@ function parseListQuery(req) {
   const limit = Math.min(100, Math.max(1, limitRaw));
   const type = (req.query?.type ?? "").trim();
   const vendor = (req.query?.vendor ?? "").trim();
+  const city = (req.query?.city ?? "").trim();
+  const priorityCity = (req.query?.priorityCity ?? city).trim();
   const duration = (req.query?.duration ?? "").trim();
   const maxPriceN = Number.parseInt(String(req.query?.maxPrice ?? ""), 10);
   const maxPrice = Number.isFinite(maxPriceN) && maxPriceN > 0 ? maxPriceN : null;
   const features = parseFeaturesQuery(req.query?.features);
-  return { q, page, limit, type, vendor, duration, maxPrice, features };
+  return { q, page, limit, type, vendor, city, priorityCity, duration, maxPrice, features };
+}
+
+function cityPriorityScore(doc, city) {
+  if (!city) return 1;
+  const rx = new RegExp(escapeRegex(city), "i");
+  const fields = ["city", "location", "vendor", "name", "title", "type"];
+  for (const f of fields) {
+    if (doc[f] && rx.test(String(doc[f]))) return 0;
+  }
+  if (Array.isArray(doc.tags) && doc.tags.some((t) => rx.test(String(t)))) return 0;
+  if (Array.isArray(doc.features) && doc.features.some((t) => rx.test(String(t)))) return 0;
+  return 1;
+}
+
+function sortDocsByCityPriority(docs, priorityCity, sort = { createdAt: -1 }) {
+  if (!priorityCity) return docs;
+  const sortKey = Object.keys(sort)[0] || "createdAt";
+  const sortDir = sort[sortKey] === -1 ? -1 : 1;
+  return [...docs].sort((a, b) => {
+    const rank = cityPriorityScore(a, priorityCity) - cityPriorityScore(b, priorityCity);
+    if (rank !== 0) return rank;
+    const av = a[sortKey];
+    const bv = b[sortKey];
+    if (av === bv) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    return av > bv ? -sortDir : sortDir;
+  });
 }
 
 function textOrClause(fields, q) {
@@ -40,10 +70,10 @@ function textOrClause(fields, q) {
 /**
  * Build { $and: [...] } from optional base filter + text search + exact filters.
  */
-function buildCabListFilter(baseFilter, { q, type, maxPrice, features }) {
+function buildCabListFilter(baseFilter, { q, type, city, maxPrice, features }) {
   const parts = [];
   if (baseFilter && Object.keys(baseFilter).length > 0) parts.push(baseFilter);
-  const text = textOrClause(["title", "vendor", "type", "seo", "seoTitle", "seoDescription", "features"], q);
+  const text = textOrClause(["title", "vendor", "type", "city", "location", "seo", "seoTitle", "seoDescription", "features"], q);
   if (text) parts.push(text);
   if (type) parts.push({ type });
   if (maxPrice) parts.push({ price: { $lte: maxPrice } });
@@ -53,10 +83,10 @@ function buildCabListFilter(baseFilter, { q, type, maxPrice, features }) {
   return { $and: parts };
 }
 
-function buildPackageListFilter(baseFilter, { q, vendor, duration }) {
+function buildPackageListFilter(baseFilter, { q, vendor, city, duration }) {
   const parts = [];
   if (baseFilter && Object.keys(baseFilter).length > 0) parts.push(baseFilter);
-  const text = textOrClause(["name", "vendor", "duration", "seo", "seoTitle", "seoDescription", "tags"], q);
+  const text = textOrClause(["name", "vendor", "city", "location", "duration", "seo", "seoTitle", "seoDescription", "tags"], q);
   if (text) parts.push(text);
   if (vendor) parts.push({ vendor });
   if (duration) parts.push({ duration });
@@ -65,11 +95,11 @@ function buildPackageListFilter(baseFilter, { q, vendor, duration }) {
   return { $and: parts };
 }
 
-function buildDriverListFilter(baseFilter, { q }) {
+function buildDriverListFilter(baseFilter, { q, city }) {
   const parts = [];
   if (baseFilter && Object.keys(baseFilter).length > 0) parts.push(baseFilter);
   const text = textOrClause(
-    ["name", "vendor", "experience", "rating", "seo", "seoTitle", "seoDescription", "languages", "supportedVehicles"],
+    ["name", "vendor", "city", "location", "experience", "rating", "seo", "seoTitle", "seoDescription", "languages", "supportedVehicles"],
     q
   );
   if (text) parts.push(text);
@@ -78,17 +108,30 @@ function buildDriverListFilter(baseFilter, { q }) {
   return { $and: parts };
 }
 
-async function paginatedFind(Model, filter, { page, limit }, sort = { createdAt: -1 }) {
-  const skip = (page - 1) * limit;
-  const [data, total] = await Promise.all([
-    Model.find(filter).sort(sort).skip(skip).limit(limit).lean(),
-    Model.countDocuments(filter)
-  ]);
-  const totalPages = Math.max(1, Math.ceil(total / limit));
+function activeCatalogFilter(base = {}) {
   return {
-    data,
-    meta: { page, limit, total, totalPages }
+    ...base,
+    isDeleted: { $ne: true },
+    $or: [{ status: "active" }, { status: { $exists: false } }]
   };
+}
+
+async function paginatedFind(Model, filter, { page, limit, priorityCity }, sort = { createdAt: -1 }) {
+  const skip = (page - 1) * limit;
+  if (!priorityCity) {
+    const [data, total] = await Promise.all([
+      Model.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+      Model.countDocuments(filter)
+    ]);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    return { data, meta: { page, limit, total, totalPages } };
+  }
+
+  const [all, total] = await Promise.all([Model.find(filter).lean(), Model.countDocuments(filter)]);
+  const ranked = sortDocsByCityPriority(all, priorityCity, sort);
+  const data = ranked.slice(skip, skip + limit);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  return { data, meta: { page, limit, total, totalPages, priorityCity } };
 }
 
 module.exports = {
@@ -96,5 +139,7 @@ module.exports = {
   buildCabListFilter,
   buildPackageListFilter,
   buildDriverListFilter,
-  paginatedFind
+  paginatedFind,
+  activeCatalogFilter,
+  sortDocsByCityPriority
 };

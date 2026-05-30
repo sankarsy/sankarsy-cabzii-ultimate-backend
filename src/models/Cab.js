@@ -1,4 +1,9 @@
 const mongoose = require("mongoose");
+const {
+  packageFareSchema,
+  farePackageLabelsSchema,
+  cabFarePackagesSchema
+} = require("./fareSchemas");
 
 const cabSchema = new mongoose.Schema(
   {
@@ -6,23 +11,30 @@ const cabSchema = new mongoose.Schema(
     vendor: { type: String, required: true, trim: true },
     vendorAdminPhone: { type: String, default: "" },
     type: { type: String, required: true, trim: true },
-    seats: { type: Number, default: 4 },
-    price: { type: Number, required: true },
-    hourlyRate: { type: Number, default: 0 },
-    dayRate: { type: Number, default: 0 },
-    extraHourRate: { type: Number, default: 0 },
-    originalPrice: { type: Number, default: 0 },
-    discountPercentage: { type: Number, default: 0 },
-    rating: { type: Number },
+    seats: { type: Number, default: 4, min: 1, max: 80 },
+    price: { type: Number, required: true, min: 0 },
+    hourlyRate: { type: Number, default: 0, min: 0 },
+    dayRate: { type: Number, default: 0, min: 0 },
+    extraHourRate: { type: Number, default: 0, min: 0 },
+    originalPrice: { type: Number, default: 0, min: 0 },
+    discountPercentage: { type: Number, default: 0, min: 0, max: 99 },
+    rating: { type: Number, min: 0, max: 5 },
     image: { type: String, default: "" },
+    gallery: { type: [String], default: [] },
+    city: { type: String, default: "", trim: true, index: true },
+    location: { type: String, default: "", trim: true },
     features: { type: [String], default: [] },
+    farePackages: { type: cabFarePackagesSchema, default: () => ({}) },
+    farePackageLabels: { type: farePackageLabelsSchema, default: () => ({}) },
     seo: { type: String, default: "" },
     seoTitle: { type: String, default: "" },
-    seoDescription: { type: String, default: "" }
+    seoDescription: { type: String, default: "" },
+    status: { type: String, enum: ["active", "inactive"], default: "active", index: true },
+    isDeleted: { type: Boolean, default: false, index: true }
   },
   { timestamps: true }
 );
 
 const Cab = mongoose.model("Cab", cabSchema);
 
-module.exports = { Cab };
+module.exports = { Cab, packageFareSchema, cabFarePackagesSchema };

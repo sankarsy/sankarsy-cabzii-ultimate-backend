@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 const { Package } = require("../models/Package");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
-const { docMatchForVendor, listFilterForVendor } = require("../utils/vendorAccess");
+const { docMatchForVendor, listFilterForVendor, vendorNameForUser } = require("../utils/vendorAccess");
 const { splitSeoStrings } = require("../utils/splitSeoStrings");
-const { parseListQuery, buildPackageListFilter, paginatedFind } = require("../utils/listQuery");
+const { parseListQuery, buildPackageListFilter, paginatedFind, activeCatalogFilter } = require("../utils/listQuery");
 
 const packageCoreSchema = Joi.object({
   name: Joi.string().required(),
@@ -18,11 +18,14 @@ const packageCoreSchema = Joi.object({
   dayRate: Joi.number().default(0),
   extraHourRate: Joi.number().default(0),
   image: Joi.string().allow("").default(""),
+  gallery: Joi.array().items(Joi.string()).max(3).default([]),
+  city: Joi.string().allow("").default(""),
+  location: Joi.string().allow("").default(""),
   tags: Joi.array().items(Joi.string()).default([])
 });
 
 async function listPackages(req, res) {
-  const base = listFilterForVendor(req);
+  const base = activeCatalogFilter(listFilterForVendor(req));
   const pq = parseListQuery(req);
   const filter = buildPackageListFilter(base, pq);
   const { data, meta } = await paginatedFind(Package, filter, pq);
@@ -43,8 +46,8 @@ async function createPackage(req, res) {
   if (error) throw new HttpError(400, error.message);
   const payload = { ...value, seo, seoTitle, seoDescription };
   if (req.user?.role === "vendor_admin") {
-    payload.vendorAdminPhone = req.user.phone;
-    payload.vendor = req.user.vendorName || payload.vendor;
+    payload.vendorAdminPhone = req.user.mobileNumber;
+    payload.vendor = vendorNameForUser(req.user) || payload.vendor;
   }
   const data = await Package.create(payload);
   await logAudit({
@@ -65,10 +68,10 @@ async function updatePackage(req, res) {
   const match = docMatchForVendor(req, req.params.id);
   const nextValue = { ...value, seo, seoTitle, seoDescription };
   if (req.user?.role === "vendor_admin") {
-    nextValue.vendorAdminPhone = req.user.phone;
-    nextValue.vendor = req.user.vendorName || nextValue.vendor;
+    nextValue.vendorAdminPhone = req.user.mobileNumber;
+    nextValue.vendor = vendorNameForUser(req.user) || nextValue.vendor;
   }
-  const data = await Package.findOneAndUpdate(match, nextValue, { new: true });
+  const data = await Package.findOneAndUpdate(match, { $set: nextValue }, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Package not found");
   await logAudit({
     req,

@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Loads cabzii-ultimate `travelData` snapshot from ./sampleData.js (regenerate via `npm run seed:sync`).
+ * Loads catalog from ./contentData.js (cabs, packages, drivers, blogs, testimonials).
  * Default: clears cabs, packages, drivers then inserts all sample rows.
  * Flags:
  *   --append        Do not delete existing rows before insert (may duplicate).
@@ -13,17 +13,39 @@ require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") }
 const mongoose = require("mongoose");
 const path = require("path");
 
-const { cabs, packages, driverServices } = require("./sampleData");
+const { cabs, packages, driverServices, blogs, testimonials } = require("./contentData");
 const { Cab } = require(path.join(__dirname, "..", "src", "models", "Cab"));
 const { Package } = require(path.join(__dirname, "..", "src", "models", "Package"));
 const { Driver } = require(path.join(__dirname, "..", "src", "models", "Driver"));
 const { Booking } = require(path.join(__dirname, "..", "src", "models", "Booking"));
+const { Blog } = require(path.join(__dirname, "..", "src", "models", "Blog"));
+const { Testimonial } = require(path.join(__dirname, "..", "src", "models", "Testimonial"));
 
 const SAMPLE_BOOKING_PHONE = "910000000099";
 
 function omitId(doc) {
   const { id, ...rest } = doc;
   return rest;
+}
+
+function slugifyTitle(title) {
+  return String(title)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function toBlogDoc(post) {
+  const { id, ...rest } = post;
+  return {
+    ...rest,
+    slug: `post-${id}-${slugifyTitle(post.title)}`
+  };
+}
+
+function toTestimonialDoc(item, index) {
+  const { id, ...rest } = item;
+  return { ...rest, sortOrder: index };
 }
 
 function toDriverDoc(service) {
@@ -64,18 +86,29 @@ async function main() {
     const cabR = await Cab.deleteMany({});
     const pkgR = await Package.deleteMany({});
     const drvR = await Driver.deleteMany({});
-    console.log(`Cleared cabs=${cabR.deletedCount} packages=${pkgR.deletedCount} drivers=${drvR.deletedCount}`);
+    const blogR = await Blog.deleteMany({});
+    const testR = await Testimonial.deleteMany({});
+    console.log(
+      `Cleared cabs=${cabR.deletedCount} packages=${pkgR.deletedCount} drivers=${drvR.deletedCount} blogs=${blogR.deletedCount} testimonials=${testR.deletedCount}`
+    );
   }
 
   const cabDocs = cabs.map(omitId);
   const pkgDocs = packages.map(omitId);
   const driverDocs = driverServices.map(toDriverDoc);
 
+  const blogDocs = blogs.map(toBlogDoc);
+  const testimonialDocs = testimonials.map(toTestimonialDoc);
+
   const insertedCabs = await Cab.insertMany(cabDocs);
   const insertedPkgs = await Package.insertMany(pkgDocs);
   const insertedDrivers = await Driver.insertMany(driverDocs);
+  const insertedBlogs = await Blog.insertMany(blogDocs);
+  const insertedTestimonials = await Testimonial.insertMany(testimonialDocs);
 
-  console.log(`Inserted cabs=${insertedCabs.length} packages=${insertedPkgs.length} drivers=${insertedDrivers.length}`);
+  console.log(
+    `Inserted cabs=${insertedCabs.length} packages=${insertedPkgs.length} drivers=${insertedDrivers.length} blogs=${insertedBlogs.length} testimonials=${insertedTestimonials.length}`
+  );
 
   if (withBookings) {
     await Booking.deleteMany({ phone: SAMPLE_BOOKING_PHONE });

@@ -1,13 +1,15 @@
-/**
- * Vendor admins own rows either by vendorAdminPhone (assigned on create)
- * or by vendor name when vendorAdminPhone was never set (legacy / seed data).
- */
+const { env } = require("../config/env");
+
+function vendorNameForUser(user) {
+  if (user?.role !== "vendor_admin") return "";
+  return env.vendorAdminMap[user.mobileNumber] || "";
+}
 
 function vendorOrScope(req) {
   if (req.user?.role !== "vendor_admin") return null;
-  const phone = req.user.phone;
-  const vendorName = (req.user.vendorName || "").trim();
-  const or = [{ vendorAdminPhone: phone }];
+  const mobileNumber = req.user.mobileNumber;
+  const vendorName = vendorNameForUser(req.user);
+  const or = [{ vendorAdminPhone: mobileNumber }];
   if (vendorName) {
     or.push({
       vendor: vendorName,
@@ -28,4 +30,4 @@ function docMatchForVendor(req, id) {
   return { _id: id, ...scope };
 }
 
-module.exports = { vendorOrScope, listFilterForVendor, docMatchForVendor };
+module.exports = { vendorOrScope, listFilterForVendor, docMatchForVendor, vendorNameForUser };

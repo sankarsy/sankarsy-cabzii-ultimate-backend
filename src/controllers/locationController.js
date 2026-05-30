@@ -24,9 +24,13 @@ async function listLocations(req, res) {
   if (req.query.city) {
     filter.cityName = new RegExp(String(req.query.city).trim(), "i");
   }
+  if (req.query.pincode) {
+    const pin = String(req.query.pincode).trim();
+    if (pin) filter.pincode = new RegExp(`^${pin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`);
+  }
   if (req.query.q) {
     const q = new RegExp(String(req.query.q).trim(), "i");
-    filter.$or = [{ name: q }, { address: q }, { cityName: q }];
+    filter.$or = [{ name: q }, { address: q }, { cityName: q }, { pincode: q }];
   }
   const data = await Location.find(filter).sort({ cityName: 1, name: 1 }).limit(500).lean();
   res.json({ success: true, data });

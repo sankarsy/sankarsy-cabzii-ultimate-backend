@@ -9,6 +9,11 @@ const uploadRoutes = require("./uploadRoutes");
 const vendorRoutes = require("./vendorRoutes");
 const cityRoutes = require("./cityRoutes");
 const locationRoutes = require("./locationRoutes");
+const blogRoutes = require("./blogRoutes");
+const testimonialRoutes = require("./testimonialRoutes");
+const siteSettingsRoutes = require("./siteSettingsRoutes");
+const userRoutes = require("./userRoutes");
+const analyticsRoutes = require("./analyticsRoutes");
 
 const router = express.Router();
 
@@ -26,5 +31,10 @@ router.use("/upload", uploadRoutes);
 router.use("/vendors", vendorRoutes);
 router.use("/cities", cityRoutes);
 router.use("/locations", locationRoutes);
+router.use("/blogs", blogRoutes);
+router.use("/testimonials", testimonialRoutes);
+router.use("/site-settings", siteSettingsRoutes);
+router.use("/users", userRoutes);
+router.use("/analytics", analyticsRoutes);
 
 module.exports = router;
