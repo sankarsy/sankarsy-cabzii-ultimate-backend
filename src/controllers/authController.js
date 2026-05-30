@@ -67,11 +67,8 @@ function sanitizeUser(user, sessionRole) {
   return {
     _id: user._id,
     mobileNumber: user.mobileNumber || user.phone,
-    name: user.name || "",
-    email: user.email || "",
     role,
     createdAt: user.createdAt,
-    lastLoginAt: user.lastLoginAt || null,
     ...(vendorName ? { vendorName } : {})
   };
 }
@@ -79,14 +76,6 @@ function sanitizeUser(user, sessionRole) {
 function canAccessPartner(mobileNumber) {
   const privileged = resolveRole(mobileNumber);
   return privileged === "vendor_admin" || privileged === "super_admin";
-}
-
-/** Stamp login activity so the admin panel can surface real engagement. */
-async function recordLogin(user) {
-  if (!user || typeof user.save !== "function") return;
-  user.lastLoginAt = new Date();
-  user.loginCount = (user.loginCount || 0) + 1;
-  await user.save();
 }
 
 async function sendOtpController(req, res) {
@@ -169,14 +158,7 @@ async function verifyOtpController(req, res) {
 
   if (loginAs === "customer") {
     if (!user) {
-      user = await User.create({
-        mobileNumber,
-        role: "customer",
-        lastLoginAt: new Date(),
-        loginCount: 1
-      });
-    } else {
-      await recordLogin(user);
+      user = await User.create({ mobileNumber, role: "customer" });
     }
     const sessionRole = "customer";
     const accessToken = signAccessToken(user, sessionRole);
@@ -202,8 +184,8 @@ async function verifyOtpController(req, res) {
       user = await User.create({ mobileNumber, role: sessionRole });
     } else if (user.role === "customer" && sessionRole !== "customer") {
       user.role = sessionRole;
+      await user.save();
     }
-    await recordLogin(user);
     const accessToken = signAccessToken(user, sessionRole);
     return res.json({
       success: true,
@@ -249,8 +231,8 @@ async function partnerLoginController(req, res) {
     user = await User.create({ mobileNumber, role: sessionRole });
   } else if (user.role === "customer" && sessionRole !== "customer") {
     user.role = sessionRole;
+    await user.save();
   }
-  await recordLogin(user);
 
   const accessToken = signAccessToken(user, sessionRole);
 
@@ -284,8 +266,8 @@ async function adminLoginController(req, res) {
     user = await User.create({ mobileNumber, role: "super_admin" });
   } else {
     user.role = "super_admin";
+    await user.save();
   }
-  await recordLogin(user);
 
   const sessionRole = "super_admin";
   const accessToken = signAccessToken(user, sessionRole);

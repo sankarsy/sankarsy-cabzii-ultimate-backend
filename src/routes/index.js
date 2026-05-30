@@ -12,8 +12,6 @@ const locationRoutes = require("./locationRoutes");
 const blogRoutes = require("./blogRoutes");
 const testimonialRoutes = require("./testimonialRoutes");
 const siteSettingsRoutes = require("./siteSettingsRoutes");
-const userRoutes = require("./userRoutes");
-const analyticsRoutes = require("./analyticsRoutes");
 
 const router = express.Router();
 
@@ -34,7 +32,5 @@ router.use("/locations", locationRoutes);
 router.use("/blogs", blogRoutes);
 router.use("/testimonials", testimonialRoutes);
 router.use("/site-settings", siteSettingsRoutes);
-router.use("/users", userRoutes);
-router.use("/analytics", analyticsRoutes);
 
 module.exports = router;
