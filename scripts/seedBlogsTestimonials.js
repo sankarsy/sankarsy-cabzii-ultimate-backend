@@ -20,7 +20,7 @@ function toBlogDoc(post) {
   const { id, ...rest } = post;
   return {
     ...rest,
-    slug: `post-${id}-${slugifyTitle(post.title)}`,
+    slug: post.slug || `post-${id}-${slugifyTitle(post.title)}`,
     published: true
   };
 }

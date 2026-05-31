@@ -14,7 +14,7 @@ const vendorSchema = Joi.object({
 });
 
 async function listVendors(req, res) {
-  const activeOnly = req.query.active === "1" || req.query.active === "true";
+  const activeOnly = req.query.active !== "0" && req.query.active !== "false";
   const filter = activeOnly ? { isActive: true } : {};
   const data = await Vendor.find(filter).sort({ name: 1 }).lean();
   res.json({ success: true, data });
@@ -38,15 +38,14 @@ async function createVendor(req, res) {
 
   if (value.adminPhone) {
     await User.findOneAndUpdate(
-      { phone: value.adminPhone },
+      { mobileNumber: value.adminPhone },
       {
         $set: {
-          phone: value.adminPhone,
-          role: "vendor_admin",
-          vendorName: data.name
+          mobileNumber: value.adminPhone,
+          role: "vendor_admin"
         }
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
   }
 
@@ -72,15 +71,14 @@ async function updateVendor(req, res) {
 
   if (value.adminPhone) {
     await User.findOneAndUpdate(
-      { phone: value.adminPhone },
+      { mobileNumber: value.adminPhone },
       {
         $set: {
-          phone: value.adminPhone,
-          role: "vendor_admin",
-          vendorName: data.name
+          mobileNumber: value.adminPhone,
+          role: "vendor_admin"
         }
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
   }
 

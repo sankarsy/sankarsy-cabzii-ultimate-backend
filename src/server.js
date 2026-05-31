@@ -6,8 +6,9 @@ async function startServer() {
   validateEnv();
   await connectDb();
 
-  app.listen(env.port, () => {
-    console.log(`Server listening on port ${env.port}`);
+  const host = process.env.HOST || "0.0.0.0";
+  app.listen(env.port, host, () => {
+    console.log(`Server listening on http://${host}:${env.port}`);
   });
 }
 

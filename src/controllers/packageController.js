@@ -10,7 +10,7 @@ const { parseListQuery, buildPackageListFilter, paginatedFind, activeCatalogFilt
 const packageCoreSchema = Joi.object({
   name: Joi.string().required(),
   vendor: Joi.string().required(),
-  duration: Joi.string().required(),
+  duration: Joi.string().allow("").default(""),
   price: Joi.number().required(),
   originalPrice: Joi.number().default(0),
   discountPercentage: Joi.number().default(0),
@@ -21,7 +21,21 @@ const packageCoreSchema = Joi.object({
   gallery: Joi.array().items(Joi.string()).max(3).default([]),
   city: Joi.string().allow("").default(""),
   location: Joi.string().allow("").default(""),
-  tags: Joi.array().items(Joi.string()).default([])
+  tags: Joi.array().items(Joi.string()).default([]),
+  category: Joi.string()
+    .valid("pilgrimage", "beach", "hill", "heritage", "honeymoon", "adventure", "family", "")
+    .allow("")
+    .default(""),
+  cabTypes: Joi.array()
+    .items(
+      Joi.object({
+        id: Joi.string().allow("").default(""),
+        label: Joi.string().allow("").default(""),
+        seats: Joi.number().integer().min(1).default(4),
+        multiplier: Joi.number().min(0.5).max(3).default(1)
+      })
+    )
+    .default([])
 });
 
 async function listPackages(req, res) {

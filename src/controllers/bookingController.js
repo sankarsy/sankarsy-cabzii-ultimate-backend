@@ -1,6 +1,9 @@
 const Joi = require("joi");
 const mongoose = require("mongoose");
 const { Booking } = require("../models/Booking");
+const { Cab } = require("../models/Cab");
+const { Driver } = require("../models/Driver");
+const { Package } = require("../models/Package");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 const { normalizeMobileNumber } = require("../utils/mobile");
@@ -17,6 +20,10 @@ const bookingCreateSchema = Joi.object({
   date: Joi.string().allow("").default(""),
   routeType: Joi.string().allow("").default(""),
   tripType: Joi.string().allow("").default(""),
+  pickupTime: Joi.string().allow("").default(""),
+  serviceTripType: Joi.string().allow("").default(""),
+  roundTrip: Joi.boolean().optional(),
+  packageHours: Joi.number().allow(null).optional(),
   amount: Joi.number().default(0)
 });
 
@@ -40,6 +47,11 @@ async function createBooking(req, res) {
   const { error, value } = bookingCreateSchema.validate(req.body);
   if (error) throw new HttpError(400, error.message);
   if (!mongoose.isValidObjectId(value.itemId)) throw new HttpError(400, "Invalid itemId");
+
+  const itemModels = { cab: Cab, driver: Driver, tour: Package };
+  const ItemModel = itemModels[value.type];
+  const itemExists = await ItemModel.findById(value.itemId).select("_id").lean();
+  if (!itemExists) throw new HttpError(400, `${value.type} item not found`);
 
   const isAdmin = ["super_admin", "vendor_admin"].includes(req.user?.role);
   const phone =

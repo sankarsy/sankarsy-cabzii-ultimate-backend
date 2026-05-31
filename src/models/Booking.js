@@ -11,8 +11,13 @@ const bookingSchema = new mongoose.Schema(
     pickup: { type: String, trim: true, default: "" },
     drop: { type: String, trim: true, default: "" },
     date: { type: String, trim: true, default: "" },
+    pickupTime: { type: String, trim: true, default: "" },
     routeType: { type: String, trim: true, default: "" },
     tripType: { type: String, trim: true, default: "" },
+    /** MMT-style: outstation | airport | hourly | local */
+    serviceTripType: { type: String, trim: true, default: "" },
+    roundTrip: { type: Boolean, default: false },
+    packageHours: { type: Number, default: null },
     amount: { type: Number, default: 0 },
     status: { type: String, enum: ["pending", "confirmed", "cancelled"], default: "pending" }
   },

@@ -16,15 +16,30 @@ const { Driver } = require(path.join(__dirname, "..", "src", "models", "Driver")
 const {
   DRIVER_PACKAGE_KEYS,
   buildDefaultDriverFarePackages,
-  hasStoredDriverPackages
+  hasStoredDriverPackages,
+  mergeDriverFarePackages
 } = require(path.join(__dirname, "..", "src", "utils", "driverFarePackages"));
 
 const DEFAULT_DRIVER_LABELS = {
-  local4hr: "Local — 4 Hours",
-  localDay: "Local — 1 Day",
-  outstation12hr: "Outstation — 12 Hours",
-  outstationOneWay: "Outstation — One Way"
+  local4hr: "Local — 4 Hrs / 40 Km",
+  local8hr: "Local — 8 Hrs / 80 Km",
+  outstationOneWay: "Outstation — One Way",
+  outstationRoundTrip: "Outstation — Round Trip"
 };
+
+function needsLegacyKeySync(packages) {
+  if (!packages || typeof packages !== "object") return false;
+  const hasLocalDay =
+    Number(packages.localDay?.price) > 0 || Number(packages.localDay?.originalPrice) > 0;
+  const hasLocal8 =
+    Number(packages.local8hr?.price) > 0 || Number(packages.local8hr?.originalPrice) > 0;
+  const has12hr =
+    Number(packages.outstation12hr?.price) > 0 || Number(packages.outstation12hr?.originalPrice) > 0;
+  const hasRound =
+    Number(packages.outstationRoundTrip?.price) > 0 ||
+    Number(packages.outstationRoundTrip?.originalPrice) > 0;
+  return (hasLocalDay && !hasLocal8) || (has12hr && !hasRound);
+}
 
 function needsLabelUpdate(labels) {
   if (!labels || typeof labels !== "object") return true;
@@ -63,6 +78,9 @@ async function main() {
 
     if (!hasStoredDriverPackages(existingPackages)) {
       patch.farePackages = buildDefaultDriverFarePackages(doc);
+      updatedPackages += 1;
+    } else if (needsLegacyKeySync(existingPackages)) {
+      patch.farePackages = mergeDriverFarePackages(existingPackages, existingPackages);
       updatedPackages += 1;
     }
 

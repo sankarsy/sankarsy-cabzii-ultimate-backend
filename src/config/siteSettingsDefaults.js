@@ -13,9 +13,10 @@ const DEFAULT_SITE_SETTINGS = {
   navbar: [
     { label: "Home", href: "/", visible: true, sortOrder: 1 },
     { label: "Cabs", href: "/cabs", visible: true, sortOrder: 2 },
-    { label: "Tours", href: "/packages", visible: true, sortOrder: 3 },
-    { label: "Drivers", href: "/drivers", visible: true, sortOrder: 4 },
-    { label: "Offers", href: "/search?q=offers", visible: true, sortOrder: 5 }
+    { label: "Drivers", href: "/drivers", visible: true, sortOrder: 3 },
+    { label: "Holidays", href: "/holidays", visible: true, sortOrder: 4 },
+    { label: "Hotels", href: "/hotels", visible: true, sortOrder: 5 },
+    { label: "Flights", href: "/flights", visible: true, sortOrder: 6 }
   ],
   footerQuickLinks: [
     { label: "Home", href: "/" },

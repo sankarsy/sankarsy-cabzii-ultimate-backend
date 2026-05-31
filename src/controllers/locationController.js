@@ -15,23 +15,70 @@ const locationSchema = Joi.object({
   isActive: Joi.boolean().default(true)
 });
 
+const CITY_ALIASES = {
+  bangalore: "Bengaluru",
+  bengaluru: "Bengaluru",
+  madras: "Chennai",
+  pondicherry: "Puducherry",
+  puducherry: "Pondicherry",
+  trichy: "Tiruchirappalli",
+  tiruchy: "Tiruchirappalli",
+  ooty: "Udhagamandalam",
+  udhagai: "Udhagamandalam",
+  tuticorin: "Thoothukudi"
+};
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function resolveCityQuery(raw) {
+  const term = String(raw || "").trim();
+  if (!term) return "";
+  const first = term.split(",")[0].trim();
+  return CITY_ALIASES[first.toLowerCase()] || first;
+}
+
+async function buildCityFilter(cityQuery) {
+  const canonical = resolveCityQuery(cityQuery);
+  const escaped = escapeRegex(canonical);
+  const cityDocs = await City.find({
+    isActive: true,
+    $or: [{ name: new RegExp(`^${escaped}$`, "i") }, { name: new RegExp(escaped, "i") }]
+  }).lean();
+
+  const clauses = [{ cityName: new RegExp(escaped, "i") }];
+  const cityIds = cityDocs.map((c) => c._id);
+  if (cityIds.length) clauses.push({ city: { $in: cityIds } });
+  for (const doc of cityDocs) {
+    clauses.push({ cityName: new RegExp(escapeRegex(doc.name), "i") });
+  }
+  return { $or: clauses };
+}
+
 async function listLocations(req, res) {
   const activeOnly = req.query.active !== "0" && req.query.active !== "false";
   const filter = activeOnly ? { isActive: true } : {};
+  const and = [];
+
   if (req.query.cityId && mongoose.isValidObjectId(req.query.cityId)) {
     filter.city = req.query.cityId;
+  } else if (req.query.city) {
+    and.push(await buildCityFilter(req.query.city));
   }
-  if (req.query.city) {
-    filter.cityName = new RegExp(String(req.query.city).trim(), "i");
-  }
+
   if (req.query.pincode) {
     const pin = String(req.query.pincode).trim();
-    if (pin) filter.pincode = new RegExp(`^${pin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`);
+    if (pin) filter.pincode = new RegExp(`^${escapeRegex(pin)}`);
   }
+
   if (req.query.q) {
     const q = new RegExp(String(req.query.q).trim(), "i");
-    filter.$or = [{ name: q }, { address: q }, { cityName: q }, { pincode: q }];
+    and.push({ $or: [{ name: q }, { address: q }, { cityName: q }, { pincode: q }] });
   }
+
+  if (and.length) filter.$and = and;
+
   const data = await Location.find(filter).sort({ cityName: 1, name: 1 }).limit(500).lean();
   res.json({ success: true, data });
 }

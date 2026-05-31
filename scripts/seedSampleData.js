@@ -14,6 +14,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 
 const { cabs, packages, driverServices, blogs, testimonials } = require("./contentData");
+const { buildDefaultDriverFarePackages } = require(path.join(__dirname, "..", "src", "utils", "driverFarePackages"));
 const { Cab } = require(path.join(__dirname, "..", "src", "models", "Cab"));
 const { Package } = require(path.join(__dirname, "..", "src", "models", "Package"));
 const { Driver } = require(path.join(__dirname, "..", "src", "models", "Driver"));
@@ -39,7 +40,7 @@ function toBlogDoc(post) {
   const { id, ...rest } = post;
   return {
     ...rest,
-    slug: `post-${id}-${slugifyTitle(post.title)}`
+    slug: post.slug || `post-${id}-${slugifyTitle(post.title)}`
   };
 }
 
@@ -49,23 +50,35 @@ function toTestimonialDoc(item, index) {
 }
 
 function toDriverDoc(service) {
-  const name = service.type.replace(/\b\w/g, (c) => c.toUpperCase());
-  return {
-    name,
-    vendor: "",
-    experience: "5 Years",
-    trips: 500,
-    rating: service.rating,
-    languages: ["Hindi", "English"],
-    supportedVehicles: ["Sedan", "SUV", "Van"],
+  const doc = {
+    name: service.name || service.serviceTitle || "Acting Driver",
+    vendor: service.vendor || service.serviceSubtitle || "Cabzii Partner",
+    type: service.type || "local",
+    experience: service.experience || "5+ Years",
+    trips: service.trips ?? 800,
+    rating: service.rating || "4.8",
+    discountPercentage: service.discountPercentage ?? 0,
+    image: service.image || "",
+    languages: service.languages || ["Hindi", "English"],
+    supportedVehicles: service.supportedVehicles || ["Sedan", "SUV"],
+    city: service.city || "",
+    location: service.location || "",
     pricing: {
-      hourly: service.pricing?.["4 hour"] ?? service.pricing?.["12 hour"] ?? 300,
-      day: service.pricing?.day ?? 2400,
-      extraHour: service.serviceCharges?.extraHour ?? 80
+      hourly: service.pricing?.hourly ?? 280,
+      day: service.pricing?.day ?? 2800,
+      extraHour: service.pricing?.extraHour ?? 220
     },
     seo: service.seo || "",
     seoTitle: service.seoTitle || "",
     seoDescription: service.seoDescription || ""
+  };
+  const farePackages =
+    service.farePackages && Object.keys(service.farePackages).length
+      ? service.farePackages
+      : buildDefaultDriverFarePackages(doc);
+  return {
+    ...doc,
+    farePackages
   };
 }
 

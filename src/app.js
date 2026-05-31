@@ -14,22 +14,25 @@ const app = express();
 
 const allowedOrigins = env.frontendUrl
   .split(",")
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
+      if (!origin) return callback(null, true);
+      const normalized = origin.replace(/\/$/, "");
+      if (allowedOrigins.length === 0 || allowedOrigins.includes(normalized)) {
+        return callback(null, true);
       }
-      callback(new Error("CORS origin not allowed"));
+      return callback(null, false);
     },
-    credentials: true
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
-); 
-app.use(helmet());
+);
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(compression());
 app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
 app.use(

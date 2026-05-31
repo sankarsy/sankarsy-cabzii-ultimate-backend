@@ -11,6 +11,7 @@
     "seed:content": "node scripts/seedBlogsTestimonials.js",
     "seed:sync": "node scripts/syncSampleDataFromTravel.js",
     "seed:cities": "node scripts/seedCities.js",
+    "seed:locations": "node scripts/seedLocations.js",
     "migrate:cab-packages": "node scripts/migrateCabFarePackages.js",
     "migrate:driver-packages": "node scripts/migrateDriverFarePackages.js"
   },

@@ -1,8 +1,8 @@
 "use strict";
 
-const { buildDefaultFarePackages, mergeFarePackages, hasStoredPackages, num } = require("./cabFarePackages");
+const { buildDefaultFarePackages, num } = require("./cabFarePackages");
 
-const DRIVER_PACKAGE_KEYS = ["local4hr", "localDay", "outstation12hr", "outstationOneWay"];
+const DRIVER_PACKAGE_KEYS = ["local4hr", "local8hr", "localDay", "outstationOneWay", "outstationRoundTrip", "outstation12hr"];
 
 function buildDefaultDriverFarePackages(driver = {}) {
   const hourly = num(driver?.pricing?.hourly);
@@ -19,21 +19,32 @@ function buildDefaultDriverFarePackages(driver = {}) {
   const defaults = buildDefaultFarePackages(base);
   return {
     local4hr: defaults.local4hr,
-    localDay: defaults.local8hr,
-    outstation12hr: defaults.local8hr,
-    outstationOneWay: defaults.outstationOneWay
+    local8hr: defaults.local8hr,
+    outstationOneWay: defaults.outstationOneWay,
+    outstationRoundTrip: defaults.outstationRoundTrip
   };
 }
 
 function hasStoredDriverPackages(farePackages) {
   if (!farePackages || typeof farePackages !== "object") return false;
-  return DRIVER_PACKAGE_KEYS.some((key) => num(farePackages[key]?.price) > 0);
+  const keys = [...DRIVER_PACKAGE_KEYS, "localDay", "outstation12hr"];
+  return keys.some((key) => num(farePackages[key]?.price) > 0 || num(farePackages[key]?.originalPrice) > 0);
 }
 
 function mergeDriverFarePackages(existing, incoming) {
   const out = {};
   for (const key of DRIVER_PACKAGE_KEYS) {
     out[key] = { ...(existing?.[key] || {}), ...(incoming?.[key] || {}) };
+  }
+  if (incoming?.localDay && num(out.local8hr?.price) <= 0 && num(out.local8hr?.originalPrice) <= 0) {
+    out.local8hr = { ...out.local8hr, ...incoming.localDay };
+  }
+  if (
+    incoming?.outstation12hr &&
+    num(out.outstationRoundTrip?.price) <= 0 &&
+    num(out.outstationRoundTrip?.originalPrice) <= 0
+  ) {
+    out.outstationRoundTrip = { ...out.outstationRoundTrip, ...incoming.outstation12hr };
   }
   return out;
 }
@@ -44,7 +55,9 @@ function mergeDriverFarePackageLabels(existing, incoming) {
 }
 
 function resolveDriverFarePackages(value, existingPackages) {
-  if (hasStoredDriverPackages(value.farePackages)) return value.farePackages;
+  if (hasStoredDriverPackages(value.farePackages)) {
+    return mergeDriverFarePackages(existingPackages || {}, value.farePackages);
+  }
   if (hasStoredDriverPackages(existingPackages)) return existingPackages;
   return buildDefaultDriverFarePackages(value);
 }

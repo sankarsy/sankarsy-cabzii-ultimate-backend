@@ -22,9 +22,11 @@ const packageFareSchema = Joi.object({
 
 const driverFarePackagesSchema = Joi.object({
   local4hr: packageFareSchema,
+  local8hr: packageFareSchema,
   localDay: packageFareSchema,
   outstation12hr: packageFareSchema,
-  outstationOneWay: packageFareSchema
+  outstationOneWay: packageFareSchema,
+  outstationRoundTrip: packageFareSchema
 });
 
 const farePackageLabelsSchema = Joi.object({
