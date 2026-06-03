@@ -13,6 +13,20 @@ async function connectDb() {
     maxPoolSize: 10
   });
   console.log("MongoDB connected");
+
+  try {
+    const { seedPackagesIfEmpty } = require("../utils/seedPackagesIfEmpty");
+    await seedPackagesIfEmpty();
+  } catch (err) {
+    console.warn("Package auto-seed skipped:", err.message);
+  }
+
+  try {
+    const { seedDriversFromCabsIfEmpty } = require("../utils/seedDriversFromCabs");
+    await seedDriversFromCabsIfEmpty();
+  } catch (err) {
+    console.warn("Driver auto-seed skipped:", err.message);
+  }
 }
 
 module.exports = { connectDb };

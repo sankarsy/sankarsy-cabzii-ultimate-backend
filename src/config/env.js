@@ -16,8 +16,9 @@ const env = {
   jwtSecret: process.env.JWT_SECRET || "",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   otpMode: (process.env.OTP_MODE || "local").toLowerCase(),
-  otpLength: Number(process.env.OTP_LENGTH || 6),
-  otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES || 5),
+  otpLength: 6,
+  otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES || 2),
+  otpResendCooldownSeconds: Number(process.env.OTP_RESEND_COOLDOWN_SECONDS || 30),
   /** When true (default in development), OTP is still saved if SMS fails — use OTP_MODE=local or debug OTP in UI. */
   otpLocalFallback:
     process.env.OTP_LOCAL_FALLBACK === "true" ||
@@ -26,6 +27,9 @@ const env = {
   fast2smsSenderId: cleanEnvString(process.env.FAST2SMS_SENDER_ID) || "CABZII",
   fast2smsEntityId: cleanEnvString(process.env.FAST2SMS_ENTITY_ID),
   fast2smsTemplateId: cleanEnvString(process.env.FAST2SMS_TEMPLATE_ID),
+  fast2smsQuickMessage:
+    process.env.FAST2SMS_QUICK_MESSAGE ||
+    "Your OTP for Cabzii login is {otp}. It is valid for {minutes} minutes.",
   fast2smsOtpMessage: process.env.FAST2SMS_OTP_MESSAGE || "{otp} is your Cabzii login OTP. Do not share it.",
   factor2ApiKey: process.env.FACTOR2_API_KEY || "",
   factor2TemplateName: process.env.FACTOR2_TEMPLATE_NAME || "cabzii",

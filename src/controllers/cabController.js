@@ -7,6 +7,7 @@ const { docMatchForVendor, listFilterForVendor, vendorNameForUser } = require(".
 const { splitSeoStrings } = require("../utils/splitSeoStrings");
 const { mergeFarePackages, resolveFarePackages } = require("../utils/cabFarePackages");
 const { parseListQuery, buildCabListFilter, paginatedFind, activeCatalogFilter } = require("../utils/listQuery");
+const { normalizeCabForApi } = require("../utils/catalogNormalize");
 
 const packageFareSchema = Joi.object({
   originalPrice: Joi.number().default(0),
@@ -75,7 +76,7 @@ async function listCabs(req, res) {
   const pq = parseListQuery(req);
   const filter = buildCabListFilter(base, pq);
   const { data, meta } = await paginatedFind(Cab, filter, pq);
-  res.json({ success: true, data, meta });
+  res.json({ success: true, data: data.map(normalizeCabForApi), meta });
 }
 
 async function getCabById(req, res) {
@@ -83,7 +84,7 @@ async function getCabById(req, res) {
   const match = docMatchForVendor(req, req.params.id);
   const data = await Cab.findOne(match).lean();
   if (!data) throw new HttpError(404, "Cab not found");
-  res.json({ success: true, data });
+  res.json({ success: true, data: normalizeCabForApi(data) });
 }
 
 async function createCab(req, res) {

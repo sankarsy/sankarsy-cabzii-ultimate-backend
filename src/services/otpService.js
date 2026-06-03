@@ -1,9 +1,9 @@
 const { env } = require("../config/env");
 
+/** Client login OTP — always 6 digits (matches Cabzii.in UI). */
 function generateOtp() {
-  const length = env.otpLength === 6 ? 6 : 6;
-  const min = 10 ** (length - 1);
-  const max = 10 ** length - 1;
+  const min = 100000;
+  const max = 999999;
   return String(Math.floor(Math.random() * (max - min + 1)) + min);
 }
 
@@ -32,19 +32,16 @@ function isFast2smsSuccess(body) {
   return false;
 }
 
-async function sendViaFast2sms(mobileNumber, otp) {
-  if (!env.fast2smsApiKey) {
-    throw new OtpSendError("SMS service is not configured", {
-      userMessage: "SMS service is not configured. Set FAST2SMS_API_KEY or use OTP_MODE=local."
-    });
-  }
+function fast2smsErrorMessage(body, fallback) {
+  return (
+    body?.message ||
+    body?.msg ||
+    (typeof body?.raw === "string" ? body.raw : null) ||
+    fallback
+  );
+}
 
-  const payload = {
-    route: "otp",
-    variables_values: otp,
-    numbers: mobileNumber
-  };
-
+async function postFast2sms(payload) {
   const response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
     method: "POST",
     headers: {
@@ -53,25 +50,47 @@ async function sendViaFast2sms(mobileNumber, otp) {
     },
     body: JSON.stringify(payload)
   });
-
   const body = await parseFast2smsResponse(response);
+  return { response, body };
+}
+
+/** Legacy Cabzii flow: Fast2SMS Quick SMS route "q" with plain English message. */
+async function sendViaFast2smsQuick(mobileNumber, otp) {
+  const minutes = env.otpTtlMinutes;
+  const message = env.fast2smsQuickMessage
+    .replace("{otp}", otp)
+    .replace("{minutes}", String(minutes));
+
+  const { response, body } = await postFast2sms({
+    route: "q",
+    message,
+    language: "english",
+    flash: 0,
+    numbers: mobileNumber
+  });
+
+  if (isFast2smsSuccess(body)) {
+    return { provider: "fast2sms", channel: "quick" };
+  }
+
+  const providerMessage = fast2smsErrorMessage(body, "Failed to send OTP via SMS");
+  console.error("[OTP] Fast2SMS quick route failed", { status: response.status, body, mobileNumber });
+  throw new OtpSendError(providerMessage, { userMessage: providerMessage, providerBody: body });
+}
+
+async function sendViaFast2smsOtpRoute(mobileNumber, otp) {
+  const { response, body } = await postFast2sms({
+    route: "otp",
+    variables_values: otp,
+    numbers: mobileNumber
+  });
 
   if (isFast2smsSuccess(body)) {
     return { provider: "fast2sms", channel: "otp" };
   }
 
-  const providerMessage =
-    body?.message || body?.msg || (typeof body?.raw === "string" ? body.raw : null) || "Failed to send OTP via SMS";
-
-  if (env.fast2smsTemplateId && env.fast2smsSenderId) {
-    try {
-      return await sendViaFast2smsDlt(mobileNumber, otp);
-    } catch (dltErr) {
-      console.error("[OTP] Fast2SMS DLT fallback failed", { message: dltErr.message, mobileNumber });
-    }
-  }
-
-  console.error("[OTP] Fast2SMS failed", { status: response.status, body, mobileNumber });
+  const providerMessage = fast2smsErrorMessage(body, "Failed to send OTP via SMS");
+  console.error("[OTP] Fast2SMS OTP route failed", { status: response.status, body, mobileNumber });
   throw new OtpSendError(providerMessage, { userMessage: providerMessage, providerBody: body });
 }
 
@@ -93,18 +112,9 @@ async function sendViaFast2smsDlt(mobileNumber, otp) {
     payload.template_id = env.fast2smsTemplateId;
   }
 
-  const response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
-    method: "POST",
-    headers: {
-      authorization: env.fast2smsApiKey,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const body = await parseFast2smsResponse(response);
+  const { response, body } = await postFast2sms(payload);
   if (!isFast2smsSuccess(body)) {
-    const providerMessage = body?.message || "DLT SMS failed";
+    const providerMessage = fast2smsErrorMessage(body, "DLT SMS failed");
     throw new OtpSendError(providerMessage, { userMessage: providerMessage, providerBody: body });
   }
 
@@ -124,6 +134,34 @@ async function sendViaFactor2(mobileNumber, otp) {
     throw new OtpSendError("2Factor request failed", { userMessage: "Failed to send OTP via SMS." });
   }
   return { provider: "factor2" };
+}
+
+async function sendViaFast2sms(mobileNumber, otp) {
+  if (!env.fast2smsApiKey) {
+    throw new OtpSendError("SMS service is not configured", {
+      userMessage: "SMS service is not configured. Set FAST2SMS_API_KEY or use OTP_MODE=local."
+    });
+  }
+
+  try {
+    return await sendViaFast2smsQuick(mobileNumber, otp);
+  } catch (quickErr) {
+    console.warn("[OTP] Quick SMS failed, trying OTP route", { message: quickErr.message, mobileNumber });
+  }
+
+  try {
+    return await sendViaFast2smsOtpRoute(mobileNumber, otp);
+  } catch (otpRouteErr) {
+    if (env.fast2smsTemplateId && env.fast2smsSenderId) {
+      try {
+        return await sendViaFast2smsDlt(mobileNumber, otp);
+      } catch (dltErr) {
+        console.error("[OTP] Fast2SMS DLT fallback failed", { message: dltErr.message, mobileNumber });
+        throw dltErr;
+      }
+    }
+    throw otpRouteErr;
+  }
 }
 
 async function sendOtp(mobileNumber, otp) {

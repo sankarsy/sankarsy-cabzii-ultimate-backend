@@ -11,6 +11,7 @@ const {
   resolveDriverFarePackages
 } = require("../utils/driverFarePackages");
 const { parseListQuery, buildDriverListFilter, paginatedFind, activeCatalogFilter } = require("../utils/listQuery");
+const { normalizeDriverForApi } = require("../utils/catalogNormalize");
 
 const packageFareSchema = Joi.object({
   originalPrice: Joi.number().default(0),
@@ -76,7 +77,7 @@ async function listDrivers(req, res) {
   const pq = parseListQuery(req);
   const filter = buildDriverListFilter(base, pq);
   const { data, meta } = await paginatedFind(Driver, filter, pq);
-  res.json({ success: true, data, meta });
+  res.json({ success: true, data: data.map(normalizeDriverForApi), meta });
 }
 
 async function getDriverById(req, res) {
@@ -84,7 +85,7 @@ async function getDriverById(req, res) {
   const match = docMatchForVendor(req, req.params.id);
   const data = await Driver.findOne(match).lean();
   if (!data) throw new HttpError(404, "Driver not found");
-  res.json({ success: true, data });
+  res.json({ success: true, data: normalizeDriverForApi(data) });
 }
 
 async function createDriver(req, res) {

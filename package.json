@@ -8,6 +8,8 @@
     "start": "nodemon src/server.js",
     "prod": "node src/server.js",
     "seed": "node scripts/seedSampleData.js",
+    "seed:drivers": "node scripts/seedDriversOnly.js",
+    "seed:packages": "node scripts/seedPackagesOnly.js",
     "seed:content": "node scripts/seedBlogsTestimonials.js",
     "seed:sync": "node scripts/syncSampleDataFromTravel.js",
     "seed:cities": "node scripts/seedCities.js",

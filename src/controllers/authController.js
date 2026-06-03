@@ -10,15 +10,18 @@ const { vendorNameForUser } = require("../utils/vendorAccess");
 
 const sendOtpSchema = Joi.object({
   phone: Joi.string().optional(),
-  mobileNumber: Joi.string().optional()
-}).or("phone", "mobileNumber");
+  mobile: Joi.string().optional(),
+  mobileNumber: Joi.string().optional(),
+  loginAs: Joi.string().valid("customer", "partner").optional()
+}).or("phone", "mobile", "mobileNumber");
 
 const verifyOtpSchema = Joi.object({
   phone: Joi.string().optional(),
+  mobile: Joi.string().optional(),
   mobileNumber: Joi.string().optional(),
   otp: Joi.string().length(6).pattern(/^\d{6}$/).required(),
-  loginAs: Joi.string().valid("customer", "partner").default("customer")
-}).or("phone", "mobileNumber");
+  loginAs: Joi.string().valid("customer", "partner").optional()
+}).or("phone", "mobile", "mobileNumber");
 
 const adminLoginSchema = Joi.object({
   phone: Joi.string().optional(),
@@ -27,11 +30,14 @@ const adminLoginSchema = Joi.object({
 }).or("phone", "mobileNumber");
 
 function resolveMobile(body) {
-  const raw = body.mobileNumber ?? body.phone;
+  const raw = body.mobileNumber ?? body.mobile ?? body.phone;
   const mobileNumber = normalizeMobileNumber(raw);
   if (!mobileNumber) throw new HttpError(400, "Enter a valid 10-digit mobile number.");
   return mobileNumber;
 }
+
+/** Per-number resend cooldown (same as legacy clientController LAST_SENT). */
+const lastOtpSentAt = new Map();
 
 function resolveRole(mobileNumber) {
   const isSuperAdmin =
@@ -82,7 +88,19 @@ async function sendOtpController(req, res) {
   const { error } = sendOtpSchema.validate(req.body);
   if (error) throw new HttpError(400, error.message);
 
+  if (req.body.loginAs === "partner") {
+    throw new HttpError(400, "OTP login is for customers only. Partners should use password login.");
+  }
+
   const mobileNumber = resolveMobile(req.body);
+
+  const cooldownMs = env.otpResendCooldownSeconds * 1000;
+  const lastSent = lastOtpSentAt.get(mobileNumber) || 0;
+  const elapsed = Date.now() - lastSent;
+  if (elapsed < cooldownMs) {
+    const wait = Math.ceil((cooldownMs - elapsed) / 1000);
+    throw new HttpError(429, `Please wait ${wait}s before requesting another OTP.`);
+  }
 
   const recentCount = await OtpSession.countDocuments({
     phone: mobileNumber,
@@ -115,12 +133,14 @@ async function sendOtpController(req, res) {
     throw new HttpError(502, smsErrorMessage);
   }
 
+  lastOtpSentAt.set(mobileNumber, Date.now());
+
   const response = {
     success: true,
     message: smsDelivered
-      ? "OTP sent successfully."
+      ? "OTP sent via Fast2SMS."
       : "OTP generated. Complete Fast2SMS verification for SMS, or use the code shown below (development).",
-    resendAfterSeconds: 30,
+    resendAfterSeconds: env.otpResendCooldownSeconds,
     smsDelivered
   };
 
@@ -151,53 +171,26 @@ async function verifyOtpController(req, res) {
   latestOtp.consumedAt = new Date();
   await latestOtp.save();
 
-  const loginAs = value.loginAs || "customer";
-  const privilegedRole = resolveRole(mobileNumber);
+  if (value.loginAs === "partner") {
+    throw new HttpError(400, "OTP login is for customers only. Partners should use password login.");
+  }
 
   let user = await findUserByMobile(mobileNumber);
 
-  if (loginAs === "customer") {
-    if (!user) {
-      user = await User.create({ mobileNumber, role: "customer" });
-    }
-    const sessionRole = "customer";
-    const accessToken = signAccessToken(user, sessionRole);
-    return res.json({
-      success: true,
-      message: "Login successful.",
-      data: {
-        token: accessToken,
-        user: sanitizeUser(user, sessionRole)
-      }
-    });
+  if (!user) {
+    user = await User.create({ mobileNumber, role: "customer" });
   }
 
-  if (loginAs === "partner") {
-    if (!canAccessPartner(mobileNumber)) {
-      throw new HttpError(
-        403,
-        "This mobile is not registered as a travel partner. Use Customer login or contact Cabzii."
-      );
+  const sessionRole = "customer";
+  const accessToken = signAccessToken(user, sessionRole);
+  return res.json({
+    success: true,
+    message: "Client logged in successfully.",
+    data: {
+      token: accessToken,
+      user: sanitizeUser(user, sessionRole)
     }
-    const sessionRole = privilegedRole;
-    if (!user) {
-      user = await User.create({ mobileNumber, role: sessionRole });
-    } else if (user.role === "customer" && sessionRole !== "customer") {
-      user.role = sessionRole;
-      await user.save();
-    }
-    const accessToken = signAccessToken(user, sessionRole);
-    return res.json({
-      success: true,
-      message: "Partner login successful.",
-      data: {
-        token: accessToken,
-        user: sanitizeUser(user, sessionRole)
-      }
-    });
-  }
-
-  throw new HttpError(400, "Invalid login type.");
+  });
 }
 
 function verifyPartnerPassword(mobileNumber, password) {
