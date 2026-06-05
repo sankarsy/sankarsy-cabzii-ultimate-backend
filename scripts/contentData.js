@@ -437,9 +437,9 @@ const blogs = [
     date: "May 31, 2026",
     seo:
       "cab booking in chennai, acting driver in chennai, call driver in chennai, taxi booking near me, travels near me, tirupati taxi chennai, chennai taxi, travels in chennai, cabzii",
-    seoTitle: "Cab Booking in Chennai — Complete Guide 2026 | Acting Driver & Taxi Near Me",
+    seoTitle: "Chennai Cabs Guide | Packages, Hours & Cab Booking 2026 | Cabzii",
     seoDescription:
-      "Complete 2026 guide: cab booking in Chennai, acting driver in Chennai, call driver, taxi booking near me, travels near me & Tirupati taxi from Chennai. Book online on cabzii.in."
+      "Chennai cabs guide — hourly packages (4 hours, 8 hours), outstation trips, acting driver hire and taxi near me. Book cab packages online on Cabzii.in."
   },
   {
     id: 1,

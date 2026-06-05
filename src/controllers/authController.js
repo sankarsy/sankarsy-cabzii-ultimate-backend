@@ -94,6 +94,9 @@ async function sendOtpController(req, res) {
 
   const mobileNumber = resolveMobile(req.body);
 
+  console.log("Using OTP mode:", env.otpMode);
+  console.log("Has Fast2SMS key:", !!env.fast2smsApiKey);
+
   const cooldownMs = env.otpResendCooldownSeconds * 1000;
   const lastSent = lastOtpSentAt.get(mobileNumber) || 0;
   const elapsed = Date.now() - lastSent;
@@ -111,6 +114,7 @@ async function sendOtpController(req, res) {
   }
 
   const otp = generateOtp();
+  console.log("OTP:", otp);
   const expiresAt = new Date(Date.now() + env.otpTtlMinutes * 60 * 1000);
 
   const session = await OtpSession.create({ phone: mobileNumber, otp, expiresAt });

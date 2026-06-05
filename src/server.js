@@ -9,6 +9,8 @@ async function startServer() {
   const host = process.env.HOST || "0.0.0.0";
   app.listen(env.port, host, () => {
     console.log(`Server listening on http://${host}:${env.port}`);
+    console.log("Using OTP mode:", env.otpMode);
+    console.log("Has Fast2SMS key:", !!env.fast2smsApiKey);
   });
 }
 

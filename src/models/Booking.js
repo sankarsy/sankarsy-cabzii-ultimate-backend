@@ -19,6 +19,14 @@ const bookingSchema = new mongoose.Schema(
     roundTrip: { type: Boolean, default: false },
     packageHours: { type: Number, default: null },
     amount: { type: Number, default: 0 },
+    paymentMethod: { type: String, trim: true, default: "cash" },
+    coupon: { type: String, trim: true, default: "" },
+    pickupLat: { type: Number, default: null },
+    pickupLng: { type: Number, default: null },
+    dropLat: { type: Number, default: null },
+    dropLng: { type: Number, default: null },
+    distanceKm: { type: Number, default: null },
+    durationMin: { type: Number, default: null },
     status: { type: String, enum: ["pending", "confirmed", "cancelled"], default: "pending" }
   },
   { timestamps: true }

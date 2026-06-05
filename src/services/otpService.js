@@ -51,6 +51,8 @@ async function postFast2sms(payload) {
     body: JSON.stringify(payload)
   });
   const body = await parseFast2smsResponse(response);
+  console.log("Fast2SMS Response:", JSON.stringify(body));
+  console.log("Fast2SMS Request ID:", body.request_id);
   return { response, body };
 }
 

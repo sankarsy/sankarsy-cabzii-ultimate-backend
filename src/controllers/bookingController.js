@@ -24,7 +24,27 @@ const bookingCreateSchema = Joi.object({
   serviceTripType: Joi.string().allow("").default(""),
   roundTrip: Joi.boolean().optional(),
   packageHours: Joi.number().allow(null).optional(),
-  amount: Joi.number().default(0)
+  amount: Joi.number().default(0),
+  paymentMethod: Joi.string()
+    .valid(
+      "cash",
+      "pay_at_drop",
+      "paytm",
+      "gpay",
+      "phonepe",
+      "upi_any",
+      "amazonpay",
+      "cabzii_wallet",
+      "card"
+    )
+    .default("cash"),
+  coupon: Joi.string().allow("").optional(),
+  pickupLat: Joi.number().allow(null).optional(),
+  pickupLng: Joi.number().allow(null).optional(),
+  dropLat: Joi.number().allow(null).optional(),
+  dropLng: Joi.number().allow(null).optional(),
+  distanceKm: Joi.number().allow(null).optional(),
+  durationMin: Joi.number().allow(null).optional()
 });
 
 const bookingUpdateSchema = bookingCreateSchema.keys({
