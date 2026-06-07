@@ -134,6 +134,21 @@ function activeCatalogFilter(base = {}) {
   return { $and: [base, activeClause] };
 }
 
+function adminCatalogFilter(base = {}) {
+  const clause = { isDeleted: { $ne: true } };
+  if (!base || Object.keys(base).length === 0) return clause;
+  return { $and: [base, clause] };
+}
+
+function isCatalogAdmin(req) {
+  return req.user && ["super_admin", "vendor_admin"].includes(req.user.role);
+}
+
+function catalogListFilter(req, vendorBase = {}) {
+  const includeAll = isCatalogAdmin(req) && String(req.query?.admin || "") === "1";
+  return includeAll ? adminCatalogFilter(vendorBase) : activeCatalogFilter(vendorBase);
+}
+
 async function paginatedFind(Model, filter, { page, limit, priorityCity }, sort = { createdAt: -1 }) {
   const skip = (page - 1) * limit;
   if (!priorityCity) {
@@ -159,5 +174,8 @@ module.exports = {
   buildDriverListFilter,
   paginatedFind,
   activeCatalogFilter,
+  adminCatalogFilter,
+  isCatalogAdmin,
+  catalogListFilter,
   sortDocsByCityPriority
 };

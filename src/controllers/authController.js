@@ -185,6 +185,10 @@ async function verifyOtpController(req, res) {
     user = await User.create({ mobileNumber, role: "customer" });
   }
 
+  user.lastLoginAt = new Date();
+  user.loginCount = Number(user.loginCount || 0) + 1;
+  await user.save();
+
   const sessionRole = "customer";
   const accessToken = signAccessToken(user, sessionRole);
   return res.json({
@@ -228,8 +232,11 @@ async function partnerLoginController(req, res) {
     user = await User.create({ mobileNumber, role: sessionRole });
   } else if (user.role === "customer" && sessionRole !== "customer") {
     user.role = sessionRole;
-    await user.save();
   }
+
+  user.lastLoginAt = new Date();
+  user.loginCount = Number(user.loginCount || 0) + 1;
+  await user.save();
 
   const accessToken = signAccessToken(user, sessionRole);
 
@@ -263,8 +270,11 @@ async function adminLoginController(req, res) {
     user = await User.create({ mobileNumber, role: "super_admin" });
   } else {
     user.role = "super_admin";
-    await user.save();
   }
+
+  user.lastLoginAt = new Date();
+  user.loginCount = Number(user.loginCount || 0) + 1;
+  await user.save();
 
   const sessionRole = "super_admin";
   const accessToken = signAccessToken(user, sessionRole);

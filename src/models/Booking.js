@@ -27,7 +27,20 @@ const bookingSchema = new mongoose.Schema(
     dropLng: { type: Number, default: null },
     distanceKm: { type: Number, default: null },
     durationMin: { type: Number, default: null },
-    status: { type: String, enum: ["pending", "confirmed", "cancelled"], default: "pending" }
+    vendorContact: {
+      name: { type: String, trim: true, default: "" },
+      phone: { type: String, trim: true, default: "" },
+      whatsapp: { type: String, trim: true, default: "" },
+      email: { type: String, trim: true, default: "" },
+      notes: { type: String, trim: true, default: "" }
+    },
+    contactSharedAt: { type: Date, default: null },
+    finishedAt: { type: Date, default: null },
+    status: {
+      type: String,
+      enum: ["pending", "confirmed", "finished", "cancelled"],
+      default: "pending"
+    }
   },
   { timestamps: true }
 );

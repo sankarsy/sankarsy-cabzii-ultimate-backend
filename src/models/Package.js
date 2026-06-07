@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { mongooseFields: catalogProductFields } = require("../utils/catalogProductFields");
 
 const packageSchema = new mongoose.Schema(
   {
@@ -37,6 +38,7 @@ const packageSchema = new mongoose.Schema(
     seo: { type: String, default: "" },
     seoTitle: { type: String, default: "" },
     seoDescription: { type: String, default: "" },
+    ...catalogProductFields,
     status: { type: String, enum: ["active", "inactive"], default: "active", index: true },
     isDeleted: { type: Boolean, default: false, index: true }
   },

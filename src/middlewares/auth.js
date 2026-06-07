@@ -9,6 +9,7 @@ const { env } = require("../config/env");
 const { HttpError } = require("../utils/httpError");
 
 const { asyncHandler } = require("../utils/asyncHandler");
+const { resolveEffectiveRole } = require("../utils/adminAccess");
 
 /**
  * Extract JWT token from Authorization header
@@ -71,10 +72,14 @@ const requireAuth = asyncHandler(
       );
     }
 
+    const mobileNumber = payload.mobileNumber || user.mobileNumber;
+    const jwtRole = payload.role || user.role;
+    const role = resolveEffectiveRole(mobileNumber, jwtRole, user.role);
+
     req.user = {
       ...user,
-      role: payload.role || user.role,
-      mobileNumber: payload.mobileNumber || user.mobileNumber
+      role,
+      mobileNumber
     };
 
     req.token = token;
@@ -102,13 +107,14 @@ const optionalAuth = asyncHandler(
         .select("-otp -__v")
         .lean();
 
-      req.user = user
-        ? {
-            ...user,
-            role: payload.role || user.role,
-            mobileNumber: payload.mobileNumber || user.mobileNumber
-          }
-        : null;
+      if (user) {
+        const mobileNumber = payload.mobileNumber || user.mobileNumber;
+        const jwtRole = payload.role || user.role;
+        const role = resolveEffectiveRole(mobileNumber, jwtRole, user.role);
+        req.user = { ...user, role, mobileNumber };
+      } else {
+        req.user = null;
+      }
 
       req.token = token;
     } catch (error) {

@@ -12,6 +12,11 @@ const locationRoutes = require("./locationRoutes");
 const blogRoutes = require("./blogRoutes");
 const testimonialRoutes = require("./testimonialRoutes");
 const siteSettingsRoutes = require("./siteSettingsRoutes");
+const analyticsRoutes = require("./analyticsRoutes");
+const userRoutes = require("./userRoutes");
+const seoServiceRoutes = require("./seoServiceRoutes");
+const seoRouteRoutes = require("./seoRouteRoutes");
+const seoMenuRoutes = require("./seoMenuRoutes");
 
 const router = express.Router();
 
@@ -32,5 +37,10 @@ router.use("/locations", locationRoutes);
 router.use("/blogs", blogRoutes);
 router.use("/testimonials", testimonialRoutes);
 router.use("/site-settings", siteSettingsRoutes);
+router.use("/analytics", analyticsRoutes);
+router.use("/users", userRoutes);
+router.use("/seo-services", seoServiceRoutes);
+router.use("/seo-routes", seoRouteRoutes);
+router.use("/seo-menu", seoMenuRoutes);
 
 module.exports = router;

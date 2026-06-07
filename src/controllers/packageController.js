@@ -4,8 +4,14 @@ const { Package } = require("../models/Package");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 const { docMatchForVendor, listFilterForVendor, vendorNameForUser } = require("../utils/vendorAccess");
-const { splitSeoStrings } = require("../utils/splitSeoStrings");
-const { parseListQuery, buildPackageListFilter, paginatedFind, activeCatalogFilter } = require("../utils/listQuery");
+const {
+  splitCatalogBody,
+  normalizeCatalogProduct,
+  ensureUniqueSlug,
+  catalogLookupQuery,
+  joiFields: catalogJoiFields
+} = require("../utils/catalogProductFields");
+const { parseListQuery, buildPackageListFilter, paginatedFind, catalogListFilter, isCatalogAdmin } = require("../utils/listQuery");
 
 const packageCoreSchema = Joi.object({
   name: Joi.string().required(),
@@ -35,11 +41,12 @@ const packageCoreSchema = Joi.object({
         multiplier: Joi.number().min(0.5).max(3).default(1)
       })
     )
-    .default([])
-});
+    .default([]),
+  status: Joi.string().valid("active", "inactive").default("active")
+}).concat(Joi.object(catalogJoiFields));
 
 async function listPackages(req, res) {
-  const base = activeCatalogFilter(listFilterForVendor(req));
+  const base = catalogListFilter(req, listFilterForVendor(req));
   const pq = parseListQuery(req);
   const filter = buildPackageListFilter(base, pq);
   const { data, meta } = await paginatedFind(Package, filter, pq);
@@ -47,18 +54,30 @@ async function listPackages(req, res) {
 }
 
 async function getPackageById(req, res) {
-  if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(400, "Invalid id");
-  const match = docMatchForVendor(req, req.params.id);
+  const lookup = catalogLookupQuery(req.params.id);
+  const scope = listFilterForVendor(req);
+  const match = lookup._id ? { _id: lookup._id, ...scope } : { slug: lookup.slug, ...scope };
   const data = await Package.findOne(match).lean();
   if (!data) throw new HttpError(404, "Package not found");
+  const isPublic = !isCatalogAdmin(req);
+  if (isPublic && (data.isDeleted || (data.status && data.status !== "active"))) {
+    throw new HttpError(404, "Package not found");
+  }
   res.json({ success: true, data });
 }
 
 async function createPackage(req, res) {
-  const { core, seo, seoTitle, seoDescription } = splitSeoStrings(req.body);
-  const { error, value } = packageCoreSchema.validate(core, { stripUnknown: true, convert: true });
+  const { core, product } = splitCatalogBody(req.body);
+  const { error, value } = packageCoreSchema.validate({ ...core, ...product }, { stripUnknown: true, convert: true });
   if (error) throw new HttpError(400, error.message);
-  const payload = { ...value, seo, seoTitle, seoDescription };
+  const productFields = normalizeCatalogProduct(product, {
+    title: value.name,
+    vendor: value.vendor,
+    type: value.category || "package",
+    city: value.city
+  });
+  productFields.slug = await ensureUniqueSlug(Package, productFields.slug);
+  const payload = { ...value, ...productFields };
   if (req.user?.role === "vendor_admin") {
     payload.vendorAdminPhone = req.user.mobileNumber;
     payload.vendor = vendorNameForUser(req.user) || payload.vendor;
@@ -76,11 +95,22 @@ async function createPackage(req, res) {
 }
 
 async function updatePackage(req, res) {
-  const { core, seo, seoTitle, seoDescription } = splitSeoStrings(req.body);
-  const { error, value } = packageCoreSchema.validate(core, { stripUnknown: true, convert: true });
+  const { core, product } = splitCatalogBody(req.body);
+  const { error, value } = packageCoreSchema.validate({ ...core, ...product }, { stripUnknown: true, convert: true });
   if (error) throw new HttpError(400, error.message);
-  const match = docMatchForVendor(req, req.params.id);
-  const nextValue = { ...value, seo, seoTitle, seoDescription };
+  const lookup = catalogLookupQuery(req.params.id);
+  const scope = listFilterForVendor(req);
+  const match = lookup._id ? { _id: lookup._id, ...scope } : { slug: lookup.slug, ...scope };
+  const existing = await Package.findOne(match).lean();
+  if (!existing) throw new HttpError(404, "Package not found");
+  const productFields = normalizeCatalogProduct(product, {
+    title: value.name || existing.name,
+    vendor: value.vendor || existing.vendor,
+    type: value.category || existing.category || "package",
+    city: value.city || existing.city
+  });
+  productFields.slug = await ensureUniqueSlug(Package, productFields.slug, existing._id);
+  const nextValue = { ...value, ...productFields };
   if (req.user?.role === "vendor_admin") {
     nextValue.vendorAdminPhone = req.user.mobileNumber;
     nextValue.vendor = vendorNameForUser(req.user) || nextValue.vendor;

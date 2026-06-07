@@ -44,11 +44,13 @@ router.post(
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Image file is required." });
     }
+    const relativeUrl = `/uploads/${req.file.filename}`;
     return res.status(201).json({
       success: true,
       data: {
         fileName: req.file.filename,
-        url: `/uploads/${req.file.filename}`
+        url: relativeUrl,
+        relativeUrl
       }
     });
   }

@@ -7,7 +7,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["customer", "vendor_admin", "super_admin"],
       default: "customer"
-    }
+    },
+    name: { type: String, trim: true, default: "" },
+    email: { type: String, trim: true, default: "" },
+    lastLoginAt: { type: Date, default: null },
+    loginCount: { type: Number, default: 0, min: 0 }
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

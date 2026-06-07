@@ -4,13 +4,19 @@ const { Driver } = require("../models/Driver");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 const { docMatchForVendor, listFilterForVendor, vendorNameForUser } = require("../utils/vendorAccess");
-const { splitSeoStrings } = require("../utils/splitSeoStrings");
+const {
+  splitCatalogBody,
+  normalizeCatalogProduct,
+  ensureUniqueSlug,
+  catalogLookupQuery,
+  joiFields: catalogJoiFields
+} = require("../utils/catalogProductFields");
 const {
   mergeDriverFarePackages,
   mergeDriverFarePackageLabels,
   resolveDriverFarePackages
 } = require("../utils/driverFarePackages");
-const { parseListQuery, buildDriverListFilter, paginatedFind, activeCatalogFilter } = require("../utils/listQuery");
+const { parseListQuery, buildDriverListFilter, paginatedFind, catalogListFilter, isCatalogAdmin } = require("../utils/listQuery");
 const { normalizeDriverForApi } = require("../utils/catalogNormalize");
 
 const packageFareSchema = Joi.object({
@@ -59,8 +65,9 @@ const driverCoreSchema = Joi.object({
     extraHour: Joi.number().default(0)
   }).default({ hourly: 0, day: 0, extraHour: 0 }),
   farePackages: driverFarePackagesSchema.optional(),
-  farePackageLabels: farePackageLabelsSchema
-});
+  farePackageLabels: farePackageLabelsSchema,
+  status: Joi.string().valid("active", "inactive").default("active")
+}).concat(Joi.object(catalogJoiFields));
 
 function withDriverFareData(value, existing = {}) {
   return {
@@ -73,7 +80,7 @@ function withDriverFareData(value, existing = {}) {
 }
 
 async function listDrivers(req, res) {
-  const base = activeCatalogFilter(listFilterForVendor(req));
+  const base = catalogListFilter(req, listFilterForVendor(req));
   const pq = parseListQuery(req);
   const filter = buildDriverListFilter(base, pq);
   const { data, meta } = await paginatedFind(Driver, filter, pq);
@@ -81,18 +88,30 @@ async function listDrivers(req, res) {
 }
 
 async function getDriverById(req, res) {
-  if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(400, "Invalid id");
-  const match = docMatchForVendor(req, req.params.id);
+  const lookup = catalogLookupQuery(req.params.id);
+  const scope = listFilterForVendor(req);
+  const match = lookup._id ? { _id: lookup._id, ...scope } : { slug: lookup.slug, ...scope };
   const data = await Driver.findOne(match).lean();
   if (!data) throw new HttpError(404, "Driver not found");
+  const isPublic = !isCatalogAdmin(req);
+  if (isPublic && (data.isDeleted || (data.status && data.status !== "active"))) {
+    throw new HttpError(404, "Driver not found");
+  }
   res.json({ success: true, data: normalizeDriverForApi(data) });
 }
 
 async function createDriver(req, res) {
-  const { core, seo, seoTitle, seoDescription } = splitSeoStrings(req.body);
-  const { error, value } = driverCoreSchema.validate(core, { stripUnknown: true, convert: true });
+  const { core, product } = splitCatalogBody(req.body);
+  const { error, value } = driverCoreSchema.validate({ ...core, ...product }, { stripUnknown: true, convert: true });
   if (error) throw new HttpError(400, error.message);
-  const payload = { ...withDriverFareData(value, {}), seo, seoTitle, seoDescription };
+  const productFields = normalizeCatalogProduct(product, {
+    title: value.name,
+    vendor: value.vendor,
+    type: value.type,
+    city: value.city
+  });
+  productFields.slug = await ensureUniqueSlug(Driver, productFields.slug);
+  const payload = { ...withDriverFareData(value, {}), ...productFields };
   if (req.user?.role === "vendor_admin") {
     payload.vendorAdminPhone = req.user.mobileNumber;
     payload.vendor = vendorNameForUser(req.user) || payload.vendor;
@@ -110,17 +129,26 @@ async function createDriver(req, res) {
 }
 
 async function updateDriver(req, res) {
-  const { core, seo, seoTitle, seoDescription } = splitSeoStrings(req.body);
-  const { error, value } = driverCoreSchema.validate(core, { stripUnknown: true, convert: true });
+  const { core, product } = splitCatalogBody(req.body);
+  const { error, value } = driverCoreSchema.validate({ ...core, ...product }, { stripUnknown: true, convert: true });
   if (error) throw new HttpError(400, error.message);
-  const match = docMatchForVendor(req, req.params.id);
+  const lookup = catalogLookupQuery(req.params.id);
+  const scope = listFilterForVendor(req);
+  const match = lookup._id ? { _id: lookup._id, ...scope } : { slug: lookup.slug, ...scope };
   const existing = await Driver.findOne(match).lean();
   if (!existing) throw new HttpError(404, "Driver not found");
 
   const mergedCore = value.farePackages
     ? { ...value, farePackages: mergeDriverFarePackages(existing.farePackages, value.farePackages) }
     : value;
-  const nextValue = { ...withDriverFareData(mergedCore, existing), seo, seoTitle, seoDescription };
+  const productFields = normalizeCatalogProduct(product, {
+    title: mergedCore.name || existing.name,
+    vendor: mergedCore.vendor || existing.vendor,
+    type: mergedCore.type || existing.type,
+    city: mergedCore.city || existing.city
+  });
+  productFields.slug = await ensureUniqueSlug(Driver, productFields.slug, existing._id);
+  const nextValue = { ...withDriverFareData(mergedCore, existing), ...productFields };
   if (req.user?.role === "vendor_admin") {
     nextValue.vendorAdminPhone = req.user.mobileNumber;
     nextValue.vendor = vendorNameForUser(req.user) || nextValue.vendor;

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { driverFarePackagesSchema, farePackageLabelsSchema } = require("./fareSchemas");
+const { mongooseFields: catalogProductFields } = require("../utils/catalogProductFields");
 
 const driverSchema = new mongoose.Schema(
   {
@@ -27,6 +28,7 @@ const driverSchema = new mongoose.Schema(
     seo: { type: String, default: "" },
     seoTitle: { type: String, default: "" },
     seoDescription: { type: String, default: "" },
+    ...catalogProductFields,
     status: { type: String, enum: ["active", "inactive"], default: "active", index: true },
     isDeleted: { type: Boolean, default: false, index: true }
   },

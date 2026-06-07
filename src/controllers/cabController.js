@@ -4,10 +4,17 @@ const { Cab } = require("../models/Cab");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 const { docMatchForVendor, listFilterForVendor, vendorNameForUser } = require("../utils/vendorAccess");
-const { splitSeoStrings } = require("../utils/splitSeoStrings");
+const {
+  splitCatalogBody,
+  normalizeCatalogProduct,
+  ensureUniqueSlug,
+  catalogLookupQuery,
+  joiFields: catalogJoiFields
+} = require("../utils/catalogProductFields");
 const { mergeFarePackages, resolveFarePackages } = require("../utils/cabFarePackages");
-const { parseListQuery, buildCabListFilter, paginatedFind, activeCatalogFilter } = require("../utils/listQuery");
+const { parseListQuery, buildCabListFilter, paginatedFind, catalogListFilter, isCatalogAdmin } = require("../utils/listQuery");
 const { normalizeCabForApi } = require("../utils/catalogNormalize");
+const { normalizeCatalogMediaFields } = require("../utils/mediaPath");
 
 const packageFareSchema = Joi.object({
   originalPrice: Joi.number().default(0),
@@ -51,8 +58,20 @@ const cabCoreSchema = Joi.object({
   location: Joi.string().allow("").default(""),
   features: Joi.array().items(Joi.string()).default([]),
   farePackages: farePackagesSchema.optional(),
-  farePackageLabels: farePackageLabelsSchema
-});
+  farePackageLabels: farePackageLabelsSchema,
+  status: Joi.string().valid("active", "inactive").default("active")
+}).concat(Joi.object(catalogJoiFields));
+
+async function mergeCabProductFields(product, core, existingId) {
+  const normalized = normalizeCatalogProduct(product, {
+    title: core.title,
+    vendor: core.vendor,
+    type: core.type,
+    city: core.city
+  });
+  normalized.slug = await ensureUniqueSlug(Cab, normalized.slug, existingId);
+  return normalized;
+}
 
 function mergeFarePackageLabels(existing, incoming) {
   if (!incoming || typeof incoming !== "object") return existing || {};
@@ -72,7 +91,7 @@ function withFarePackages(value, existing = {}) {
 }
 
 async function listCabs(req, res) {
-  const base = activeCatalogFilter(listFilterForVendor(req));
+  const base = catalogListFilter(req, listFilterForVendor(req));
   const pq = parseListQuery(req);
   const filter = buildCabListFilter(base, pq);
   const { data, meta } = await paginatedFind(Cab, filter, pq);
@@ -80,18 +99,29 @@ async function listCabs(req, res) {
 }
 
 async function getCabById(req, res) {
-  if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(400, "Invalid id");
-  const match = docMatchForVendor(req, req.params.id);
+  const param = req.params.id;
+  if (!param) throw new HttpError(400, "Invalid id");
+  const lookup = catalogLookupQuery(param);
+  const scope = listFilterForVendor(req);
+  const match = lookup._id ? { _id: lookup._id, ...scope } : { slug: lookup.slug, ...scope };
   const data = await Cab.findOne(match).lean();
   if (!data) throw new HttpError(404, "Cab not found");
+  const isPublic = !isCatalogAdmin(req);
+  if (isPublic && (data.isDeleted || (data.status && data.status !== "active"))) {
+    throw new HttpError(404, "Cab not found");
+  }
   res.json({ success: true, data: normalizeCabForApi(data) });
 }
 
 async function createCab(req, res) {
-  const { core, seo, seoTitle, seoDescription } = splitSeoStrings(req.body);
-  const { error, value } = cabCoreSchema.validate(core, { stripUnknown: true, convert: true });
+  const { core, product } = splitCatalogBody(req.body);
+  const { error, value } = cabCoreSchema.validate({ ...core, ...product }, { stripUnknown: true, convert: true });
   if (error) throw new HttpError(400, error.message);
-  const payload = { ...withFarePackages(value, {}), seo, seoTitle, seoDescription };
+  const productFields = await mergeCabProductFields(product, value);
+  const payload = normalizeCatalogMediaFields({
+    ...withFarePackages(value, {}),
+    ...productFields
+  });
   if (req.user?.role === "vendor_admin") {
     payload.vendorAdminPhone = req.user.mobileNumber;
     payload.vendor = vendorNameForUser(req.user) || payload.vendor;
@@ -109,17 +139,23 @@ async function createCab(req, res) {
 }
 
 async function updateCab(req, res) {
-  const { core, seo, seoTitle, seoDescription } = splitSeoStrings(req.body);
-  const { error, value } = cabCoreSchema.validate(core, { stripUnknown: true, convert: true });
+  const { core, product } = splitCatalogBody(req.body);
+  const { error, value } = cabCoreSchema.validate({ ...core, ...product }, { stripUnknown: true, convert: true });
   if (error) throw new HttpError(400, error.message);
-  const match = docMatchForVendor(req, req.params.id);
+  const lookup = catalogLookupQuery(req.params.id);
+  const scope = listFilterForVendor(req);
+  const match = lookup._id ? { _id: lookup._id, ...scope } : { slug: lookup.slug, ...scope };
   const existing = await Cab.findOne(match).lean();
   if (!existing) throw new HttpError(404, "Cab not found");
 
   const mergedCore = value.farePackages
     ? { ...value, farePackages: mergeFarePackages(existing.farePackages, value.farePackages) }
     : value;
-  const nextValue = { ...withFarePackages(mergedCore, existing), seo, seoTitle, seoDescription };
+  const productFields = await mergeCabProductFields(product, { ...mergedCore, ...existing }, existing._id);
+  const nextValue = normalizeCatalogMediaFields({
+    ...withFarePackages(mergedCore, existing),
+    ...productFields
+  });
   if (req.user?.role === "vendor_admin") {
     nextValue.vendorAdminPhone = req.user.mobileNumber;
     nextValue.vendor = vendorNameForUser(req.user) || nextValue.vendor;
