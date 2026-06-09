@@ -35,12 +35,17 @@ app.use(
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(compression());
 app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
+// Trusted loopback IPs — the Next.js server (SSG build + server-side proxy)
+// runs on the same machine; rate-limiting it 429s the whole site.
+const LOOPBACK_IPS = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 500,
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    skip: (req) => LOOPBACK_IPS.has(req.ip)
   })
 );
 app.use(express.json({ limit: "1mb" }));
