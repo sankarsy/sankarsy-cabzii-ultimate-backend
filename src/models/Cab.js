@@ -24,6 +24,8 @@ const cabSchema = new mongoose.Schema(
     originalPrice: { type: Number, default: 0, min: 0 },
     discountPercentage: { type: Number, default: 0, min: 0, max: 99 },
     rating: { type: Number, min: 0, max: 5 },
+    /** Count of admin-approved verified reviews — ratings are hidden in UI when 0. */
+    reviewCount: { type: Number, default: 0, min: 0 },
     image: { type: String, default: "" },
     gallery: { type: [String], default: [] },
     city: { type: String, default: "", trim: true, index: true },

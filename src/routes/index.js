@@ -11,11 +11,13 @@ const cityRoutes = require("./cityRoutes");
 const locationRoutes = require("./locationRoutes");
 const blogRoutes = require("./blogRoutes");
 const testimonialRoutes = require("./testimonialRoutes");
+const reviewRoutes = require("./reviewRoutes");
 const siteSettingsRoutes = require("./siteSettingsRoutes");
 const analyticsRoutes = require("./analyticsRoutes");
 const userRoutes = require("./userRoutes");
 const seoServiceRoutes = require("./seoServiceRoutes");
 const seoRouteRoutes = require("./seoRouteRoutes");
+const seoCityPageRoutes = require("./seoCityPageRoutes");
 const seoMenuRoutes = require("./seoMenuRoutes");
 
 const router = express.Router();
@@ -36,11 +38,13 @@ router.use("/cities", cityRoutes);
 router.use("/locations", locationRoutes);
 router.use("/blogs", blogRoutes);
 router.use("/testimonials", testimonialRoutes);
+router.use("/reviews", reviewRoutes);
 router.use("/site-settings", siteSettingsRoutes);
 router.use("/analytics", analyticsRoutes);
 router.use("/users", userRoutes);
 router.use("/seo-services", seoServiceRoutes);
 router.use("/seo-routes", seoRouteRoutes);
+router.use("/seo-city-pages", seoCityPageRoutes);
 router.use("/seo-menu", seoMenuRoutes);
 
 module.exports = router;

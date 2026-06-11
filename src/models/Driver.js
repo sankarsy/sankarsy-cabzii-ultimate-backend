@@ -11,6 +11,8 @@ const driverSchema = new mongoose.Schema(
     experience: { type: String, default: "0 Years" },
     trips: { type: Number, default: 0, min: 0 },
     rating: { type: String, default: "0.0" },
+    /** Count of admin-approved verified reviews — ratings are hidden in UI when 0. */
+    reviewCount: { type: Number, default: 0, min: 0 },
     image: { type: String, default: "" },
     gallery: { type: [String], default: [] },
     city: { type: String, default: "", trim: true, index: true },

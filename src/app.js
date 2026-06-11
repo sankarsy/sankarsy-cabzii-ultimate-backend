@@ -6,6 +6,7 @@ const compression = require("compression");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
+const { sanitize } = require("express-mongo-sanitize");
 const apiRoutes = require("./routes");
 const { env } = require("./config/env");
 const { errorHandler, notFoundHandler } = require("./middlewares/errorHandler");
@@ -49,6 +50,16 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
+
+/* Strip $/. operators from user input (NoSQL injection guard).
+   Express 5 makes req.query a getter, so sanitize body/params directly
+   instead of using the package middleware (which reassigns req.query). */
+app.use((req, _res, next) => {
+  if (req.body) sanitize(req.body, { replaceWith: "_" });
+  if (req.params) sanitize(req.params, { replaceWith: "_" });
+  next();
+});
+
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
