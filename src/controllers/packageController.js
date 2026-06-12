@@ -17,6 +17,34 @@ const packageCoreSchema = Joi.object({
   name: Joi.string().required(),
   vendor: Joi.string().required(),
   duration: Joi.string().allow("").default(""),
+  packageType: Joi.string().allow("").default(""),
+  state: Joi.string().allow("").default(""),
+  destination: Joi.string().allow("").default(""),
+  nights: Joi.number().integer().min(0).default(0),
+  days: Joi.number().integer().min(0).default(0),
+  description: Joi.string().allow("").default(""),
+  highlights: Joi.array().items(Joi.string()).default([]),
+  inclusions: Joi.array().items(Joi.string()).default([]),
+  exclusions: Joi.array().items(Joi.string()).default([]),
+  termsAndConditions: Joi.string().allow("").default(""),
+  cancellationPolicy: Joi.string().allow("").default(""),
+  itinerary: Joi.array()
+    .items(
+      Joi.object({
+        day: Joi.number().integer().min(1).default(1),
+        title: Joi.string().allow("").default(""),
+        details: Joi.string().allow("").default("")
+      })
+    )
+    .default([]),
+  faqs: Joi.array()
+    .items(
+      Joi.object({
+        question: Joi.string().allow("").default(""),
+        answer: Joi.string().allow("").default("")
+      })
+    )
+    .default([]),
   price: Joi.number().required(),
   originalPrice: Joi.number().default(0),
   discountPercentage: Joi.number().default(0),
@@ -128,6 +156,30 @@ async function updatePackage(req, res) {
   res.json({ success: true, data });
 }
 
+/** Duplicate a package: copies all fields, generates a fresh slug, starts inactive. */
+async function duplicatePackage(req, res) {
+  const scope = listFilterForVendor(req);
+  const lookup = catalogLookupQuery(req.params.id);
+  const match = lookup._id ? { _id: lookup._id, ...scope } : { slug: lookup.slug, ...scope };
+  const source = await Package.findOne(match).lean();
+  if (!source) throw new HttpError(404, "Package not found");
+
+  const { _id, createdAt, updatedAt, __v, ...copy } = source;
+  copy.name = `${source.name} (Copy)`;
+  copy.status = "inactive";
+  copy.slug = await ensureUniqueSlug(Package, source.slug || "");
+  const data = await Package.create(copy);
+  await logAudit({
+    req,
+    action: "create",
+    entity: "package",
+    entityId: data._id,
+    vendor: data.vendor,
+    after: data.toObject()
+  });
+  res.status(201).json({ success: true, data, message: "Package duplicated (inactive draft)" });
+}
+
 async function deletePackage(req, res) {
   const filter = docMatchForVendor(req, req.params.id);
   const data = await Package.findOneAndDelete(filter);
@@ -143,4 +195,4 @@ async function deletePackage(req, res) {
   res.json({ success: true, message: "Package deleted" });
 }
 
-module.exports = { listPackages, getPackageById, createPackage, updatePackage, deletePackage };
+module.exports = { listPackages, getPackageById, createPackage, updatePackage, deletePackage, duplicatePackage };

@@ -7,6 +7,38 @@ const packageSchema = new mongoose.Schema(
     vendor: { type: String, required: true, trim: true },
     vendorAdminPhone: { type: String, default: "" },
     duration: { type: String, default: "", trim: true },
+    /* ── Tour-package extension (all optional; legacy packages unaffected) ── */
+    /** Open string (not enum) so new vendor service categories need no migration. */
+    packageType: { type: String, default: "", trim: true, index: true },
+    state: { type: String, default: "", trim: true },
+    destination: { type: String, default: "", trim: true },
+    nights: { type: Number, default: 0, min: 0 },
+    days: { type: Number, default: 0, min: 0 },
+    description: { type: String, default: "" },
+    highlights: { type: [String], default: [] },
+    inclusions: { type: [String], default: [] },
+    exclusions: { type: [String], default: [] },
+    termsAndConditions: { type: String, default: "" },
+    cancellationPolicy: { type: String, default: "" },
+    itinerary: {
+      type: [
+        {
+          day: { type: Number, default: 1 },
+          title: { type: String, default: "" },
+          details: { type: String, default: "" }
+        }
+      ],
+      default: []
+    },
+    faqs: {
+      type: [
+        {
+          question: { type: String, default: "" },
+          answer: { type: String, default: "" }
+        }
+      ],
+      default: []
+    },
     price: { type: Number, required: true, min: 0 },
     originalPrice: { type: Number, default: 0, min: 0 },
     discountPercentage: { type: Number, default: 0, min: 0, max: 99 },

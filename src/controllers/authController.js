@@ -7,6 +7,7 @@ const { signAccessToken } = require("../services/tokenService");
 const { HttpError } = require("../utils/httpError");
 const { normalizeMobileNumber } = require("../utils/mobile");
 const { vendorNameForUser } = require("../utils/vendorAccess");
+const { logAudit } = require("../services/auditService");
 
 const sendOtpSchema = Joi.object({
   phone: Joi.string().optional(),
@@ -238,6 +239,15 @@ async function partnerLoginController(req, res) {
   user.loginCount = Number(user.loginCount || 0) + 1;
   await user.save();
 
+  /* Login history entry (queryable in admin audit log) */
+  await logAudit({
+    req: { user },
+    action: "login",
+    entity: "session",
+    entityId: user._id,
+    meta: { role: sessionRole, ip: req.ip || "", userAgent: req.headers["user-agent"] || "" }
+  });
+
   const accessToken = signAccessToken(user, sessionRole);
 
   res.json({
@@ -277,6 +287,16 @@ async function adminLoginController(req, res) {
   await user.save();
 
   const sessionRole = "super_admin";
+
+  /* Login history entry (queryable in admin audit log) */
+  await logAudit({
+    req: { user },
+    action: "login",
+    entity: "session",
+    entityId: user._id,
+    meta: { role: sessionRole, ip: req.ip || "", userAgent: req.headers["user-agent"] || "" }
+  });
+
   const accessToken = signAccessToken(user, sessionRole);
 
   res.json({
