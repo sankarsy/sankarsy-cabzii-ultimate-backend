@@ -27,6 +27,8 @@ const settingsSchema = Joi.object({
   footerLegalLinks: Joi.array().items(Joi.object({ label: Joi.string().required(), href: Joi.string().required() })),
   hero: Joi.object(),
   heroStats: Joi.array().items(Joi.object()),
+  whySection: Joi.object(),
+  whyStats: Joi.array().items(Joi.object()),
   whyChooseUs: Joi.array().items(Joi.object()),
   homeSections: Joi.array().items(Joi.object()),
   whatsappFab: Joi.object()

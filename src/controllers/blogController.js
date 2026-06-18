@@ -12,9 +12,19 @@ const blogSchema = Joi.object({
   body: Joi.string().allow("").default(""),
   author: Joi.string().allow("").default("Cabzii Editorial"),
   date: Joi.string().allow("").default(""),
+  category: Joi.string().allow("").default("travel"),
+  tags: Joi.array().items(Joi.string()).default([]),
+  coverImage: Joi.string().allow("").default(""),
+  featured: Joi.boolean().default(false),
+  scheduledAt: Joi.date().allow(null).default(null),
+  status: Joi.string().valid("draft", "scheduled", "published").default("published"),
+  relatedSlugs: Joi.array().items(Joi.string()).default([]),
   seo: Joi.string().allow("").default(""),
   seoTitle: Joi.string().allow("").default(""),
   seoDescription: Joi.string().allow("").default(""),
+  canonicalUrl: Joi.string().allow("").default(""),
+  robots: Joi.string().allow("").default("index,follow"),
+  ogImage: Joi.string().allow("").default(""),
   published: Joi.boolean().default(true)
 });
 

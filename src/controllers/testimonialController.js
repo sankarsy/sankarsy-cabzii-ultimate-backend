@@ -10,6 +10,9 @@ const testimonialSchema = Joi.object({
   location: Joi.string().allow("").default(""),
   message: Joi.string().required(),
   rating: Joi.number().min(1).max(5).default(5),
+  photoUrl: Joi.string().allow("").default(""),
+  featured: Joi.boolean().default(false),
+  sampleReview: Joi.boolean().default(false),
   sortOrder: Joi.number().default(0),
   published: Joi.boolean().default(true)
 });

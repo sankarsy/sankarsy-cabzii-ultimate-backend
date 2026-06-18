@@ -14,6 +14,16 @@ const seoCityPageSchema = Joi.object({
   seo: Joi.string().allow("").default(""),
   h1: Joi.string().allow("").default(""),
   body: Joi.string().allow("").default(""),
+  faqs: Joi.array()
+    .items(Joi.object({ question: Joi.string().required(), answer: Joi.string().allow("").default("") }))
+    .default([]),
+  schemaJson: Joi.string().allow("").default(""),
+  image: Joi.string().allow("").default(""),
+  banner: Joi.string().allow("").default(""),
+  popularLocations: Joi.array().items(Joi.string()).default([]),
+  airportDetails: Joi.string().allow("").default(""),
+  popularRoutes: Joi.array().items(Joi.string()).default([]),
+  popularPackages: Joi.array().items(Joi.string()).default([]),
   published: Joi.boolean().default(true)
 });
 

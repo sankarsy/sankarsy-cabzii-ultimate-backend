@@ -19,6 +19,9 @@ const seoServiceRoutes = require("./seoServiceRoutes");
 const seoRouteRoutes = require("./seoRouteRoutes");
 const seoCityPageRoutes = require("./seoCityPageRoutes");
 const seoMenuRoutes = require("./seoMenuRoutes");
+const chatLeadRoutes = require("./chatLeadRoutes");
+const crmRoutes = require("./crmRoutes");
+const enterpriseRoutes = require("./enterpriseRoutes");
 
 const router = express.Router();
 
@@ -46,5 +49,8 @@ router.use("/seo-services", seoServiceRoutes);
 router.use("/seo-routes", seoRouteRoutes);
 router.use("/seo-city-pages", seoCityPageRoutes);
 router.use("/seo-menu", seoMenuRoutes);
+router.use("/chat-leads", chatLeadRoutes);
+router.use("/crm", crmRoutes);
+router.use("/enterprise", enterpriseRoutes);
 
 module.exports = router;

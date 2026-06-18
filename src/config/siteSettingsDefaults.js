@@ -66,13 +66,23 @@ const DEFAULT_SITE_SETTINGS = {
     { value: "150+", label: "Cities Covered", iconKey: "pin" },
     { value: "4.9/5", label: "Customer Rating", iconKey: "star" }
   ],
+  whySection: {
+    eyebrow: "Why Cabzii",
+    title: "A premium cab booking experience",
+    subtitle:
+      "Trusted by riders for airport transfers, outstation trips, and local hire across Chennai and 20+ cities."
+  },
+  whyStats: [
+    { value: "50K+", label: "Happy customers" },
+    { value: "Best Price", label: "Guarantee" },
+    { value: "24×7", label: "Support" },
+    { value: "Secure", label: "OTP booking" }
+  ],
   whyChooseUs: [
-    { title: "Sanitized Cabs", subtitle: "Clean & hygienic vehicles", iconKey: "shield" },
-    { title: "Live Tracking", subtitle: "Real-time trip tracking", iconKey: "tracking" },
-    { title: "Transparent Pricing", subtitle: "No hidden charges", iconKey: "tag" },
-    { title: "24/7 Customer Support", subtitle: "We are here to help", iconKey: "headset" },
-    { title: "Doorstep Pickup", subtitle: "On-time pickup", iconKey: "pickup" },
-    { title: "Safe & Secure", subtitle: "Your safety is our priority", iconKey: "lock" }
+    { title: "Verified partners", subtitle: "Background-checked drivers and trusted cab vendors across South India.", iconKey: "verified" },
+    { title: "Best price guarantee", subtitle: "Compare fares side-by-side before you pay — no hidden charges.", iconKey: "price" },
+    { title: "Secure checkout", subtitle: "OTP-verified booking with encrypted payment on cabzii.in.", iconKey: "secure" },
+    { title: "24×7 support", subtitle: "WhatsApp and phone support before, during, and after your trip.", iconKey: "support" },
   ],
   homeSections: [
     { key: "cabs", enabled: true, eyebrow: "Premium Fleet", title: "Featured Cabs", subtitle: "Compare fares and book instantly.", limit: 6, sortOrder: 1 },
