@@ -23,6 +23,7 @@ function privilegedRoleForPhone(mobileNumber) {
 function resolveEffectiveRole(mobileNumber, jwtRole, userRole) {
   const privileged = privilegedRoleForPhone(mobileNumber);
   if (privileged === "super_admin") return "super_admin";
+  if (userRole === "super_admin" || userRole === "vendor_admin") return userRole;
   const base = jwtRole || userRole || "customer";
   if (base === "customer" && privileged) return privileged;
   return base;

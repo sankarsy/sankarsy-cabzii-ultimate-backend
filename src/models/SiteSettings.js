@@ -34,6 +34,7 @@ const siteSettingsSchema = new mongoose.Schema(
     whyChooseUs: { type: [mongoose.Schema.Types.Mixed], default: () => DEFAULT_SITE_SETTINGS.whyChooseUs },
     homeSections: { type: [mongoose.Schema.Types.Mixed], default: () => DEFAULT_SITE_SETTINGS.homeSections },
     whatsappFab: { type: mongoose.Schema.Types.Mixed, default: () => DEFAULT_SITE_SETTINGS.whatsappFab },
+    pageSeo: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
     homepageBuilder: { type: mongoose.Schema.Types.Mixed, default: () => ({ blocks: [], version: 1 }) },
     vendorModuleAccess: { type: mongoose.Schema.Types.Mixed, default: () => ({}) }
   },

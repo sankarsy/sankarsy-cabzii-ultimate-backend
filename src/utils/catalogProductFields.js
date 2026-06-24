@@ -52,12 +52,13 @@ function buildAutoSlug(title, city = "") {
   return slugify([title, city].filter(Boolean).join("-"));
 }
 
-function normalizeCatalogProduct(input = {}, { title = "", vendor = "", type = "", city = "" } = {}) {
+function normalizeCatalogProduct(input = {}, { title = "", vendor = "", type = "", city = "", vehicleModel = "" } = {}) {
   const slug = slugify(input.slug) || buildAutoSlug(title, city);
   const brandName = String(input.brandName || vendor || "").trim();
   const speciality = String(input.speciality || type || "").trim();
-  const imageAlt = String(input.imageAlt || title || "").trim();
-  const imageTitle = String(input.imageTitle || title || "").trim();
+  const model = String(vehicleModel || "").trim();
+  const imageAlt = String(input.imageAlt || [title, model, "cab rental", city].filter(Boolean).join(" ")).trim();
+  const imageTitle = String(input.imageTitle || title || model || "").trim();
 
   return {
     slug,

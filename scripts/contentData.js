@@ -10,7 +10,13 @@ const CAB_TYPES_STANDARD = [
 
 const VEHICLE_IMAGES = {
   sedan:
-    "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1621007947382-b6263ac8e237?auto=format&fit=crop&w=900&q=80",
+  dzire:
+    "https://images.unsplash.com/photo-1621007947382-b6263ac8e237?auto=format&fit=crop&w=900&q=80",
+  wagon:
+    "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=900&q=80",
+  etios:
+    "https://images.unsplash.com/photo-1552519507-da3b42c508e2?auto=format&fit=crop&w=900&q=80",
   ertiga:
     "https://images.unsplash.com/photo-1533473359331-0135ef1b58dd?auto=format&fit=crop&w=900&q=80",
   innova:

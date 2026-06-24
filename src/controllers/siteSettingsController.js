@@ -1,6 +1,6 @@
 const Joi = require("joi");
 const { SiteSettings } = require("../models/SiteSettings");
-const { mergeSiteSettings } = require("../config/siteSettingsDefaults");
+const { mergeSiteSettings, deepMerge } = require("../config/siteSettingsDefaults");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 
@@ -31,7 +31,16 @@ const settingsSchema = Joi.object({
   whyStats: Joi.array().items(Joi.object()),
   whyChooseUs: Joi.array().items(Joi.object()),
   homeSections: Joi.array().items(Joi.object()),
-  whatsappFab: Joi.object()
+  whatsappFab: Joi.object(),
+  pageSeo: Joi.object().pattern(
+    Joi.string(),
+    Joi.object({
+      productName: Joi.string().allow(""),
+      seoTitle: Joi.string().allow(""),
+      seoDescription: Joi.string().allow(""),
+      seoKeywords: Joi.string().allow("")
+    })
+  )
 }).min(1);
 
 async function getOrCreateSettingsDoc() {
@@ -54,6 +63,10 @@ async function updateSettings(req, res) {
   if (error) throw new HttpError(400, error.message);
 
   const before = await getOrCreateSettingsDoc();
+  const beforePlain = before.toObject();
+  if (value.pageSeo) {
+    value.pageSeo = deepMerge(beforePlain.pageSeo || {}, value.pageSeo);
+  }
   const updated = await SiteSettings.findByIdAndUpdate(
     before._id,
     { $set: value },

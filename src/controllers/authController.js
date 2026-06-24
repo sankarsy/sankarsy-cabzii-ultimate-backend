@@ -1,7 +1,9 @@
 const Joi = require("joi");
+const bcrypt = require("bcryptjs");
 const { env } = require("../config/env");
 const { OtpSession } = require("../models/OtpSession");
 const { User } = require("../models/User");
+const { Vendor } = require("../models/Vendor");
 const { generateOtp, sendOtp } = require("../services/otpService");
 const { signAccessToken } = require("../services/tokenService");
 const { HttpError } = require("../utils/httpError");
@@ -63,14 +65,16 @@ async function findUserByMobile(mobileNumber) {
   return null;
 }
 
-function sanitizeUser(user, sessionRole) {
+function sanitizeUser(user, sessionRole, vendorNameOverride) {
   const role = sessionRole || user.role;
   const plain = typeof user.toObject === "function" ? user.toObject() : user;
-  const vendorName = vendorNameForUser({
-    ...plain,
-    role,
-    mobileNumber: plain.mobileNumber || plain.phone
-  });
+  const vendorName =
+    vendorNameOverride ||
+    vendorNameForUser({
+      ...plain,
+      role,
+      mobileNumber: plain.mobileNumber || plain.phone
+    });
   return {
     _id: user._id,
     mobileNumber: user.mobileNumber || user.phone,
@@ -83,6 +87,39 @@ function sanitizeUser(user, sessionRole) {
 function canAccessPartner(mobileNumber) {
   const privileged = resolveRole(mobileNumber);
   return privileged === "vendor_admin" || privileged === "super_admin";
+}
+
+async function canAccessPartnerAsync(mobileNumber) {
+  if (canAccessPartner(mobileNumber)) return true;
+  const user = await User.findOne({ mobileNumber }).select("role").lean();
+  if (user?.role === "vendor_admin" || user?.role === "super_admin") return true;
+  const vendor = await Vendor.findOne({ adminPhone: mobileNumber, isActive: true }).select("_id").lean();
+  return Boolean(vendor);
+}
+
+async function vendorNameForMobile(mobileNumber) {
+  const vendor = await Vendor.findOne({ adminPhone: mobileNumber, isActive: true }).select("name").lean();
+  if (vendor?.name) return vendor.name;
+  return env.vendorAdminMap[mobileNumber] || "";
+}
+
+async function verifyPartnerPassword(mobileNumber, password) {
+  const user = await User.findOne({ mobileNumber }).select("+passwordHash role").lean();
+  if (user?.passwordHash) {
+    return bcrypt.compare(password, user.passwordHash);
+  }
+
+  if (!canAccessPartner(mobileNumber) && user?.role !== "vendor_admin" && user?.role !== "super_admin") {
+    const vendor = await Vendor.findOne({ adminPhone: mobileNumber, isActive: true }).select("_id").lean();
+    if (!vendor) return false;
+  }
+
+  const privilegedRole = resolveRole(mobileNumber);
+  if (privilegedRole === "super_admin") {
+    return Boolean(env.adminLoginPassword && password === env.adminLoginPassword);
+  }
+  const partnerPass = env.partnerLoginPassword || env.adminLoginPassword;
+  return Boolean(partnerPass && password === partnerPass);
 }
 
 async function sendOtpController(req, res) {
@@ -202,31 +239,26 @@ async function verifyOtpController(req, res) {
   });
 }
 
-function verifyPartnerPassword(mobileNumber, password) {
-  const privilegedRole = resolveRole(mobileNumber);
-  if (!canAccessPartner(mobileNumber)) return false;
-  if (privilegedRole === "super_admin") {
-    return Boolean(env.adminLoginPassword && password === env.adminLoginPassword);
-  }
-  const partnerPass = env.partnerLoginPassword || env.adminLoginPassword;
-  return Boolean(partnerPass && password === partnerPass);
-}
-
 async function partnerLoginController(req, res) {
   const { error, value } = adminLoginSchema.validate(req.body);
   if (error) throw new HttpError(400, error.message);
 
   const mobileNumber = resolveMobile(value);
 
-  if (!canAccessPartner(mobileNumber)) {
+  if (!(await canAccessPartnerAsync(mobileNumber))) {
     throw new HttpError(403, "This mobile is not registered as a travel partner.");
   }
 
-  if (!verifyPartnerPassword(mobileNumber, value.password)) {
+  if (!(await verifyPartnerPassword(mobileNumber, value.password))) {
     throw new HttpError(401, "Invalid partner mobile or password.");
   }
 
-  const sessionRole = resolveRole(mobileNumber);
+  const sessionRole =
+    resolveRole(mobileNumber) === "super_admin"
+      ? "super_admin"
+      : (await User.findOne({ mobileNumber }).select("role").lean())?.role === "super_admin"
+        ? "super_admin"
+        : "vendor_admin";
 
   let user = await findUserByMobile(mobileNumber);
   if (!user) {
@@ -249,13 +281,14 @@ async function partnerLoginController(req, res) {
   });
 
   const accessToken = signAccessToken(user, sessionRole);
+  const vendorName = await vendorNameForMobile(mobileNumber);
 
   res.json({
     success: true,
     message: "Partner login successful.",
     data: {
       token: accessToken,
-      user: sanitizeUser(user, sessionRole)
+      user: sanitizeUser(user, sessionRole, vendorName)
     }
   });
 }
@@ -310,7 +343,11 @@ async function adminLoginController(req, res) {
 }
 
 async function meController(req, res) {
-  res.json({ success: true, data: sanitizeUser(req.user, req.user.role) });
+  let vendorName = "";
+  if (req.user?.role === "vendor_admin") {
+    vendorName = await vendorNameForMobile(req.user.mobileNumber);
+  }
+  res.json({ success: true, data: sanitizeUser(req.user, req.user.role, vendorName) });
 }
 
 module.exports = {

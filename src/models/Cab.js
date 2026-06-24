@@ -15,6 +15,10 @@ const cabSchema = new mongoose.Schema(
     seats: { type: Number, default: 4, min: 1, max: 80 },
     bags: { type: Number, default: 2, min: 0, max: 10 },
     examples: { type: String, default: "" },
+    /** Base vehicle model — e.g. Maruti Dzire (MrMed "Salt" equivalent) */
+    vehicleModel: { type: String, trim: true, default: "" },
+    /** Primary service form — One Way, Round Trip, Hourly, Local Package */
+    serviceForm: { type: String, trim: true, default: "One Way" },
     ac: { type: Boolean, default: true },
     fuelIncluded: { type: Boolean, default: true },
     price: { type: Number, required: true, min: 0 },

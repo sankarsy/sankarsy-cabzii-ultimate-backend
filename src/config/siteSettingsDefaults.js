@@ -91,7 +91,8 @@ const DEFAULT_SITE_SETTINGS = {
     { key: "testimonials", enabled: true, eyebrow: "Happy Travelers", title: "Customer Testimonials", subtitle: "Real feedback from riders who booked with Cabzii.", limit: 3, sortOrder: 4, viewAllHref: "/testimonials" },
     { key: "blogs", enabled: true, eyebrow: "Latest Insights", title: "Travel Blog", subtitle: "Quick reads to help you book smarter and travel better.", limit: 3, sortOrder: 5, viewAllHref: "/blogs" }
   ],
-  whatsappFab: { enabled: true, number: "9944197416" }
+  whatsappFab: { enabled: true, number: "9944197416" },
+  pageSeo: {}
 };
 
 function deepMerge(base, patch) {

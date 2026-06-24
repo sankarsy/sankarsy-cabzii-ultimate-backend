@@ -44,7 +44,11 @@ const cabCoreSchema = Joi.object({
   title: Joi.string().required(),
   vendor: Joi.string().required(),
   type: Joi.string().required(),
+  vehicleModel: Joi.string().allow("").default(""),
+  serviceForm: Joi.string().allow("").default("One Way"),
   seats: Joi.number().integer().min(1).default(4),
+  bags: Joi.number().integer().min(0).max(10).default(2),
+  examples: Joi.string().allow("").default(""),
   price: Joi.number().required(),
   hourlyRate: Joi.number().default(0),
   dayRate: Joi.number().default(0),
@@ -67,7 +71,8 @@ async function mergeCabProductFields(product, core, existingId) {
     title: core.title,
     vendor: core.vendor,
     type: core.type,
-    city: core.city
+    city: core.city,
+    vehicleModel: core.vehicleModel
   });
   normalized.slug = await ensureUniqueSlug(Cab, normalized.slug, existingId);
   return normalized;

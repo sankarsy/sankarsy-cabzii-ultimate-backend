@@ -9,6 +9,15 @@ const { Location } = require("../src/models/Location");
 /** Pickup / drop points per city — upserted script, safe to re-run. */
 const LOCATION_SEEDS = [
   {
+    city: { name: "Chennai", state: "Tamil Nadu", sortOrder: 1 },
+    points: [
+      { name: "Chennai International Airport", address: "GST Road, Meenambakkam, Chennai", pincode: "600027" },
+      { name: "Chennai Central Railway Station", address: "Park Town, Chennai", pincode: "600003" },
+      { name: "OMR Sholinganallur", address: "Rajiv Gandhi Salai, Sholinganallur, Chennai", pincode: "600119" },
+      { name: "Maduravoyal", address: "Maduravoyal, Chennai", pincode: "600095" }
+    ]
+  },
+  {
     city: { name: "Coimbatore", state: "Tamil Nadu", sortOrder: 2 },
     points: [
       { name: "Coimbatore Junction", address: "Gandhipuram, Coimbatore", pincode: "641018" },

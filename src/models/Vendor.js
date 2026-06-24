@@ -4,22 +4,42 @@ const vendorSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, unique: true },
     slug: { type: String, trim: true, index: true },
-    contactPhone: { type: String, trim: true, default: "", match: [/^[0-9]{10,15}$/, "Invalid contact phone"] },
+    contactPhone: {
+      type: String,
+      trim: true,
+      default: "",
+      validate: {
+        validator(v) {
+          return !v || /^[0-9]{10,15}$/.test(v);
+        },
+        message: "Invalid contact phone"
+      }
+    },
     contactEmail: { type: String, trim: true, default: "" },
-    adminPhone: { type: String, trim: true, default: "", index: true, match: [/^[0-9]{10,15}$/, "Invalid admin phone"] },
+    adminPhone: {
+      type: String,
+      trim: true,
+      default: "",
+      index: true,
+      validate: {
+        validator(v) {
+          return !v || /^[0-9]{10,15}$/.test(v);
+        },
+        message: "Invalid admin phone"
+      }
+    },
     isActive: { type: Boolean, default: true }
   },
   { timestamps: true }
 );
 
-vendorSchema.pre("save", function setSlug(next) {
+vendorSchema.pre("save", function setSlug() {
   if (!this.slug && this.name) {
     this.slug = this.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
   }
-  next();
 });
 
 const Vendor = mongoose.model("Vendor", vendorSchema);

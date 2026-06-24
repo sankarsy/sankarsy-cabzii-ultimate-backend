@@ -1,17 +1,43 @@
 const Joi = require("joi");
+const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const { Vendor } = require("../models/Vendor");
 const { User } = require("../models/User");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
+const { privilegedRoleForPhone } = require("../utils/adminAccess");
+const { normalizeMobileNumber } = require("../utils/mobile");
 
 const vendorSchema = Joi.object({
   name: Joi.string().required(),
   contactPhone: Joi.string().allow("").default(""),
   contactEmail: Joi.string().allow("").default(""),
   adminPhone: Joi.string().pattern(/^[0-9]{10,15}$/).allow("").default(""),
+  adminPassword: Joi.string().min(6).max(64).allow("").default(""),
   isActive: Joi.boolean().default(true)
 });
+
+async function upsertVendorAdminUser(adminPhone, adminPassword, isEdit) {
+  const mobile = normalizeMobileNumber(adminPhone);
+  if (!mobile) return;
+
+  if (privilegedRoleForPhone(mobile) === "super_admin") {
+    throw new HttpError(400, "This mobile belongs to a super admin. Use a different phone for the vendor admin login.");
+  }
+
+  const update = {
+    mobileNumber: mobile,
+    role: "vendor_admin"
+  };
+
+  if (adminPassword) {
+    update.passwordHash = await bcrypt.hash(adminPassword, 10);
+  } else if (!isEdit) {
+    throw new HttpError(400, "Set a login password for the vendor admin phone.");
+  }
+
+  await User.findOneAndUpdate({ mobileNumber: mobile }, { $set: update }, { upsert: true, new: true, setDefaultsOnInsert: true });
+}
 
 async function listVendors(req, res) {
   const activeOnly = req.query.active !== "0" && req.query.active !== "false";
@@ -34,19 +60,18 @@ async function createVendor(req, res) {
   const existing = await Vendor.findOne({ name: value.name.trim() });
   if (existing) throw new HttpError(409, "Vendor name already exists");
 
-  const data = await Vendor.create(value);
+  if (value.adminPhone) {
+    const mobile = normalizeMobileNumber(value.adminPhone);
+    if (mobile && privilegedRoleForPhone(mobile) === "super_admin") {
+      throw new HttpError(400, "This mobile belongs to a super admin. Use a different phone for the vendor admin login.");
+    }
+  }
+
+  const { adminPassword, ...vendorFields } = value;
+  const data = await Vendor.create(vendorFields);
 
   if (value.adminPhone) {
-    await User.findOneAndUpdate(
-      { mobileNumber: value.adminPhone },
-      {
-        $set: {
-          mobileNumber: value.adminPhone,
-          role: "vendor_admin"
-        }
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    await upsertVendorAdminUser(value.adminPhone, adminPassword, false);
   }
 
   await logAudit({
@@ -66,20 +91,12 @@ async function updateVendor(req, res) {
   const { error, value } = vendorSchema.validate(req.body, { stripUnknown: true });
   if (error) throw new HttpError(400, error.message);
 
-  const data = await Vendor.findByIdAndUpdate(req.params.id, value, { new: true, runValidators: true });
+  const { adminPassword, ...vendorFields } = value;
+  const data = await Vendor.findByIdAndUpdate(req.params.id, vendorFields, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Vendor not found");
 
   if (value.adminPhone) {
-    await User.findOneAndUpdate(
-      { mobileNumber: value.adminPhone },
-      {
-        $set: {
-          mobileNumber: value.adminPhone,
-          role: "vendor_admin"
-        }
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    await upsertVendorAdminUser(value.adminPhone, adminPassword, true);
   }
 
   await logAudit({

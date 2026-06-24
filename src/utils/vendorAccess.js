@@ -1,8 +1,9 @@
 const { env } = require("../config/env");
+const { Vendor } = require("../models/Vendor");
 
 function vendorNameForUser(user) {
   if (user?.role !== "vendor_admin") return "";
-  return env.vendorAdminMap[user.mobileNumber] || "";
+  return user.vendorName || env.vendorAdminMap[user.mobileNumber] || "";
 }
 
 function vendorOrScope(req) {

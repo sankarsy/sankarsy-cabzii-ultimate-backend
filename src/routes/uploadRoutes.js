@@ -56,4 +56,31 @@ router.post(
   }
 );
 
+/** Delete an uploaded file from disk (admin only). Body: { path: "/uploads/filename.jpg" } */
+router.delete("/", requireAuth, requireRole("super_admin", "vendor_admin"), (req, res) => {
+  const raw = String(req.body?.path || req.query?.path || "").trim();
+  if (!raw) {
+    return res.status(400).json({ success: false, message: "Image path is required." });
+  }
+  const normalized = raw.replace(/\\/g, "/");
+  const match = normalized.match(/\/uploads\/([^/?#]+)$/i) || normalized.match(/^uploads\/([^/?#]+)$/i);
+  if (!match) {
+    return res.status(400).json({ success: false, message: "Only files under /uploads/ can be deleted." });
+  }
+  const filename = match[1].replace(/\.\./g, "");
+  const filePath = path.join(uploadsDir, filename);
+  if (!filePath.startsWith(uploadsDir)) {
+    return res.status(400).json({ success: false, message: "Invalid file path." });
+  }
+  if (!fs.existsSync(filePath)) {
+    return res.json({ success: true, message: "File already removed.", data: { path: `/uploads/${filename}` } });
+  }
+  try {
+    fs.unlinkSync(filePath);
+    return res.json({ success: true, message: "Image deleted.", data: { path: `/uploads/${filename}` } });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message || "Could not delete image." });
+  }
+});
+
 module.exports = router;
