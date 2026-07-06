@@ -21,7 +21,9 @@ function parseListQuery(req) {
   const q = (req.query?.q ?? "").trim();
   const page = Math.max(1, Number.parseInt(String(req.query?.page ?? "1"), 10) || 1);
   const limitRaw = Number.parseInt(String(req.query?.limit ?? "20"), 10) || 20;
-  const limit = Math.min(100, Math.max(1, limitRaw));
+  const adminList = req.query?.admin === "1" || req.query?.admin === "true";
+  const maxLimit = adminList ? 5000 : 100;
+  const limit = Math.min(maxLimit, Math.max(1, limitRaw));
   const type = (req.query?.type ?? "").trim();
   const vendor = (req.query?.vendor ?? "").trim();
   const city = (req.query?.city ?? "").trim();
