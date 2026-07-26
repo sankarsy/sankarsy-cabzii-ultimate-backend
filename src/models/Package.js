@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { mongooseFields: catalogProductFields } = require("../utils/catalogProductFields");
+const { vehicleEnterpriseSeoSchema, vehicleFaqSchema } = require("./vehicleSchemas");
 
 const packageSchema = new mongoose.Schema(
   {
@@ -48,6 +49,8 @@ const packageSchema = new mongoose.Schema(
     image: { type: String, default: "" },
     gallery: { type: [String], default: [] },
     city: { type: String, default: "", trim: true, index: true },
+    /** Round-trip transport from this hub is included in list/MRP (e.g. Chennai). */
+    pricingOriginCity: { type: String, default: "Chennai", trim: true },
     location: { type: String, default: "", trim: true },
     tags: { type: [String], default: [] },
     category: {
@@ -70,6 +73,11 @@ const packageSchema = new mongoose.Schema(
     seo: { type: String, default: "" },
     seoTitle: { type: String, default: "" },
     seoDescription: { type: String, default: "" },
+    metaKeywords: { type: String, default: "" },
+    canonicalUrl: { type: String, default: "" },
+    schemaEnabled: { type: Boolean, default: true },
+    faq: { type: [vehicleFaqSchema], default: [] },
+    enterpriseSeo: { type: vehicleEnterpriseSeoSchema, default: () => ({}) },
     ...catalogProductFields,
     status: { type: String, enum: ["active", "inactive"], default: "active", index: true },
     isDeleted: { type: Boolean, default: false, index: true }

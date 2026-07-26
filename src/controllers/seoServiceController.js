@@ -114,12 +114,44 @@ async function getSeoServiceBySlug(req, res) {
   if (mongoose.isValidObjectId(param) && isAdmin) {
     doc = await SeoService.findById(param);
   } else {
-    const filter = isAdmin ? { slug: param } : { slug: param, published: true };
-    doc = await SeoService.findOne(filter);
+    // Return draft/unpublished too so public resolver can block static fallbacks.
+    doc = await SeoService.findOne({ slug: param });
   }
 
   if (!doc) return res.status(404).json({ success: false, message: "Service page not found" });
   res.json({ success: true, data: withPublicUrl(doc) });
+}
+
+/** Bulk upsert built-in service pages from admin import. */
+async function importStaticSeoServices(req, res) {
+  const items = Array.isArray(req.body?.items) ? req.body.items : [];
+  if (!items.length) throw new HttpError(400, "No service items to import.");
+
+  let upserted = 0;
+  const results = [];
+  for (const raw of items) {
+    const { error, value } = seoServiceSchema.validate(raw, { stripUnknown: true, convert: true });
+    if (error) continue;
+    const baseSlug = slugify(value.slug) || slugify(value.name) || slugify(value.seoTitle);
+    if (!baseSlug) continue;
+    const existing = await SeoService.findOne({ slug: baseSlug });
+    const payload = await normalizePayload({ ...value, slug: baseSlug }, existing?._id);
+    const data = await SeoService.findOneAndUpdate(
+      { slug: payload.slug },
+      payload,
+      { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
+    );
+    upserted += 1;
+    results.push({ slug: data.slug, id: String(data._id) });
+  }
+
+  await logAudit({
+    req,
+    action: "import",
+    entity: "seo_service",
+    after: { count: upserted }
+  });
+  res.json({ success: true, data: { upserted, results }, message: `Imported ${upserted} service pages.` });
 }
 
 async function createSeoService(req, res) {
@@ -155,5 +187,6 @@ module.exports = {
   getSeoServiceBySlug,
   createSeoService,
   updateSeoService,
-  deleteSeoService
+  deleteSeoService,
+  importStaticSeoServices
 };

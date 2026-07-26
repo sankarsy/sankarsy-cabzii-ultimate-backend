@@ -27,13 +27,69 @@ function parseListQuery(req) {
   const type = (req.query?.type ?? "").trim();
   const vendor = (req.query?.vendor ?? "").trim();
   const city = (req.query?.city ?? "").trim();
+  const brand = (req.query?.brand ?? "").trim();
+  const category = (req.query?.category ?? type).trim();
+  const seatsRaw = Number.parseInt(String(req.query?.seats ?? ""), 10);
+  const seats = Number.isFinite(seatsRaw) && seatsRaw > 0 ? seatsRaw : null;
+  const fuelType = (req.query?.fuelType ?? "").trim();
+  const transmission = (req.query?.transmission ?? "").trim();
+  const status = (req.query?.status ?? "").trim();
+  const featured = req.query?.featured === "1" || req.query?.featured === "true";
+  const recommended = req.query?.recommended === "1" || req.query?.recommended === "true";
+  const bestseller = req.query?.bestseller === "1" || req.query?.bestseller === "true";
+  const sort = (req.query?.sort ?? "newest").trim();
   const priorityCity = (req.query?.priorityCity ?? city).trim();
   const duration = (req.query?.duration ?? "").trim();
-  const category = (req.query?.category ?? "").trim();
   const maxPriceN = Number.parseInt(String(req.query?.maxPrice ?? ""), 10);
   const maxPrice = Number.isFinite(maxPriceN) && maxPriceN > 0 ? maxPriceN : null;
   const features = parseFeaturesQuery(req.query?.features);
-  return { q, page, limit, type, vendor, city, priorityCity, duration, category, maxPrice, features };
+  return {
+    q,
+    page,
+    limit,
+    type,
+    vendor,
+    city,
+    brand,
+    category,
+    seats,
+    fuelType,
+    transmission,
+    status,
+    featured,
+    recommended,
+    bestseller,
+    sort,
+    priorityCity,
+    duration,
+    maxPrice,
+    features
+  };
+}
+
+function cabSortClause(sort = "newest") {
+  switch (sort) {
+    case "oldest":
+      return { createdAt: 1 };
+    case "price_asc":
+      return { startingPrice: 1, price: 1 };
+    case "price_desc":
+      return { startingPrice: -1, price: -1 };
+    case "rating":
+      return { "stats.rating": -1, rating: -1 };
+    case "bookings":
+      return { "stats.totalBookings": -1, "stats.completedTrips": -1 };
+    case "alpha":
+      return { title: 1 };
+    case "newest":
+    default:
+      return { createdAt: -1 };
+  }
+}
+
+function boolFilter(key, enabled) {
+  if (!enabled) return null;
+  return { [key]: true };
 }
 
 function cityPriorityScore(doc, city) {
@@ -78,15 +134,52 @@ function cityNameClause(city) {
   return { city: new RegExp(escapeRegex(city), "i") };
 }
 
-function buildCabListFilter(baseFilter, { q, type, city, maxPrice, features }) {
+function buildCabListFilter(baseFilter, pq) {
+  const { q, type, city, brand, category, seats, fuelType, transmission, status, featured, recommended, bestseller, maxPrice, features } = pq;
   const parts = [];
   if (baseFilter && Object.keys(baseFilter).length > 0) parts.push(baseFilter);
-  const text = textOrClause(["title", "vendor", "type", "city", "location", "seo", "seoTitle", "seoDescription", "features"], q);
+  const text = textOrClause(
+    [
+      "title",
+      "vehicleName",
+      "vehicleModel",
+      "brand",
+      "model",
+      "slug",
+      "productCode",
+      "vendor",
+      "type",
+      "category",
+      "city",
+      "location",
+      "seo",
+      "seoTitle",
+      "seoDescription",
+      "features"
+    ],
+    q
+  );
   if (text) parts.push(text);
-  if (type) parts.push({ type });
+  if (category) parts.push({ $or: [{ category }, { type: category }] });
+  else if (type) parts.push({ type });
+  if (brand) parts.push({ brand: new RegExp(escapeRegex(brand), "i") });
+  if (pq.vendor) parts.push({ vendor: new RegExp(escapeRegex(pq.vendor), "i") });
   const cityClause = cityNameClause(city);
   if (cityClause) parts.push(cityClause);
-  if (maxPrice) parts.push({ price: { $lte: maxPrice } });
+  if (seats) parts.push({ seats: { $gte: seats } });
+  if (fuelType) parts.push({ fuelType: new RegExp(escapeRegex(fuelType), "i") });
+  if (transmission) parts.push({ transmission: new RegExp(escapeRegex(transmission), "i") });
+  if (status) parts.push({ status });
+  for (const clause of [
+    boolFilter("featured", featured),
+    boolFilter("recommended", recommended),
+    boolFilter("bestseller", bestseller)
+  ]) {
+    if (clause) parts.push(clause);
+  }
+  if (maxPrice) {
+    parts.push({ $or: [{ startingPrice: { $lte: maxPrice } }, { price: { $lte: maxPrice } }] });
+  }
   if (features.length) parts.push({ features: { $all: features } });
   if (parts.length === 0) return {};
   if (parts.length === 1) return parts[0];
@@ -179,5 +272,6 @@ module.exports = {
   adminCatalogFilter,
   isCatalogAdmin,
   catalogListFilter,
-  sortDocsByCityPriority
+  sortDocsByCityPriority,
+  cabSortClause
 };

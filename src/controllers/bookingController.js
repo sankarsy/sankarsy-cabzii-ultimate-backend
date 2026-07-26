@@ -31,8 +31,18 @@ const bookingCreateSchema = Joi.object({
   phone: Joi.string().optional(),
   mobileNumber: Joi.string().optional(),
   email: Joi.string().allow("").default(""),
-  type: Joi.string().valid("cab", "driver", "tour").required(),
-  itemId: Joi.string().required(),
+  type: Joi.string().valid("cab", "driver", "tour", "bus").required(),
+  itemId: Joi.string().allow("").optional(),
+  busMeta: Joi.object({
+    tripId: Joi.string().allow("").default(""),
+    operator: Joi.string().allow("").default(""),
+    seats: Joi.array().items(Joi.string()).default([]),
+    boardingPoint: Joi.string().allow("").default(""),
+    droppingPoint: Joi.string().allow("").default(""),
+    busType: Joi.string().allow("").default(""),
+    fromCity: Joi.string().allow("").default(""),
+    toCity: Joi.string().allow("").default("")
+  }).optional(),
   pickup: Joi.string().allow("").default(""),
   drop: Joi.string().allow("").default(""),
   date: Joi.string().allow("").default(""),
@@ -159,12 +169,39 @@ async function listBookings(req, res) {
 async function createBooking(req, res) {
   const { error, value } = bookingCreateSchema.validate(req.body);
   if (error) throw new HttpError(400, error.message);
-  if (!mongoose.isValidObjectId(value.itemId)) throw new HttpError(400, "Invalid itemId");
 
-  const itemModels = { cab: Cab, driver: Driver, tour: Package };
-  const ItemModel = itemModels[value.type];
-  const itemExists = await ItemModel.findById(value.itemId).select("_id").lean();
-  if (!itemExists) throw new HttpError(400, `${value.type} item not found`);
+  if (value.type === "bus") {
+    const seats = value.busMeta?.seats?.length
+      ? value.busMeta.seats
+      : String(value.routeType || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+    if (!seats.length) throw new HttpError(400, "At least one bus seat is required.");
+    value.busMeta = {
+      tripId: value.busMeta?.tripId || value.itemId || "",
+      operator: value.busMeta?.operator || value.serviceTripType || "",
+      seats,
+      boardingPoint: value.busMeta?.boardingPoint || value.pickup || "",
+      droppingPoint: value.busMeta?.droppingPoint || value.drop || "",
+      busType: value.busMeta?.busType || value.tripType || "",
+      fromCity: value.busMeta?.fromCity || "",
+      toCity: value.busMeta?.toCity || ""
+    };
+    if (value.itemId && mongoose.isValidObjectId(value.itemId)) {
+      const { BusTrip } = require("../models/BusTrip");
+      const trip = await BusTrip.findById(value.itemId).select("_id").lean();
+      if (!trip) value.itemId = null;
+    } else {
+      value.itemId = null;
+    }
+  } else {
+    if (!mongoose.isValidObjectId(value.itemId)) throw new HttpError(400, "Invalid itemId");
+    const itemModels = { cab: Cab, driver: Driver, tour: Package };
+    const ItemModel = itemModels[value.type];
+    const itemExists = await ItemModel.findById(value.itemId).select("_id").lean();
+    if (!itemExists) throw new HttpError(400, `${value.type} item not found`);
+  }
 
   const isAdmin = isAdminUser(req);
   const phone =

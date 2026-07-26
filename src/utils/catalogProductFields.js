@@ -17,6 +17,47 @@ const mongooseFields = {
   minorPush: { type: Boolean, default: false }
 };
 
+const enterpriseSeoJoi = Joi.object({
+  robots: Joi.string().allow("").default("index,follow"),
+  ogTitle: Joi.string().allow("").default(""),
+  ogDescription: Joi.string().allow("").default(""),
+  ogImage: Joi.string().allow("").default(""),
+  twitterTitle: Joi.string().allow("").default(""),
+  twitterDescription: Joi.string().allow("").default(""),
+  twitterImage: Joi.string().allow("").default(""),
+  h1: Joi.string().allow("").default(""),
+  h2: Joi.array().items(Joi.string().allow("")).default([]),
+  h3: Joi.array().items(Joi.string().allow("")).default([]),
+  shortDescription: Joi.string().allow("").default(""),
+  longSeoContent: Joi.string().allow("").default(""),
+  highlights: Joi.array().items(Joi.string()).default([]),
+  state: Joi.string().allow("").default("Tamil Nadu"),
+  nearbyLocations: Joi.array().items(Joi.string()).default([]),
+  nearbyAirports: Joi.array().items(Joi.string()).default([]),
+  nearbyStations: Joi.array().items(Joi.string()).default([]),
+  nearbyPlaces: Joi.array().items(Joi.string()).default([]),
+  priceUnit: Joi.string().allow("").default("Per KM"),
+  offerText: Joi.string().allow("").default(""),
+  offerEnds: Joi.string().allow("").default(""),
+  youtubeUrl: Joi.string().allow("").default(""),
+  seoReviews: Joi.array()
+    .items(
+      Joi.object({
+        name: Joi.string().allow("").default(""),
+        rating: Joi.number().min(1).max(5).default(5),
+        review: Joi.string().allow("").default(""),
+        location: Joi.string().allow("").default("")
+      })
+    )
+    .default([]),
+  relatedVehicles: Joi.array().items(Joi.string()).default([]),
+  relatedCities: Joi.array().items(Joi.string()).default([]),
+  relatedPackages: Joi.array().items(Joi.string()).default([]),
+  relatedBlogs: Joi.array().items(Joi.string()).default([]),
+  relatedServices: Joi.array().items(Joi.string()).default([]),
+  seoScore: Joi.number().min(0).max(100).default(0)
+}).default();
+
 const joiFields = {
   slug: Joi.string().allow("").default(""),
   productCode: Joi.string().allow("").default(""),
@@ -31,10 +72,32 @@ const joiFields = {
   minorPush: Joi.boolean().default(false),
   seo: Joi.string().allow("").default(""),
   seoTitle: Joi.string().allow("").default(""),
-  seoDescription: Joi.string().allow("").default("")
+  seoDescription: Joi.string().allow("").default(""),
+  metaKeywords: Joi.string().allow("").default(""),
+  canonicalUrl: Joi.string().allow("").default(""),
+  schemaEnabled: Joi.boolean().default(true),
+  faq: Joi.array()
+    .items(
+      Joi.object({
+        question: Joi.string().allow("").default(""),
+        answer: Joi.string().allow("").default("")
+      })
+    )
+    .default([]),
+  enterpriseSeo: enterpriseSeoJoi
 };
 
-const SEO_KEYS = ["seo", "seoTitle", "seoDescription", ...Object.keys(mongooseFields)];
+const SEO_KEYS = [
+  "seo",
+  "seoTitle",
+  "seoDescription",
+  "metaKeywords",
+  "canonicalUrl",
+  "schemaEnabled",
+  "faq",
+  "enterpriseSeo",
+  ...Object.keys(mongooseFields)
+];
 
 function splitCatalogBody(body) {
   const raw = body && typeof body === "object" ? { ...body } : {};
@@ -66,6 +129,13 @@ function normalizeCatalogProduct(input = {}, { title = "", vendor = "", type = "
     brandName,
     imageAlt,
     imageTitle,
+    ...(input.metaKeywords != null ? { metaKeywords: String(input.metaKeywords || "") } : {}),
+    ...(input.canonicalUrl != null ? { canonicalUrl: String(input.canonicalUrl || "") } : {}),
+    ...(input.schemaEnabled != null ? { schemaEnabled: Boolean(input.schemaEnabled) } : {}),
+    ...(Array.isArray(input.faq) ? { faq: input.faq } : {}),
+    ...(input.enterpriseSeo && typeof input.enterpriseSeo === "object"
+      ? { enterpriseSeo: input.enterpriseSeo }
+      : {}),
     countryOfOrigin: String(input.countryOfOrigin || "India").trim() || "India",
     speciality,
     condition: String(input.condition || "").trim(),

@@ -4,7 +4,8 @@ const {
   getSeoServiceBySlug,
   createSeoService,
   updateSeoService,
-  deleteSeoService
+  deleteSeoService,
+  importStaticSeoServices
 } = require("../controllers/seoServiceController");
 const { asyncHandler } = require("../utils/asyncHandler");
 const { requireAuth, requireRole, optionalAuth } = require("../middlewares/auth");
@@ -12,6 +13,7 @@ const { requireAuth, requireRole, optionalAuth } = require("../middlewares/auth"
 const router = express.Router();
 
 router.get("/", optionalAuth, asyncHandler(listSeoServices));
+router.post("/import-static", requireAuth, requireRole("super_admin"), asyncHandler(importStaticSeoServices));
 router.get("/:slug", optionalAuth, asyncHandler(getSeoServiceBySlug));
 router.post("/", requireAuth, requireRole("super_admin"), asyncHandler(createSeoService));
 router.put("/:id", requireAuth, requireRole("super_admin"), asyncHandler(updateSeoService));

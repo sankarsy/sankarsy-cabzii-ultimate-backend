@@ -2,6 +2,8 @@
 
 const { buildDefaultFarePackages } = require("./cabFarePackages");
 const { buildDefaultDriverFarePackages } = require("./driverFarePackages");
+const { syncVehiclePricing, resolveVehiclePackages } = require("./vehiclePackages");
+const { applyVehicleSeo } = require("./vehicleSeo");
 
 function num(v, fallback = 0) {
   const n = Number(v);
@@ -70,29 +72,59 @@ function isLegacyDriver(doc) {
   return !hasPackages && !hasPricing && num(doc.price) <= 0;
 }
 
+function enrichModernCab(doc) {
+  const synced = syncVehiclePricing(doc);
+  const packages = synced.packages;
+  const stats = {
+    rating: num(doc.stats?.rating ?? doc.rating),
+    totalReviews: num(doc.stats?.totalReviews ?? doc.reviewCount),
+    completedTrips: num(doc.stats?.completedTrips),
+    totalBookings: num(doc.stats?.totalBookings),
+    views: num(doc.stats?.views),
+    wishlistCount: num(doc.stats?.wishlistCount),
+    lastBooked: doc.stats?.lastBooked || null
+  };
+  const seo = applyVehicleSeo({ ...doc, ...synced });
+  const cover =
+    doc.image ||
+    (Array.isArray(doc.images) ? doc.images.find((i) => i.type === "cover")?.url : "") ||
+    (Array.isArray(doc.gallery) ? doc.gallery[0] : "") ||
+    "";
+
+  return {
+    ...doc,
+    vehicleName: doc.vehicleName || doc.vehicleModel || doc.title || "",
+    category: doc.category || doc.type || "Sedan",
+    packages,
+    farePackages: synced.farePackages,
+    farePackageLabels: synced.farePackageLabels,
+    startingPrice: synced.startingPrice || num(doc.price),
+    pricePerKm: synced.pricePerKm,
+    stats,
+    rating: stats.rating,
+    reviewCount: stats.totalReviews,
+    seoTitle: doc.seoTitle || seo.seoTitle,
+    seoDescription: doc.seoDescription || seo.seoDescription,
+    image: cover
+  };
+}
+
 function normalizeCabForApi(doc) {
   if (!doc) return doc;
   const id = doc._id ?? doc.id;
 
   if (!isLegacyCab(doc)) {
-    const price = num(doc.price);
-    const farePackages =
-      doc.farePackages && Object.keys(doc.farePackages).length
-        ? doc.farePackages
-        : price > 0
-          ? buildDefaultFarePackages(doc)
-          : doc.farePackages;
+    const enriched = enrichModernCab(doc);
+    const price = num(enriched.price);
 
     return {
-      ...doc,
+      ...enriched,
       _id: id,
       id: id ? String(id) : "",
-      title: doc.title || doc.name || "Cab",
-      vendor: doc.vendor || "Cabzii Partner",
+      title: enriched.title || enriched.name || "Cab",
+      vendor: enriched.vendor || "Cabzii Partner",
       price,
-      farePackages,
-      city: doc.city || inferCity(doc),
-      image: doc.image || (Array.isArray(doc.cabImages) ? doc.cabImages[0] : "") || ""
+      city: enriched.city || inferCity(enriched)
     };
   }
 

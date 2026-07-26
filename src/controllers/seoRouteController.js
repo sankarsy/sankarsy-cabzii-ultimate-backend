@@ -120,12 +120,51 @@ async function getSeoRouteBySlug(req, res) {
   if (mongoose.isValidObjectId(param) && isAdmin) {
     doc = await SeoRoute.findById(param);
   } else {
-    const filter = isAdmin ? { slug: param } : { slug: param, published: true };
-    doc = await SeoRoute.findOne(filter);
+    // Return draft/unpublished too so public resolver can block static fallbacks.
+    doc = await SeoRoute.findOne({ slug: param });
   }
 
   if (!doc) return res.status(404).json({ success: false, message: "Route page not found" });
   res.json({ success: true, data: withPublicUrl(doc) });
+}
+
+/** Bulk upsert built-in route pages from admin import. */
+async function importStaticSeoRoutes(req, res) {
+  const items = Array.isArray(req.body?.items) ? req.body.items : [];
+  if (!items.length) throw new HttpError(400, "No route items to import.");
+
+  let upserted = 0;
+  const results = [];
+  for (const raw of items) {
+    const { error, value } = seoRouteSchema.validate(raw, { stripUnknown: true, convert: true });
+    if (error) continue;
+    const fromCitySlug = slugify(value.fromCitySlug);
+    const toCitySlug = slugify(value.toCitySlug);
+    if (!fromCitySlug || !toCitySlug) continue;
+    const baseSlug =
+      slugify(value.slug) || slugify(`${fromCitySlug}-to-${toCitySlug}-cab`);
+    if (!baseSlug) continue;
+    const existing = await SeoRoute.findOne({ slug: baseSlug });
+    const payload = await normalizePayload(
+      { ...value, slug: baseSlug, fromCitySlug, toCitySlug },
+      existing?._id
+    );
+    const data = await SeoRoute.findOneAndUpdate(
+      { slug: payload.slug },
+      payload,
+      { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
+    );
+    upserted += 1;
+    results.push({ slug: data.slug, id: String(data._id) });
+  }
+
+  await logAudit({
+    req,
+    action: "import",
+    entity: "seo_route",
+    after: { count: upserted }
+  });
+  res.json({ success: true, data: { upserted, results }, message: `Imported ${upserted} route pages.` });
 }
 
 async function createSeoRoute(req, res) {
@@ -161,5 +200,6 @@ module.exports = {
   getSeoRouteBySlug,
   createSeoRoute,
   updateSeoRoute,
-  deleteSeoRoute
+  deleteSeoRoute,
+  importStaticSeoRoutes
 };

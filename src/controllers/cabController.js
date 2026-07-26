@@ -4,102 +4,25 @@ const { Cab } = require("../models/Cab");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 const { docMatchForVendor, listFilterForVendor, vendorNameForUser } = require("../utils/vendorAccess");
+const { catalogLookupQuery } = require("../utils/catalogProductFields");
+const { mergeFarePackages } = require("../utils/cabFarePackages");
 const {
-  splitCatalogBody,
-  normalizeCatalogProduct,
-  ensureUniqueSlug,
-  catalogLookupQuery,
-  joiFields: catalogJoiFields
-} = require("../utils/catalogProductFields");
-const { mergeFarePackages, resolveFarePackages } = require("../utils/cabFarePackages");
-const { parseListQuery, buildCabListFilter, paginatedFind, catalogListFilter, isCatalogAdmin } = require("../utils/listQuery");
+  parseListQuery,
+  buildCabListFilter,
+  paginatedFind,
+  catalogListFilter,
+  isCatalogAdmin,
+  cabSortClause
+} = require("../utils/listQuery");
 const { normalizeCabForApi } = require("../utils/catalogNormalize");
-const { normalizeCatalogMediaFields } = require("../utils/mediaPath");
-
-const packageFareSchema = Joi.object({
-  originalPrice: Joi.number().default(0),
-  price: Joi.number().default(0),
-  discountPercentage: Joi.number().default(0),
-  extraKmRate: Joi.number().default(0),
-  extraHourRate: Joi.number().default(0)
-});
-
-const farePackagesSchema = Joi.object({
-  local4hr: packageFareSchema,
-  local8hr: packageFareSchema,
-  outstationOneWay: packageFareSchema,
-  outstationRoundTrip: packageFareSchema
-});
-
-const farePackageLabelsSchema = Joi.object({
-  local4hr: Joi.string().allow("").optional(),
-  local8hr: Joi.string().allow("").optional(),
-  localDay: Joi.string().allow("").optional(),
-  outstation12hr: Joi.string().allow("").optional(),
-  outstationOneWay: Joi.string().allow("").optional(),
-  outstationRoundTrip: Joi.string().allow("").optional()
-}).optional();
-
-const cabCoreSchema = Joi.object({
-  title: Joi.string().required(),
-  vendor: Joi.string().required(),
-  type: Joi.string().required(),
-  vehicleModel: Joi.string().allow("").default(""),
-  serviceForm: Joi.string().allow("").default("One Way"),
-  seats: Joi.number().integer().min(1).default(4),
-  bags: Joi.number().integer().min(0).max(10).default(2),
-  examples: Joi.string().allow("").default(""),
-  price: Joi.number().required(),
-  hourlyRate: Joi.number().default(0),
-  dayRate: Joi.number().default(0),
-  extraHourRate: Joi.number().default(0),
-  originalPrice: Joi.number().default(0),
-  discountPercentage: Joi.number().default(0),
-  rating: Joi.number().min(0).max(5).optional(),
-  image: Joi.string().allow("").default(""),
-  gallery: Joi.array().items(Joi.string()).max(3).default([]),
-  city: Joi.string().allow("").default(""),
-  location: Joi.string().allow("").default(""),
-  features: Joi.array().items(Joi.string()).default([]),
-  farePackages: farePackagesSchema.optional(),
-  farePackageLabels: farePackageLabelsSchema,
-  status: Joi.string().valid("active", "inactive").default("active")
-}).concat(Joi.object(catalogJoiFields));
-
-async function mergeCabProductFields(product, core, existingId) {
-  const normalized = normalizeCatalogProduct(product, {
-    title: core.title,
-    vendor: core.vendor,
-    type: core.type,
-    city: core.city,
-    vehicleModel: core.vehicleModel
-  });
-  normalized.slug = await ensureUniqueSlug(Cab, normalized.slug, existingId);
-  return normalized;
-}
-
-function mergeFarePackageLabels(existing, incoming) {
-  if (!incoming || typeof incoming !== "object") return existing || {};
-  return { ...(existing || {}), ...incoming };
-}
-
-function withFarePackages(value, existing = {}) {
-  let farePackageLabels = existing.farePackageLabels || {};
-  if (value.farePackageLabels && typeof value.farePackageLabels === "object") {
-    farePackageLabels = mergeFarePackageLabels(existing.farePackageLabels, value.farePackageLabels);
-  }
-  return {
-    ...value,
-    farePackages: resolveFarePackages(value, existing.farePackages),
-    farePackageLabels
-  };
-}
+const { finalizeCabPayload } = require("../utils/vehiclePrepare");
 
 async function listCabs(req, res) {
   const base = catalogListFilter(req, listFilterForVendor(req));
   const pq = parseListQuery(req);
   const filter = buildCabListFilter(base, pq);
-  const { data, meta } = await paginatedFind(Cab, filter, pq);
+  const sort = cabSortClause(pq.sort);
+  const { data, meta } = await paginatedFind(Cab, filter, pq, sort);
   res.json({ success: true, data: data.map(normalizeCabForApi), meta });
 }
 
@@ -115,18 +38,14 @@ async function getCabById(req, res) {
   if (isPublic && (data.isDeleted || (data.status && data.status !== "active"))) {
     throw new HttpError(404, "Cab not found");
   }
+  if (isPublic) {
+    await Cab.updateOne({ _id: data._id }, { $inc: { "stats.views": 1 } }).catch(() => {});
+  }
   res.json({ success: true, data: normalizeCabForApi(data) });
 }
 
 async function createCab(req, res) {
-  const { core, product } = splitCatalogBody(req.body);
-  const { error, value } = cabCoreSchema.validate({ ...core, ...product }, { stripUnknown: true, convert: true });
-  if (error) throw new HttpError(400, error.message);
-  const productFields = await mergeCabProductFields(product, value);
-  const payload = normalizeCatalogMediaFields({
-    ...withFarePackages(value, {}),
-    ...productFields
-  });
+  const payload = await finalizeCabPayload(req.body, {}, null);
   if (req.user?.role === "vendor_admin") {
     payload.vendorAdminPhone = req.user.mobileNumber;
     payload.vendor = vendorNameForUser(req.user) || payload.vendor;
@@ -140,32 +59,27 @@ async function createCab(req, res) {
     vendor: data.vendor,
     after: data.toObject()
   });
-  res.status(201).json({ success: true, data });
+  res.status(201).json({ success: true, data: normalizeCabForApi(data.toObject()) });
 }
 
 async function updateCab(req, res) {
-  const { core, product } = splitCatalogBody(req.body);
-  const { error, value } = cabCoreSchema.validate({ ...core, ...product }, { stripUnknown: true, convert: true });
-  if (error) throw new HttpError(400, error.message);
   const lookup = catalogLookupQuery(req.params.id);
   const scope = listFilterForVendor(req);
   const match = lookup._id ? { _id: lookup._id, ...scope } : { slug: lookup.slug, ...scope };
   const existing = await Cab.findOne(match).lean();
   if (!existing) throw new HttpError(404, "Cab not found");
 
-  const mergedCore = value.farePackages
-    ? { ...value, farePackages: mergeFarePackages(existing.farePackages, value.farePackages) }
-    : value;
-  const productFields = await mergeCabProductFields(product, { ...mergedCore, ...existing }, existing._id);
-  const nextValue = normalizeCatalogMediaFields({
-    ...withFarePackages(mergedCore, existing),
-    ...productFields
-  });
-  if (req.user?.role === "vendor_admin") {
-    nextValue.vendorAdminPhone = req.user.mobileNumber;
-    nextValue.vendor = vendorNameForUser(req.user) || nextValue.vendor;
+  const body = { ...req.body };
+  if (body.farePackages) {
+    body.farePackages = mergeFarePackages(existing.farePackages, body.farePackages);
   }
-  const data = await Cab.findOneAndUpdate(match, { $set: nextValue }, { new: true, runValidators: true });
+
+  const payload = await finalizeCabPayload(body, existing, existing._id);
+  if (req.user?.role === "vendor_admin") {
+    payload.vendorAdminPhone = req.user.mobileNumber;
+    payload.vendor = vendorNameForUser(req.user) || payload.vendor;
+  }
+  const data = await Cab.findOneAndUpdate(match, { $set: payload }, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Cab not found");
   await logAudit({
     req,
@@ -175,7 +89,7 @@ async function updateCab(req, res) {
     vendor: data.vendor,
     after: data.toObject()
   });
-  res.json({ success: true, data });
+  res.json({ success: true, data: normalizeCabForApi(data.toObject()) });
 }
 
 async function deleteCab(req, res) {
@@ -193,4 +107,134 @@ async function deleteCab(req, res) {
   res.json({ success: true, message: "Cab deleted" });
 }
 
-module.exports = { listCabs, getCabById, createCab, updateCab, deleteCab };
+async function duplicateCab(req, res) {
+  const filter = docMatchForVendor(req, req.params.id);
+  const source = await Cab.findOne(filter).lean();
+  if (!source) throw new HttpError(404, "Cab not found");
+
+  const clone = { ...source };
+  delete clone._id;
+  delete clone.createdAt;
+  delete clone.updatedAt;
+  clone.title = `${clone.title} (Copy)`;
+  clone.slug = "";
+  clone.productCode = "";
+  clone.stats = {
+    rating: clone.stats?.rating || clone.rating || 0,
+    totalReviews: 0,
+    completedTrips: 0,
+    totalBookings: 0,
+    views: 0,
+    wishlistCount: 0,
+    lastBooked: null
+  };
+  clone.status = "inactive";
+
+  const payload = await finalizeCabPayload(clone, {}, null);
+  if (req.user?.role === "vendor_admin") {
+    payload.vendorAdminPhone = req.user.mobileNumber;
+    payload.vendor = vendorNameForUser(req.user) || payload.vendor;
+  }
+  const data = await Cab.create(payload);
+  await logAudit({
+    req,
+    action: "duplicate",
+    entity: "cab",
+    entityId: data._id,
+    vendor: data.vendor,
+    after: data.toObject()
+  });
+  res.status(201).json({ success: true, data: normalizeCabForApi(data.toObject()) });
+}
+
+async function listCurated(req, res, field) {
+  const base = catalogListFilter(req, listFilterForVendor(req));
+  const limit = Math.min(50, Math.max(1, Number.parseInt(String(req.query?.limit ?? "12"), 10) || 12));
+  const city = (req.query?.city ?? "").trim();
+  const pq = {
+    q: "",
+    featured: field === "featured",
+    recommended: field === "recommended",
+    bestseller: field === "bestseller",
+    city,
+    type: "",
+    vendor: "",
+    brand: "",
+    category: "",
+    seats: null,
+    fuelType: "",
+    transmission: "",
+    status: "",
+    maxPrice: null,
+    features: []
+  };
+  let filter = buildCabListFilter(base, pq);
+
+  if (field === "popular") {
+    const popularClause = {
+      $or: [{ bestseller: true }, { featured: true }, { "stats.totalBookings": { $gt: 0 } }]
+    };
+    filter = filter && Object.keys(filter).length ? { $and: [filter, popularClause] } : { ...base, ...popularClause };
+  }
+
+  const sort =
+    field === "popular"
+      ? { "stats.totalBookings": -1, "stats.completedTrips": -1, rating: -1 }
+      : { createdAt: -1 };
+
+  const data = await Cab.find(filter).sort(sort).limit(limit).lean();
+  res.json({ success: true, data: data.map(normalizeCabForApi) });
+}
+
+async function getFeaturedCabs(req, res) {
+  return listCurated(req, res, "featured");
+}
+
+async function getRecommendedCabs(req, res) {
+  return listCurated(req, res, "recommended");
+}
+
+async function getPopularCabs(req, res) {
+  return listCurated(req, res, "popular");
+}
+
+async function getRelatedCabs(req, res) {
+  const param = req.params.id;
+  const lookup = catalogLookupQuery(param);
+  const scope = listFilterForVendor(req);
+  const match = lookup._id ? { _id: lookup._id, ...scope } : { slug: lookup.slug, ...scope };
+  const source = await Cab.findOne(match).lean();
+  if (!source) throw new HttpError(404, "Cab not found");
+
+  const limit = Math.min(12, Math.max(1, Number.parseInt(String(req.query?.limit ?? "6"), 10) || 6));
+  const base = catalogListFilter(req, listFilterForVendor(req));
+  const or = [];
+  if (source.category || source.type) or.push({ category: source.category || source.type });
+  if (source.type) or.push({ type: source.type });
+  if (source.city) or.push({ city: source.city });
+  if (source.brand) or.push({ brand: source.brand });
+
+  const filter = {
+    $and: [
+      base,
+      { _id: { $ne: source._id } },
+      or.length ? { $or: or } : {}
+    ].filter((c) => Object.keys(c).length)
+  };
+
+  const data = await Cab.find(filter).sort({ "stats.totalBookings": -1, rating: -1 }).limit(limit).lean();
+  res.json({ success: true, data: data.map(normalizeCabForApi) });
+}
+
+module.exports = {
+  listCabs,
+  getCabById,
+  createCab,
+  updateCab,
+  deleteCab,
+  duplicateCab,
+  getFeaturedCabs,
+  getRecommendedCabs,
+  getPopularCabs,
+  getRelatedCabs
+};

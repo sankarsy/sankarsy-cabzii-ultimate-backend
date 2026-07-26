@@ -2,6 +2,9 @@
 
 /**
  * Import built-in service & route pages into MongoDB so admin can edit them.
+ * Prefer Admin → Services / Routes → "Import to database" (imports the full route mesh).
+ * This script seeds the core service list + priority routes as a CLI fallback.
+ *
  * Usage: node scripts/seedSeoCms.js
  */
 
@@ -24,7 +27,8 @@ const SERVICES = [
   { slug: "cab-rental", name: "Cab Rental", priceFrom: 1400, highlights: ["Local day packages", "Extra km rates listed", "Vendor comparison"] },
   { slug: "local-taxi", name: "Local Taxi", priceFrom: 400, highlights: ["City point-to-point rides", "Hourly city packages", "Near-me pickup search"] },
   { slug: "hourly-rental", name: "Hourly Rental Taxi", priceFrom: 320, highlights: ["4hr / 8hr / 12hr slabs", "Ideal for errands & meetings", "Transparent extra hour rate"] },
-  { slug: "tour-packages", name: "Holiday Packages", priceFrom: 4999, highlights: ["Pilgrimage circuits", "Beach & hill getaways", "Tirupati & Rameswaram tours"] }
+  { slug: "tour-packages", name: "Holiday Packages", priceFrom: 4999, highlights: ["Pilgrimage circuits", "Beach & hill getaways", "Tirupati & Rameswaram tours"] },
+  { slug: "acting-driver", name: "Acting Driver", priceFrom: 500, highlights: ["Driver for your car", "Hourly & outstation", "Verified chauffeurs"] }
 ];
 
 const ROUTES = [
@@ -35,7 +39,9 @@ const ROUTES = [
   { slug: "chennai-to-madurai-cab", from: "chennai", to: "madurai", distance: "460 km", duration: "7–8 hours", sedanFrom: 6000, suvFrom: 8000 },
   { slug: "chennai-to-rameswaram-cab", from: "chennai", to: "rameswaram", distance: "560 km", duration: "9–10 hours", sedanFrom: 7500, suvFrom: 9500 },
   { slug: "bengaluru-to-mysore-cab", from: "bengaluru", to: "mysore", distance: "145 km", duration: "3 hours", sedanFrom: 2500, suvFrom: 3500 },
-  { slug: "bengaluru-to-chennai-cab", from: "bengaluru", to: "chennai", distance: "350 km", duration: "6–7 hours", sedanFrom: 4500, suvFrom: 6500 }
+  { slug: "bengaluru-to-chennai-cab", from: "bengaluru", to: "chennai", distance: "350 km", duration: "6–7 hours", sedanFrom: 4500, suvFrom: 6500 },
+  { slug: "bengaluru-to-hyderabad-cab", from: "bengaluru", to: "hyderabad", distance: "575 km", duration: "9–10 hours", sedanFrom: 7500, suvFrom: 9500 },
+  { slug: "hyderabad-to-bengaluru-cab", from: "hyderabad", to: "bengaluru", distance: "575 km", duration: "9–10 hours", sedanFrom: 7500, suvFrom: 9500 }
 ];
 
 async function upsertServices() {
@@ -107,7 +113,7 @@ async function main() {
   await upsertServices();
   await upsertRoutes();
   await mongoose.disconnect();
-  console.log("Done. Open Admin → Services / Routes to edit all pages.");
+  console.log("Done. Prefer Admin → Services/Routes → Import to database for the full mesh.");
 }
 
 main().catch((err) => {
