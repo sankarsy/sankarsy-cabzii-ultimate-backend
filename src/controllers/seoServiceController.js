@@ -16,6 +16,10 @@ const seoServiceSchema = Joi.object({
   priceFrom: Joi.number().min(0).default(0),
   highlights: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string().allow("")).default([]),
   body: Joi.string().allow("").default(""),
+  image: Joi.string().allow("").default(""),
+  imageAlt: Joi.string().allow("").default(""),
+  imageTitle: Joi.string().allow("").default(""),
+  gallery: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string().allow("")).default([]),
   seo: Joi.string().allow("").default(""),
   seoTitle: Joi.string().allow("").default(""),
   seoDescription: Joi.string().allow("").default(""),
@@ -69,6 +73,15 @@ async function normalizePayload(value, excludeId) {
     searchQuery,
     highlights,
     citySlugs,
+    gallery: Array.isArray(value.gallery)
+      ? value.gallery.map((g) => String(g).trim()).filter(Boolean)
+      : String(value.gallery || "")
+          .split(",")
+          .map((g) => g.trim())
+          .filter(Boolean),
+    image: String(value.image || "").trim(),
+    imageAlt: String(value.imageAlt || "").trim(),
+    imageTitle: String(value.imageTitle || "").trim(),
     menuCitySlug: slugify(value.menuCitySlug || "chennai") || "chennai"
   };
 }

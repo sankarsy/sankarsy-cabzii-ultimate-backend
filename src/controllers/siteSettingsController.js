@@ -31,6 +31,14 @@ const settingsSchema = Joi.object({
   whyStats: Joi.array().items(Joi.object()),
   whyChooseUs: Joi.array().items(Joi.object()),
   homeSections: Joi.array().items(Joi.object()),
+  holidayCategories: Joi.array().items(
+    Joi.object({
+      id: Joi.string().required(),
+      label: Joi.string().allow(""),
+      image: Joi.string().allow(""),
+      desc: Joi.string().allow("")
+    })
+  ),
   whatsappFab: Joi.object(),
   pageSeo: Joi.object().pattern(
     Joi.string(),

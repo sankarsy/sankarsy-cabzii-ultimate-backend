@@ -39,9 +39,9 @@ const DEFAULT_SITE_SETTINGS = {
     subtitle:
       "Cabs, acting drivers and tour packages in Chennai, Bengaluru, Mumbai and across India — transparent fares, instant booking.",
     image: "/images/hero-banner.png",
-    promoBadge: "Up To",
-    promoTitle: "20% OFF",
-    promoSubtitle: "Cabs & Tours",
+    promoBadge: "",
+    promoTitle: "",
+    promoSubtitle: "Transparent fares",
     searchPlaceholder: "Search cabs or tours...",
     tabs: [
       { id: "outstation", label: "Outstation" },
@@ -92,6 +92,15 @@ const DEFAULT_SITE_SETTINGS = {
     { key: "blogs", enabled: true, eyebrow: "Latest Insights", title: "Travel Blog", subtitle: "Quick reads to help you book smarter and travel better.", limit: 3, sortOrder: 5, viewAllHref: "/blogs" }
   ],
   whatsappFab: { enabled: true, number: "9944197416" },
+  holidayCategories: [
+    { id: "pilgrimage", label: "Pilgrimage", image: "", desc: "Tirupati, Rameswaram, Madurai & more temple tours with cab, darshan & stay." },
+    { id: "beach", label: "Beach", image: "", desc: "Goa, Pondicherry & coastal getaways — sun, sand and scenic ECR drives." },
+    { id: "hill", label: "Hill Station", image: "", desc: "Ooty, Kodaikanal, Munnar & cool mountain escapes with sightseeing cabs." },
+    { id: "heritage", label: "Heritage", image: "", desc: "Forts, palaces & UNESCO wonders — Mysore, Hampi, Thanjavur and beyond." },
+    { id: "honeymoon", label: "Honeymoon", image: "", desc: "Romantic escapes with private cab, handpicked stays & flexible plans." },
+    { id: "adventure", label: "Adventure", image: "", desc: "Safari trails, trekking bases & offbeat drives for thrill seekers." },
+    { id: "family", label: "Family", image: "", desc: "Kid-friendly itineraries, spacious cabs & relaxed sightseeing for all ages." }
+  ],
   pageSeo: {}
 };
 

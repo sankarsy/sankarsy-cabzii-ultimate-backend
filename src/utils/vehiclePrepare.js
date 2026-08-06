@@ -229,8 +229,31 @@ function prepareVehicleBody(value, existing = {}) {
 
   if (Array.isArray(merged.images) && merged.images.length) {
     const cover = merged.images.find((img) => img.type === "cover") || merged.images[0];
-    if (cover?.url && !merged.image) merged.image = cover.url;
+    if (cover?.url) {
+      merged.image = cover.url;
+      if (cover.alt) merged.imageAlt = cover.alt;
+      if (cover.title) merged.imageTitle = cover.title;
+    }
     merged.gallery = merged.images.map((img) => img.url).filter(Boolean);
+  }
+
+  // Cover image drives OG + Twitter so admin image changes update social previews automatically.
+  if (merged.image) {
+    const es =
+      merged.enterpriseSeo && typeof merged.enterpriseSeo === "object" ? { ...merged.enterpriseSeo } : {};
+    es.ogImage = merged.image;
+    es.twitterImage = merged.image;
+    merged.enterpriseSeo = es;
+  }
+
+  const weakAlt = !merged.imageAlt || /^(image|photo|picture|img|car|cab image)$/i.test(String(merged.imageAlt).trim());
+  if (merged.image && weakAlt) {
+    const name = merged.vehicleName || merged.vehicleModel || merged.title || merged.name || "Cab";
+    const city = merged.city || "India";
+    merged.imageAlt = `${name} cab rental for airport and outstation travel in ${city}`;
+  }
+  if (merged.image && !merged.imageTitle) {
+    merged.imageTitle = merged.vehicleName || merged.title || merged.name || merged.imageAlt || "";
   }
 
   return merged;

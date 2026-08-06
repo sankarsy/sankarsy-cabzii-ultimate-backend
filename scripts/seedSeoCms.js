@@ -17,31 +17,31 @@ const { SeoRoute } = require(path.join(__dirname, "..", "src", "models", "SeoRou
 const { autoSeoServiceFields, autoSeoRouteFields } = require(path.join(__dirname, "..", "src", "utils", "seoAutoFill"));
 
 const SERVICES = [
-  { slug: "airport-taxi", name: "Airport Taxi", priceFrom: 899, highlights: ["MAA/BLR/HYD terminal pickup", "Flight buffer time", "Fixed fare quote"] },
-  { slug: "outstation-cab", name: "Outstation Cab", priceFrom: 1400, highlights: ["Round trip & one way", "Per km fare shown upfront", "Highway-experienced drivers"] },
-  { slug: "one-way-cab", name: "One Way Cab", priceFrom: 4500, highlights: ["Inter-city one way drops", "Sedan, SUV & Innova", "No return charge confusion"] },
-  { slug: "driver-on-hire", name: "Driver on Hire", priceFrom: 500, highlights: ["Use your own car", "Hourly & daily packages", "Verified chauffeurs"] },
-  { slug: "chauffeur-service", name: "Chauffeur Service", priceFrom: 600, highlights: ["Corporate & wedding travel", "Professional presentation", "Multi-stop city runs"] },
-  { slug: "tempo-traveller", name: "Tempo Traveller", priceFrom: 3200, highlights: ["12 to 17 seater options", "Group & family trips", "AC tempo for outstation"] },
-  { slug: "car-rental", name: "Car Rental", priceFrom: 1200, highlights: ["Self-drive alternatives via cab", "Sedan & SUV fleet", "Daily rental slabs"] },
-  { slug: "cab-rental", name: "Cab Rental", priceFrom: 1400, highlights: ["Local day packages", "Extra km rates listed", "Vendor comparison"] },
-  { slug: "local-taxi", name: "Local Taxi", priceFrom: 400, highlights: ["City point-to-point rides", "Hourly city packages", "Near-me pickup search"] },
-  { slug: "hourly-rental", name: "Hourly Rental Taxi", priceFrom: 320, highlights: ["4hr / 8hr / 12hr slabs", "Ideal for errands & meetings", "Transparent extra hour rate"] },
-  { slug: "tour-packages", name: "Holiday Packages", priceFrom: 4999, highlights: ["Pilgrimage circuits", "Beach & hill getaways", "Tirupati & Rameswaram tours"] },
-  { slug: "acting-driver", name: "Acting Driver", priceFrom: 500, highlights: ["Driver for your car", "Hourly & outstation", "Verified chauffeurs"] }
+  { slug: "airport-taxi", name: "Airport Taxi", priceFrom: 699, highlights: ["MAA/BLR/HYD terminal pickup", "Flight buffer time", "Fixed fare quote"] },
+  { slug: "outstation-cab", name: "Outstation Cab", priceFrom: 1499, highlights: ["Round trip & one way", "Per km fare shown upfront", "Highway-experienced drivers"] },
+  { slug: "one-way-cab", name: "One Way Cab", priceFrom: 4999, highlights: ["Inter-city one way drops", "Sedan, SUV & Innova", "No return charge confusion"] },
+  { slug: "driver-on-hire", name: "Driver on Hire", priceFrom: 499, highlights: ["Use your own car", "Hourly & daily packages", "Verified chauffeurs"] },
+  { slug: "chauffeur-service", name: "Chauffeur Service", priceFrom: 599, highlights: ["Corporate & wedding travel", "Professional presentation", "Multi-stop city runs"] },
+  { slug: "tempo-traveller", name: "Tempo Traveller", priceFrom: 3499, highlights: ["12 to 17 seater options", "Group & family trips", "AC tempo for outstation"] },
+  { slug: "car-rental", name: "Car Rental", priceFrom: 1299, highlights: ["Self-drive alternatives via cab", "Sedan & SUV fleet", "Daily rental slabs"] },
+  { slug: "cab-rental", name: "Cab Rental", priceFrom: 1499, highlights: ["Local day packages", "Extra km rates listed", "Vendor comparison"] },
+  { slug: "local-taxi", name: "Local Taxi", priceFrom: 399, highlights: ["City point-to-point rides", "Hourly city packages", "Near-me pickup search"] },
+  { slug: "hourly-rental", name: "Hourly Rental Taxi", priceFrom: 349, highlights: ["4hr / 8hr / 12hr slabs", "Ideal for errands & meetings", "Transparent extra hour rate"] },
+  { slug: "tour-packages", name: "Holiday Packages", priceFrom: 6999, highlights: ["Pilgrimage circuits", "Beach & hill getaways", "Tirupati & Rameswaram tours"] },
+  { slug: "acting-driver", name: "Acting Driver", priceFrom: 499, highlights: ["Driver for your car", "Hourly & outstation", "Verified chauffeurs"] }
 ];
 
 const ROUTES = [
-  { slug: "chennai-to-bangalore-cab", from: "chennai", to: "bengaluru", distance: "350 km", duration: "6–7 hours", sedanFrom: 4500, suvFrom: 6500 },
-  { slug: "chennai-to-pondicherry-cab", from: "chennai", to: "pondicherry", distance: "160 km", duration: "3–4 hours", sedanFrom: 2800, suvFrom: 3800 },
-  { slug: "chennai-to-tirupati-cab", from: "chennai", to: "tirupati", distance: "135 km", duration: "3–4 hours", sedanFrom: 3200, suvFrom: 4200 },
-  { slug: "chennai-to-coimbatore-cab", from: "chennai", to: "coimbatore", distance: "505 km", duration: "8–9 hours", sedanFrom: 6500, suvFrom: 8500 },
-  { slug: "chennai-to-madurai-cab", from: "chennai", to: "madurai", distance: "460 km", duration: "7–8 hours", sedanFrom: 6000, suvFrom: 8000 },
-  { slug: "chennai-to-rameswaram-cab", from: "chennai", to: "rameswaram", distance: "560 km", duration: "9–10 hours", sedanFrom: 7500, suvFrom: 9500 },
-  { slug: "bengaluru-to-mysore-cab", from: "bengaluru", to: "mysore", distance: "145 km", duration: "3 hours", sedanFrom: 2500, suvFrom: 3500 },
-  { slug: "bengaluru-to-chennai-cab", from: "bengaluru", to: "chennai", distance: "350 km", duration: "6–7 hours", sedanFrom: 4500, suvFrom: 6500 },
-  { slug: "bengaluru-to-hyderabad-cab", from: "bengaluru", to: "hyderabad", distance: "575 km", duration: "9–10 hours", sedanFrom: 7500, suvFrom: 9500 },
-  { slug: "hyderabad-to-bengaluru-cab", from: "hyderabad", to: "bengaluru", distance: "575 km", duration: "9–10 hours", sedanFrom: 7500, suvFrom: 9500 }
+  { slug: "chennai-to-bangalore-cab", from: "chennai", to: "bengaluru", distance: "350 km", duration: "6–7 hours", sedanFrom: 5499, suvFrom: 7499 },
+  { slug: "chennai-to-pondicherry-cab", from: "chennai", to: "pondicherry", distance: "160 km", duration: "3–4 hours", sedanFrom: 2899, suvFrom: 3799 },
+  { slug: "chennai-to-tirupati-cab", from: "chennai", to: "tirupati", distance: "135 km", duration: "3–4 hours", sedanFrom: 3299, suvFrom: 4299 },
+  { slug: "chennai-to-coimbatore-cab", from: "chennai", to: "coimbatore", distance: "505 km", duration: "8–9 hours", sedanFrom: 7499, suvFrom: 9999 },
+  { slug: "chennai-to-madurai-cab", from: "chennai", to: "madurai", distance: "460 km", duration: "7–8 hours", sedanFrom: 6999, suvFrom: 9299 },
+  { slug: "chennai-to-rameswaram-cab", from: "chennai", to: "rameswaram", distance: "560 km", duration: "9–10 hours", sedanFrom: 8499, suvFrom: 10999 },
+  { slug: "bengaluru-to-mysore-cab", from: "bengaluru", to: "mysore", distance: "145 km", duration: "3 hours", sedanFrom: 2499, suvFrom: 3499 },
+  { slug: "bengaluru-to-chennai-cab", from: "bengaluru", to: "chennai", distance: "350 km", duration: "6–7 hours", sedanFrom: 5499, suvFrom: 7499 },
+  { slug: "bengaluru-to-hyderabad-cab", from: "bengaluru", to: "hyderabad", distance: "575 km", duration: "9–10 hours", sedanFrom: 8499, suvFrom: 10999 },
+  { slug: "hyderabad-to-bengaluru-cab", from: "hyderabad", to: "bengaluru", distance: "575 km", duration: "9–10 hours", sedanFrom: 8499, suvFrom: 10999 }
 ];
 
 async function upsertServices() {

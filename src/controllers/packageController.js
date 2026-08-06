@@ -54,6 +54,7 @@ const packageCoreSchema = Joi.object({
   image: Joi.string().allow("").default(""),
   gallery: Joi.array().items(Joi.string()).max(3).default([]),
   city: Joi.string().allow("").default(""),
+  pricingOriginCity: Joi.string().allow("").default("Chennai"),
   location: Joi.string().allow("").default(""),
   tags: Joi.array().items(Joi.string()).default([]),
   category: Joi.string()
@@ -67,6 +68,20 @@ const packageCoreSchema = Joi.object({
         label: Joi.string().allow("").default(""),
         seats: Joi.number().integer().min(1).default(4),
         multiplier: Joi.number().min(0.5).max(3).default(1)
+      })
+    )
+    .default([]),
+  seoTitle: Joi.string().allow("").default(""),
+  seoDescription: Joi.string().allow("").default(""),
+  metaKeywords: Joi.string().allow("").default(""),
+  seo: Joi.string().allow("").default(""),
+  canonicalUrl: Joi.string().allow("").default(""),
+  schemaEnabled: Joi.boolean().default(true),
+  faq: Joi.array()
+    .items(
+      Joi.object({
+        question: Joi.string().allow("").default(""),
+        answer: Joi.string().allow("").default("")
       })
     )
     .default([]),
@@ -105,7 +120,12 @@ async function createPackage(req, res) {
     city: value.city
   });
   productFields.slug = await ensureUniqueSlug(Package, productFields.slug);
-  const payload = { ...value, ...productFields };
+  const { faq, ...coreValue } = value;
+  const payload = {
+    ...coreValue,
+    ...productFields,
+    faqs: Array.isArray(faq) ? faq : Array.isArray(value.faqs) ? value.faqs : []
+  };
   if (req.user?.role === "vendor_admin") {
     payload.vendorAdminPhone = req.user.mobileNumber;
     payload.vendor = vendorNameForUser(req.user) || payload.vendor;
@@ -138,7 +158,12 @@ async function updatePackage(req, res) {
     city: value.city || existing.city
   });
   productFields.slug = await ensureUniqueSlug(Package, productFields.slug, existing._id);
-  const nextValue = { ...value, ...productFields };
+  const { faq, ...coreValue } = value;
+  const nextValue = {
+    ...coreValue,
+    ...productFields,
+    faqs: Array.isArray(faq) ? faq : Array.isArray(value.faqs) ? value.faqs : []
+  };
   if (req.user?.role === "vendor_admin") {
     nextValue.vendorAdminPhone = req.user.mobileNumber;
     nextValue.vendor = vendorNameForUser(req.user) || nextValue.vendor;
