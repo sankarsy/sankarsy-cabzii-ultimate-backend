@@ -48,7 +48,8 @@ const settingsSchema = Joi.object({
       seoDescription: Joi.string().allow(""),
       seoKeywords: Joi.string().allow("")
     })
-  )
+  ),
+  callDriverTariff: Joi.object()
 }).min(1);
 
 async function getOrCreateSettingsDoc() {

@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const { Driver } = require("../models/Driver");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
-const { docMatchForVendor, listFilterForVendor, vendorNameForUser } = require("../utils/vendorAccess");
+const { docMatchForVendor, listFilterForVendor, applyAuthenticatedVendorOwnership } = require("../utils/vendorAccess");
 const {
   splitCatalogBody,
   normalizeCatalogProduct,
@@ -18,6 +18,12 @@ const {
 } = require("../utils/driverFarePackages");
 const { parseListQuery, buildDriverListFilter, paginatedFind, catalogListFilter, isCatalogAdmin } = require("../utils/listQuery");
 const { normalizeDriverForApi } = require("../utils/catalogNormalize");
+const { publicAvailabilityFilter } = require("../utils/bookingAvailability");
+const {
+  normalizeDriverPhone,
+  assertDriverPhoneNotVendorOrAdmin,
+  assertUniqueDriverPhone
+} = require("../utils/driverIdentity");
 
 const packageFareSchema = Joi.object({
   originalPrice: Joi.number().default(0),
@@ -47,6 +53,7 @@ const farePackageLabelsSchema = Joi.object({
 
 const driverCoreSchema = Joi.object({
   name: Joi.string().required(),
+  phone: Joi.string().allow("").optional(),
   vendor: Joi.string().allow("").default(""),
   type: Joi.string().allow("").default("local"),
   experience: Joi.string().default("0 Years"),
@@ -56,6 +63,12 @@ const driverCoreSchema = Joi.object({
   gallery: Joi.array().items(Joi.string()).max(3).default([]),
   city: Joi.string().allow("").default(""),
   location: Joi.string().allow("").default(""),
+  serviceAreas: Joi.array().items(Joi.string()).default([]),
+  licenseNumber: Joi.string().allow("").default(""),
+  licenseExpiry: Joi.string().allow("").default(""),
+  availabilityStatus: Joi.string()
+    .valid("available", "assigned", "on_trip", "offline", "inactive")
+    .default("available"),
   discountPercentage: Joi.number().default(0),
   languages: Joi.array().items(Joi.string()).default([]),
   supportedVehicles: Joi.array().items(Joi.string()).default([]),
@@ -69,6 +82,18 @@ const driverCoreSchema = Joi.object({
   status: Joi.string().valid("active", "inactive").default("active")
 }).concat(Joi.object(catalogJoiFields));
 
+async function applyDriverPhoneRules(req, value, existing = {}) {
+  const raw = Object.prototype.hasOwnProperty.call(value, "phone") ? value.phone : existing.phone;
+  const phone = normalizeDriverPhone(raw);
+  if (!existing._id && !phone) {
+    throw new HttpError(400, "Driver mobile number is required.");
+  }
+  const vendorPhone = existing.vendorAdminPhone || req.user?.mobileNumber || "";
+  assertDriverPhoneNotVendorOrAdmin(phone, vendorPhone);
+  await assertUniqueDriverPhone(phone, existing._id);
+  return phone;
+}
+
 function withDriverFareData(value, existing = {}) {
   return {
     ...value,
@@ -80,11 +105,23 @@ function withDriverFareData(value, existing = {}) {
 }
 
 async function listDrivers(req, res) {
+  if (!isCatalogAdmin(req)) {
+    return res.json({
+      success: true,
+      data: [],
+      meta: { total: 0, page: 1, totalPages: 0, limit: 0 }
+    });
+  }
   const base = catalogListFilter(req, listFilterForVendor(req));
   const pq = parseListQuery(req);
-  const filter = buildDriverListFilter(base, pq);
+  const filter = await publicAvailabilityFilter("driver", req, buildDriverListFilter(base, pq));
   const { data, meta } = await paginatedFind(Driver, filter, pq);
-  res.json({ success: true, data: data.map(normalizeDriverForApi), meta });
+  const includePhone = isCatalogAdmin(req);
+  res.json({
+    success: true,
+    data: data.map((row) => normalizeDriverForApi(row, { includePhone })),
+    meta
+  });
 }
 
 async function getDriverById(req, res) {
@@ -94,10 +131,10 @@ async function getDriverById(req, res) {
   const data = await Driver.findOne(match).lean();
   if (!data) throw new HttpError(404, "Driver not found");
   const isPublic = !isCatalogAdmin(req);
-  if (isPublic && (data.isDeleted || (data.status && data.status !== "active"))) {
+  if (isPublic) {
     throw new HttpError(404, "Driver not found");
   }
-  res.json({ success: true, data: normalizeDriverForApi(data) });
+  res.json({ success: true, data: normalizeDriverForApi(data, { includePhone: isCatalogAdmin(req) }) });
 }
 
 async function createDriver(req, res) {
@@ -111,11 +148,12 @@ async function createDriver(req, res) {
     city: value.city
   });
   productFields.slug = await ensureUniqueSlug(Driver, productFields.slug);
-  const payload = { ...withDriverFareData(value, {}), ...productFields };
-  if (req.user?.role === "vendor_admin") {
-    payload.vendorAdminPhone = req.user.mobileNumber;
-    payload.vendor = vendorNameForUser(req.user) || payload.vendor;
-  }
+  const payload = await applyAuthenticatedVendorOwnership(
+    req,
+    { ...withDriverFareData(value, {}), ...productFields }
+  );
+  payload.phone = await applyDriverPhoneRules(req, value, payload);
+  assertDriverPhoneNotVendorOrAdmin(payload.phone, payload.vendorAdminPhone || req.user?.mobileNumber);
   const data = await Driver.create(payload);
   await logAudit({
     req,
@@ -148,11 +186,13 @@ async function updateDriver(req, res) {
     city: mergedCore.city || existing.city
   });
   productFields.slug = await ensureUniqueSlug(Driver, productFields.slug, existing._id);
-  const nextValue = { ...withDriverFareData(mergedCore, existing), ...productFields };
-  if (req.user?.role === "vendor_admin") {
-    nextValue.vendorAdminPhone = req.user.mobileNumber;
-    nextValue.vendor = vendorNameForUser(req.user) || nextValue.vendor;
-  }
+  const nextValue = await applyAuthenticatedVendorOwnership(
+    req,
+    { ...withDriverFareData(mergedCore, existing), ...productFields },
+    existing
+  );
+  nextValue.phone = await applyDriverPhoneRules(req, value, existing);
+  assertDriverPhoneNotVendorOrAdmin(nextValue.phone, nextValue.vendorAdminPhone || req.user?.mobileNumber);
   const data = await Driver.findOneAndUpdate(match, { $set: nextValue }, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Driver not found");
   await logAudit({

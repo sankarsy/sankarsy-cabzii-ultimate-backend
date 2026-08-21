@@ -27,6 +27,13 @@ async function connectDb() {
   } catch (err) {
     console.warn("Driver auto-seed skipped:", err.message);
   }
+
+  try {
+    const { seedBusesIfEmpty } = require("../utils/seedBusesIfEmpty");
+    await seedBusesIfEmpty();
+  } catch (err) {
+    console.warn("Bus auto-seed skipped:", err.message);
+  }
 }
 
 module.exports = { connectDb };

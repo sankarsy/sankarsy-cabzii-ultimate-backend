@@ -460,26 +460,29 @@ async function enterpriseDashboard(req, res) {
 // AI content assistant (template-based, no external API)
 async function generateAiDraft(req, res) {
   requireSuperAdmin(req);
-  const { type, vars = {} } = req.body || {};
+  const { type, vars = {}, prompt = "" } = req.body || {};
   const templateKey = req.body.templateKey || (type === "route" ? "route-oneway" : "city-taxi");
   const template = await SeoTemplate.findOne({ key: templateKey, active: true });
+  const extra = String(prompt || "").trim();
   const seo = template ? buildSeoFromTemplate(template, vars) : {};
 
-  let body = "";
+  let body = extra ? `<p>${extra}</p>` : "";
   if (type === "city") {
-    body = `<p>Book reliable taxi and cab services in ${vars.City || vars.city || "your city"} with Cabzii. Airport transfers, local packages, and outstation trips with verified drivers and upfront fares.</p>`;
+    body += `<p>Book reliable taxi, bus and cab services in ${vars.City || vars.city || "Chennai"} with Cabzii. Airport transfers, local packages, outstation trips and bus tickets with verified partners and upfront fares.</p>`;
   } else if (type === "route") {
-    body = `<p>Travel from ${vars.FromCity || vars.fromCity} to ${vars.ToCity || vars.toCity} with comfortable sedans, SUVs and Innova. Transparent pricing and 24×7 support on cabzii.in.</p>`;
+    body += `<p>Travel from ${vars.FromCity || vars.fromCity || "Chennai"} to ${vars.ToCity || vars.toCity} with comfortable sedans, SUVs, Innova or bus. Transparent pricing and 24×7 support on cabzii.in.</p>`;
   } else if (type === "faq") {
     return res.json({
       success: true,
       data: {
-        question: `How do I book a cab in ${vars.City || "Chennai"}?`,
-        answer: "Enter pickup and drop on cabzii.in, choose your vehicle, and confirm with OTP-secure booking."
+        question: extra || `How do I book a cab in ${vars.City || "Chennai"}?`,
+        answer: extra
+          ? extra
+          : "Enter pickup and drop on cabzii.in, choose your vehicle, and confirm with OTP-secure booking."
       }
     });
   } else if (type === "blog") {
-    body = `<p>Planning a trip from ${vars.FromCity || "Chennai"}? Here’s a practical guide to booking cabs, comparing fares, and choosing the right vehicle on Cabzii.</p>`;
+    body += `<p>Planning a trip from ${vars.FromCity || "Chennai"}? Here’s a practical guide to booking cabs, buses, comparing fares, and choosing the right vehicle on Cabzii.</p>`;
   }
 
   res.json({
@@ -488,6 +491,7 @@ async function generateAiDraft(req, res) {
       seoTitle: seo.title,
       seoDescription: seo.description,
       keywords: seo.keywords,
+      prompt: extra,
       body,
       schemaJson: template?.schemaTemplate ? renderTemplate(template.schemaTemplate, vars) : ""
     }

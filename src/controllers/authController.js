@@ -10,12 +10,20 @@ const { HttpError } = require("../utils/httpError");
 const { normalizeMobileNumber } = require("../utils/mobile");
 const { vendorNameForUser } = require("../utils/vendorAccess");
 const { logAudit } = require("../services/auditService");
+const {
+  findActiveDriverByPhone,
+  assertDriverCanLogin,
+  assertNotPrivilegedDriverLogin,
+  driverSessionUser
+} = require("../utils/driverIdentity");
+
+const loginAsSchema = Joi.string().valid("customer", "partner", "driver").optional();
 
 const sendOtpSchema = Joi.object({
   phone: Joi.string().optional(),
   mobile: Joi.string().optional(),
   mobileNumber: Joi.string().optional(),
-  loginAs: Joi.string().valid("customer", "partner").optional()
+  loginAs: loginAsSchema
 }).or("phone", "mobile", "mobileNumber");
 
 const verifyOtpSchema = Joi.object({
@@ -23,7 +31,7 @@ const verifyOtpSchema = Joi.object({
   mobile: Joi.string().optional(),
   mobileNumber: Joi.string().optional(),
   otp: Joi.string().length(6).pattern(/^\d{6}$/).required(),
-  loginAs: Joi.string().valid("customer", "partner").optional()
+  loginAs: loginAsSchema
 }).or("phone", "mobile", "mobileNumber");
 
 const adminLoginSchema = Joi.object({
@@ -127,10 +135,20 @@ async function sendOtpController(req, res) {
   if (error) throw new HttpError(400, error.message);
 
   if (req.body.loginAs === "partner") {
-    throw new HttpError(400, "OTP login is for customers only. Partners should use password login.");
+    throw new HttpError(400, "OTP login is for customers and drivers. Partners should use password login.");
   }
 
   const mobileNumber = resolveMobile(req.body);
+
+  if (req.body.loginAs === "driver") {
+    assertNotPrivilegedDriverLogin(mobileNumber);
+    const existingUser = await findUserByMobile(mobileNumber);
+    if (existingUser?.role === "vendor_admin" || existingUser?.role === "super_admin") {
+      throw new HttpError(403, "This mobile is registered as a partner or admin. Use partner login.");
+    }
+    const driver = await findActiveDriverByPhone(mobileNumber);
+    assertDriverCanLogin(driver);
+  }
 
   console.log("Using OTP mode:", env.otpMode);
   console.log("Has Fast2SMS key:", !!env.fast2smsApiKey);
@@ -214,7 +232,35 @@ async function verifyOtpController(req, res) {
   await latestOtp.save();
 
   if (value.loginAs === "partner") {
-    throw new HttpError(400, "OTP login is for customers only. Partners should use password login.");
+    throw new HttpError(400, "OTP login is for customers and drivers. Partners should use password login.");
+  }
+
+  if (value.loginAs === "driver") {
+    assertNotPrivilegedDriverLogin(mobileNumber);
+    const driver = await findActiveDriverByPhone(mobileNumber);
+    assertDriverCanLogin(driver);
+
+    let user = await findUserByMobile(mobileNumber);
+    if (!user) {
+      user = await User.create({ mobileNumber, role: "driver", name: driver.name || "" });
+    } else if (user.role === "vendor_admin" || user.role === "super_admin") {
+      throw new HttpError(403, "This mobile is registered as a partner or admin. Use partner login.");
+    }
+
+    user.lastLoginAt = new Date();
+    user.loginCount = Number(user.loginCount || 0) + 1;
+    await user.save();
+
+    const sessionRole = "driver";
+    const accessToken = signAccessToken(user, sessionRole, { driverId: driver._id });
+    return res.json({
+      success: true,
+      message: "Driver logged in successfully.",
+      data: {
+        token: accessToken,
+        user: driverSessionUser(user, driver)
+      }
+    });
   }
 
   let user = await findUserByMobile(mobileNumber);
@@ -343,6 +389,12 @@ async function adminLoginController(req, res) {
 }
 
 async function meController(req, res) {
+  if (req.user?.role === "driver" && req.driver) {
+    return res.json({
+      success: true,
+      data: driverSessionUser(req.user, req.driver)
+    });
+  }
   let vendorName = "";
   if (req.user?.role === "vendor_admin") {
     vendorName = await vendorNameForMobile(req.user.mobileNumber);

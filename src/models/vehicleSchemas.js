@@ -9,7 +9,10 @@ const vehiclePackageSchema = new mongoose.Schema(
       default: "custom",
       enum: [
         "local_4hr",
+        "local_5hr",
         "local_8hr",
+        "local_10hr",
+        "local_15hr",
         "airport_pickup",
         "airport_drop",
         "one_way",

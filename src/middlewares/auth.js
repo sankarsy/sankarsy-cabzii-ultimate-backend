@@ -3,6 +3,7 @@
 const jwt = require("jsonwebtoken");
 
 const { User } = require("../models/User");
+const { Driver } = require("../models/Driver");
 
 const { env } = require("../config/env");
 
@@ -10,6 +11,7 @@ const { HttpError } = require("../utils/httpError");
 
 const { asyncHandler } = require("../utils/asyncHandler");
 const { resolveEffectiveRole } = require("../utils/adminAccess");
+const { assertDriverCanLogin } = require("../utils/driverIdentity");
 
 /**
  * Extract JWT token from Authorization header
@@ -82,6 +84,23 @@ const requireAuth = asyncHandler(
       mobileNumber
     };
 
+    if (role === "driver") {
+      const driverId = payload.driverId;
+      const driver = driverId
+        ? await Driver.findById(driverId).lean()
+        : await Driver.findOne({ phone: mobileNumber, isDeleted: { $ne: true } }).lean();
+      assertDriverCanLogin(driver && !driver.isDeleted ? driver : null);
+      if (driver.phone && String(driver.phone) !== String(mobileNumber)) {
+        throw new HttpError(403, "Driver session does not match this account.");
+      }
+      req.driver = {
+        _id: driver._id,
+        phone: driver.phone,
+        name: driver.name || ""
+      };
+      req.user.driverId = driver._id;
+    }
+
     req.token = token;
 
     next();
@@ -112,6 +131,18 @@ const optionalAuth = asyncHandler(
         const jwtRole = payload.role || user.role;
         const role = resolveEffectiveRole(mobileNumber, jwtRole, user.role);
         req.user = { ...user, role, mobileNumber };
+        if (role === "driver") {
+          const driverId = payload.driverId;
+          const driver = driverId
+            ? await Driver.findById(driverId).lean()
+            : await Driver.findOne({ phone: mobileNumber, isDeleted: { $ne: true } }).lean();
+          if (driver && !driver.isDeleted && (!driver.status || driver.status === "active")) {
+            req.driver = { _id: driver._id, phone: driver.phone, name: driver.name || "" };
+            req.user.driverId = driver._id;
+          } else {
+            req.user = null;
+          }
+        }
       } else {
         req.user = null;
       }

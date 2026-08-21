@@ -13,5 +13,6 @@ router.put("/:id", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.up
 router.post("/:id/notes", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.addCrmNote));
 router.post("/:id/call-logs", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.addCallLog));
 router.post("/import-chat-leads", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.importChatLeads));
+router.post("/import-bookings", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.importBookings));
 
 module.exports = router;

@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const { Cab } = require("../models/Cab");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
-const { docMatchForVendor, listFilterForVendor, vendorNameForUser } = require("../utils/vendorAccess");
+const { docMatchForVendor, listFilterForVendor, applyAuthenticatedVendorOwnership } = require("../utils/vendorAccess");
 const { catalogLookupQuery } = require("../utils/catalogProductFields");
 const { mergeFarePackages } = require("../utils/cabFarePackages");
 const {
@@ -16,11 +16,12 @@ const {
 } = require("../utils/listQuery");
 const { normalizeCabForApi } = require("../utils/catalogNormalize");
 const { finalizeCabPayload } = require("../utils/vehiclePrepare");
+const { publicAvailabilityFilter } = require("../utils/bookingAvailability");
 
 async function listCabs(req, res) {
   const base = catalogListFilter(req, listFilterForVendor(req));
   const pq = parseListQuery(req);
-  const filter = buildCabListFilter(base, pq);
+  const filter = await publicAvailabilityFilter("cab", req, buildCabListFilter(base, pq));
   const sort = cabSortClause(pq.sort);
   const { data, meta } = await paginatedFind(Cab, filter, pq, sort);
   res.json({ success: true, data: data.map(normalizeCabForApi), meta });
@@ -45,11 +46,10 @@ async function getCabById(req, res) {
 }
 
 async function createCab(req, res) {
-  const payload = await finalizeCabPayload(req.body, {}, null);
-  if (req.user?.role === "vendor_admin") {
-    payload.vendorAdminPhone = req.user.mobileNumber;
-    payload.vendor = vendorNameForUser(req.user) || payload.vendor;
-  }
+  const payload = await applyAuthenticatedVendorOwnership(
+    req,
+    await finalizeCabPayload(req.body, {}, null)
+  );
   const data = await Cab.create(payload);
   await logAudit({
     req,
@@ -74,11 +74,11 @@ async function updateCab(req, res) {
     body.farePackages = mergeFarePackages(existing.farePackages, body.farePackages);
   }
 
-  const payload = await finalizeCabPayload(body, existing, existing._id);
-  if (req.user?.role === "vendor_admin") {
-    payload.vendorAdminPhone = req.user.mobileNumber;
-    payload.vendor = vendorNameForUser(req.user) || payload.vendor;
-  }
+  const payload = await applyAuthenticatedVendorOwnership(
+    req,
+    await finalizeCabPayload(body, existing, existing._id),
+    existing
+  );
   const data = await Cab.findOneAndUpdate(match, { $set: payload }, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Cab not found");
   await logAudit({
@@ -130,11 +130,11 @@ async function duplicateCab(req, res) {
   };
   clone.status = "inactive";
 
-  const payload = await finalizeCabPayload(clone, {}, null);
-  if (req.user?.role === "vendor_admin") {
-    payload.vendorAdminPhone = req.user.mobileNumber;
-    payload.vendor = vendorNameForUser(req.user) || payload.vendor;
-  }
+  const payload = await applyAuthenticatedVendorOwnership(
+    req,
+    await finalizeCabPayload(clone, {}, null),
+    source
+  );
   const data = await Cab.create(payload);
   await logAudit({
     req,

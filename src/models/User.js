@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
     mobileNumber: { type: String, required: true, unique: true, index: true },
     role: {
       type: String,
-      enum: ["customer", "vendor_admin", "super_admin"],
+      enum: ["customer", "driver", "vendor_admin", "super_admin"],
       default: "customer"
     },
     name: { type: String, trim: true, default: "" },

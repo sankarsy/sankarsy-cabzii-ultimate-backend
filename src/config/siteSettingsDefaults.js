@@ -1,4 +1,6 @@
 /** Default site content — used when DB is empty and as merge base for partial updates. */
+const { DEFAULT_CALL_DRIVER_TARIFF, mergeCallDriverTariff } = require("./callDriverTariff");
+
 const DEFAULT_SITE_SETTINGS = {
   siteName: "cabzii.in",
   brandColor: "#0056D2",
@@ -13,16 +15,18 @@ const DEFAULT_SITE_SETTINGS = {
   navbar: [
     { label: "Home", href: "/", visible: true, sortOrder: 1 },
     { label: "Cabs", href: "/cabs", visible: true, sortOrder: 2 },
-    { label: "Drivers", href: "/drivers", visible: true, sortOrder: 3 },
-    { label: "Holidays", href: "/holidays", visible: true, sortOrder: 4 },
-    { label: "Hotels", href: "/hotels", visible: true, sortOrder: 5 },
-    { label: "Flights", href: "/flights", visible: true, sortOrder: 6 }
+    { label: "Buses", href: "/buses", visible: true, sortOrder: 3 },
+    { label: "Call Driver", href: "/call-driver", visible: true, sortOrder: 4 },
+    { label: "Holidays", href: "/holidays", visible: true, sortOrder: 5 },
+    { label: "Hotels", href: "/hotels", visible: false, sortOrder: 6 },
+    { label: "Flights", href: "/flights", visible: false, sortOrder: 7 }
   ],
   footerQuickLinks: [
     { label: "Home", href: "/" },
     { label: "Cabs", href: "/cabs" },
+    { label: "Buses", href: "/buses" },
     { label: "Tours", href: "/packages" },
-    { label: "Drivers", href: "/drivers" },
+    { label: "Call Driver", href: "/call-driver" },
     { label: "Blog", href: "/blogs" },
     { label: "Reviews", href: "/testimonials" },
     { label: "Locations", href: "/locations" }
@@ -86,7 +90,7 @@ const DEFAULT_SITE_SETTINGS = {
   ],
   homeSections: [
     { key: "cabs", enabled: true, eyebrow: "Premium Fleet", title: "Featured Cabs", subtitle: "Compare fares and book instantly.", limit: 6, sortOrder: 1 },
-    { key: "drivers", enabled: true, eyebrow: "Professional Chauffeurs", title: "Acting Drivers", subtitle: "Hire verified drivers for your car.", limit: 3, sortOrder: 2 },
+    { key: "drivers", enabled: true, eyebrow: "Call Driver", title: "Need a Driver for Your Own Car?", subtitle: "Book a trusted Cabzii Call Driver in Chennai and outstation.", limit: 6, sortOrder: 2, viewAllHref: "/call-driver" },
     { key: "tours", enabled: true, eyebrow: "Explore India", title: "Tour Packages", subtitle: "Weekend getaways and group tours.", limit: 6, sortOrder: 3 },
     { key: "testimonials", enabled: true, eyebrow: "Happy Travelers", title: "Customer Testimonials", subtitle: "Real feedback from riders who booked with Cabzii.", limit: 3, sortOrder: 4, viewAllHref: "/testimonials" },
     { key: "blogs", enabled: true, eyebrow: "Latest Insights", title: "Travel Blog", subtitle: "Quick reads to help you book smarter and travel better.", limit: 3, sortOrder: 5, viewAllHref: "/blogs" }
@@ -101,7 +105,8 @@ const DEFAULT_SITE_SETTINGS = {
     { id: "adventure", label: "Adventure", image: "", desc: "Safari trails, trekking bases & offbeat drives for thrill seekers." },
     { id: "family", label: "Family", image: "", desc: "Kid-friendly itineraries, spacious cabs & relaxed sightseeing for all ages." }
   ],
-  pageSeo: {}
+  pageSeo: {},
+  callDriverTariff: DEFAULT_CALL_DRIVER_TARIFF
 };
 
 function deepMerge(base, patch) {
@@ -119,7 +124,9 @@ function deepMerge(base, patch) {
 }
 
 function mergeSiteSettings(stored) {
-  return deepMerge(DEFAULT_SITE_SETTINGS, stored || {});
+  const merged = deepMerge(DEFAULT_SITE_SETTINGS, stored || {});
+  merged.callDriverTariff = mergeCallDriverTariff(merged.callDriverTariff);
+  return merged;
 }
 
 module.exports = { DEFAULT_SITE_SETTINGS, mergeSiteSettings, deepMerge };

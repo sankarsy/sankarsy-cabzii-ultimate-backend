@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const { Package } = require("../models/Package");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
-const { docMatchForVendor, listFilterForVendor, vendorNameForUser } = require("../utils/vendorAccess");
+const { docMatchForVendor, listFilterForVendor, applyAuthenticatedVendorOwnership } = require("../utils/vendorAccess");
 const {
   splitCatalogBody,
   normalizeCatalogProduct,
@@ -121,15 +121,11 @@ async function createPackage(req, res) {
   });
   productFields.slug = await ensureUniqueSlug(Package, productFields.slug);
   const { faq, ...coreValue } = value;
-  const payload = {
+  const payload = await applyAuthenticatedVendorOwnership(req, {
     ...coreValue,
     ...productFields,
     faqs: Array.isArray(faq) ? faq : Array.isArray(value.faqs) ? value.faqs : []
-  };
-  if (req.user?.role === "vendor_admin") {
-    payload.vendorAdminPhone = req.user.mobileNumber;
-    payload.vendor = vendorNameForUser(req.user) || payload.vendor;
-  }
+  });
   const data = await Package.create(payload);
   await logAudit({
     req,
@@ -159,15 +155,15 @@ async function updatePackage(req, res) {
   });
   productFields.slug = await ensureUniqueSlug(Package, productFields.slug, existing._id);
   const { faq, ...coreValue } = value;
-  const nextValue = {
-    ...coreValue,
-    ...productFields,
-    faqs: Array.isArray(faq) ? faq : Array.isArray(value.faqs) ? value.faqs : []
-  };
-  if (req.user?.role === "vendor_admin") {
-    nextValue.vendorAdminPhone = req.user.mobileNumber;
-    nextValue.vendor = vendorNameForUser(req.user) || nextValue.vendor;
-  }
+  const nextValue = await applyAuthenticatedVendorOwnership(
+    req,
+    {
+      ...coreValue,
+      ...productFields,
+      faqs: Array.isArray(faq) ? faq : Array.isArray(value.faqs) ? value.faqs : []
+    },
+    existing
+  );
   const data = await Package.findOneAndUpdate(match, { $set: nextValue }, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Package not found");
   await logAudit({
@@ -189,10 +185,20 @@ async function duplicatePackage(req, res) {
   const source = await Package.findOne(match).lean();
   if (!source) throw new HttpError(404, "Package not found");
 
-  const { _id, createdAt, updatedAt, __v, ...copy } = source;
-  copy.name = `${source.name} (Copy)`;
-  copy.status = "inactive";
-  copy.slug = await ensureUniqueSlug(Package, source.slug || "");
+  const copy = await applyAuthenticatedVendorOwnership(req, {
+    ...source,
+    _id: undefined,
+    createdAt: undefined,
+    updatedAt: undefined,
+    __v: undefined,
+    name: `${source.name} (Copy)`,
+    status: "inactive",
+    slug: await ensureUniqueSlug(Package, source.slug || "")
+  }, source);
+  delete copy._id;
+  delete copy.createdAt;
+  delete copy.updatedAt;
+  delete copy.__v;
   const data = await Package.create(copy);
   await logAudit({
     req,

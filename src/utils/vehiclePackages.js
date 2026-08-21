@@ -4,7 +4,10 @@ const { buildDefaultFarePackages, PACKAGE_KEYS } = require("./cabFarePackages");
 
 const TYPE_TO_LEGACY = {
   local_4hr: "local4hr",
+  local_5hr: null,
   local_8hr: "local8hr",
+  local_10hr: null,
+  local_15hr: null,
   one_way: "outstationOneWay",
   round_trip: "outstationRoundTrip",
   airport_pickup: "local4hr",
@@ -144,6 +147,29 @@ function lowestPackagePrice(packages = []) {
   return prices.length ? Math.min(...prices) : 0;
 }
 
+function isActivePricedPackage(row) {
+  return Boolean(row) && row.active !== false && num(row.price) > 0;
+}
+
+function pickLocalPackageByHours(packages = [], hours, nowHours) {
+  const h = num(hours, num(nowHours, 8));
+  const local = (packages || []).filter(
+    (p) =>
+      isActivePricedPackage(p) &&
+      (String(p.packageType || "").startsWith("local") ||
+        p.packageType === "hourly" ||
+        p.packageType === "custom") &&
+      num(p.includedHours) > 0
+  );
+  const byHours = (want) => local.find((p) => num(p.includedHours) === want);
+  if (h > 12 && byHours(15)) return byHours(15);
+  if (h > 7 && byHours(10)) return byHours(10);
+  if (h > 4 && byHours(8)) return byHours(8);
+  if (h <= 4 && byHours(4)) return byHours(4);
+  if (h <= 5 && byHours(5)) return byHours(5);
+  return byHours(8) || byHours(10) || byHours(5) || byHours(4) || byHours(15) || local[0] || null;
+}
+
 module.exports = {
   TYPE_TO_LEGACY,
   DEFAULT_LABELS,
@@ -153,5 +179,7 @@ module.exports = {
   resolveVehiclePackages,
   syncVehiclePricing,
   lowestPackagePrice,
+  isActivePricedPackage,
+  pickLocalPackageByHours,
   PACKAGE_KEYS
 };

@@ -6,6 +6,8 @@ const { Package } = require("../models/Package");
 const { Vendor } = require("../models/Vendor");
 const { SiteSettings } = require("../models/SiteSettings");
 const { mergeSiteSettings } = require("../config/siteSettingsDefaults");
+const { sanitizeLatestLocation } = require("./driverGps");
+const { TRACKING_STATES, trackingDisplayState } = require("./customerTracking");
 
 function normalizeContact(input = {}) {
   return {
@@ -90,6 +92,9 @@ function sanitizeBookingForViewer(booking, { isAdmin = false } = {}) {
     doc.vendorContact = undefined;
     delete doc.vendorContact;
   }
+  if (!isAdmin) {
+    delete doc.latestLocation;
+  }
   return doc;
 }
 
@@ -101,7 +106,18 @@ async function enrichBookingForDisplay(booking, { isAdmin = false } = {}) {
   if (needsContact) {
     doc.vendorContact = await resolveVendorContactForBooking(doc);
   }
-  return sanitizeBookingForViewer(doc, { isAdmin });
+  const sanitized = sanitizeBookingForViewer(doc, { isAdmin });
+  if (isAdmin) {
+    const tracking = sanitizeLatestLocation(doc.latestLocation);
+    const state = trackingDisplayState(doc);
+    if (state === TRACKING_STATES.FINISHED) {
+      tracking.freshness = TRACKING_STATES.FINISHED;
+    } else if (String(doc.status || "") === "cancelled" && tracking.freshness === "live") {
+      tracking.freshness = "stale";
+    }
+    sanitized.tracking = tracking;
+  }
+  return sanitized;
 }
 
 module.exports = {

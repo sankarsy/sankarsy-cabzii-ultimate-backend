@@ -5,6 +5,7 @@ const {
   createBus,
   updateBus,
   deleteBus,
+  duplicateBus,
   importSampleBuses
 } = require("../controllers/busController");
 const { asyncHandler } = require("../utils/asyncHandler");
@@ -15,6 +16,7 @@ const router = express.Router();
 router.get("/", optionalAuth, asyncHandler(listBuses));
 router.post("/import-sample", requireAuth, requireRole("super_admin", "vendor_admin"), asyncHandler(importSampleBuses));
 router.post("/", requireAuth, requireRole("super_admin", "vendor_admin"), asyncHandler(createBus));
+router.post("/:id/duplicate", requireAuth, requireRole("super_admin", "vendor_admin"), asyncHandler(duplicateBus));
 router.get("/:id", optionalAuth, asyncHandler(getBusById));
 router.put("/:id", requireAuth, requireRole("super_admin", "vendor_admin"), asyncHandler(updateBus));
 router.delete("/:id", requireAuth, requireRole("super_admin", "vendor_admin"), asyncHandler(deleteBus));

@@ -6,6 +6,8 @@ const { vehicleEnterpriseSeoSchema, vehicleFaqSchema } = require("./vehicleSchem
 const driverSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
+    /** Driver's own 10-digit mobile. Not the vendor contact number. Empty on historical catalog rows. */
+    phone: { type: String, trim: true, default: "" },
     vendor: { type: String, default: "" },
     vendorAdminPhone: { type: String, default: "" },
     type: { type: String, default: "local" },
@@ -18,6 +20,15 @@ const driverSchema = new mongoose.Schema(
     gallery: { type: [String], default: [] },
     city: { type: String, default: "", trim: true, index: true },
     location: { type: String, default: "", trim: true },
+    serviceAreas: { type: [String], default: [] },
+    licenseNumber: { type: String, default: "", trim: true },
+    licenseExpiry: { type: String, default: "", trim: true },
+    availabilityStatus: {
+      type: String,
+      enum: ["available", "assigned", "on_trip", "offline", "inactive"],
+      default: "available",
+      index: true
+    },
     discountPercentage: { type: Number, default: 0, min: 0, max: 99 },
     languages: { type: [String], default: [] },
     supportedVehicles: { type: [String], default: [] },
@@ -41,6 +52,11 @@ const driverSchema = new mongoose.Schema(
     isDeleted: { type: Boolean, default: false, index: true }
   },
   { timestamps: true }
+);
+
+driverSchema.index(
+  { phone: 1 },
+  { unique: true, partialFilterExpression: { phone: { $type: "string", $gt: "" } } }
 );
 
 const Driver = mongoose.model("Driver", driverSchema);

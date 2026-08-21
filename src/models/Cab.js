@@ -57,6 +57,7 @@ const cabSchema = new mongoose.Schema(
     hourlyRate: { type: Number, default: 0, min: 0 },
     dayRate: { type: Number, default: 0, min: 0 },
     extraHourRate: { type: Number, default: 0, min: 0 },
+    driverAllowance: { type: Number, default: 0, min: 0 },
     originalPrice: { type: Number, default: 0, min: 0 },
     discountPercentage: { type: Number, default: 0, min: 0, max: 100 },
     rating: { type: Number, min: 0, max: 5 },

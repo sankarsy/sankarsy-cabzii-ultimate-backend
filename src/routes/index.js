@@ -4,6 +4,7 @@ const cabRoutes = require("./cabRoutes");
 const packageRoutes = require("./packageRoutes");
 const driverRoutes = require("./driverRoutes");
 const busRoutes = require("./busRoutes");
+const driverOpsRoutes = require("./driverOpsRoutes");
 const bookingRoutes = require("./bookingRoutes");
 const auditRoutes = require("./auditRoutes");
 const uploadRoutes = require("./uploadRoutes");
@@ -23,6 +24,7 @@ const seoMenuRoutes = require("./seoMenuRoutes");
 const chatLeadRoutes = require("./chatLeadRoutes");
 const crmRoutes = require("./crmRoutes");
 const enterpriseRoutes = require("./enterpriseRoutes");
+const callDriverRoutes = require("./callDriverRoutes");
 
 const router = express.Router();
 
@@ -34,7 +36,9 @@ router.use("/auth", authRoutes);
 router.use("/cabs", cabRoutes);
 router.use("/packages", packageRoutes);
 router.use("/drivers", driverRoutes);
+router.use("/call-driver", callDriverRoutes);
 router.use("/buses", busRoutes);
+router.use("/driver", driverOpsRoutes);
 router.use("/bookings", bookingRoutes);
 router.use("/audit-logs", auditRoutes);
 router.use("/upload", uploadRoutes);

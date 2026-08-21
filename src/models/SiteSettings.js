@@ -40,7 +40,8 @@ const siteSettingsSchema = new mongoose.Schema(
     whatsappFab: { type: mongoose.Schema.Types.Mixed, default: () => DEFAULT_SITE_SETTINGS.whatsappFab },
     pageSeo: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
     homepageBuilder: { type: mongoose.Schema.Types.Mixed, default: () => ({ blocks: [], version: 1 }) },
-    vendorModuleAccess: { type: mongoose.Schema.Types.Mixed, default: () => ({}) }
+    vendorModuleAccess: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    callDriverTariff: { type: mongoose.Schema.Types.Mixed, default: () => ({}) }
   },
   { timestamps: true }
 );

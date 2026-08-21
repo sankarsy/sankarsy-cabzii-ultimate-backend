@@ -42,6 +42,12 @@ async function listCities(req, res) {
   const activeOnly = req.query.active !== "0" && req.query.active !== "false";
   const filter = activeOnly ? { isActive: true } : {};
   const data = await City.find(filter).sort({ sortOrder: 1, name: 1 }).lean();
+  data.sort((a, b) => {
+    const ac = String(a.name || "").toLowerCase() === "chennai" ? 0 : 1;
+    const bc = String(b.name || "").toLowerCase() === "chennai" ? 0 : 1;
+    if (ac !== bc) return ac - bc;
+    return (a.sortOrder || 0) - (b.sortOrder || 0) || String(a.name).localeCompare(String(b.name));
+  });
   res.json({ success: true, data });
 }
 

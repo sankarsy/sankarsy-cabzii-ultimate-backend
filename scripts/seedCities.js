@@ -39,9 +39,9 @@ const TAMIL_NADU_CITIES = [
 ];
 
 const OTHER_CITIES = [
-  { name: "Bengaluru", state: "Karnataka", sortOrder: 1 },
-  { name: "Mumbai", state: "Maharashtra", sortOrder: 2 },
-  { name: "Hyderabad", state: "Telangana", sortOrder: 3 }
+  { name: "Bengaluru", state: "Karnataka", sortOrder: 200 },
+  { name: "Mumbai", state: "Maharashtra", sortOrder: 201 },
+  { name: "Hyderabad", state: "Telangana", sortOrder: 202 }
 ];
 
 async function run() {
@@ -53,8 +53,8 @@ async function run() {
   for (const name of TAMIL_NADU_CITIES) {
     order += 1;
     await City.findOneAndUpdate(
-      { name, state: "Tamil Nadu" },
-      { $set: { name, state: "Tamil Nadu", sortOrder: order, isActive: true } },
+      { name, state: name === "Tirupati" ? "Andhra Pradesh" : "Tamil Nadu" },
+      { $set: { name, state: name === "Tirupati" ? "Andhra Pradesh" : "Tamil Nadu", sortOrder: name === "Chennai" ? 0 : order, isActive: true } },
       { upsert: true, new: true }
     );
   }

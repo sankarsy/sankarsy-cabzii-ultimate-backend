@@ -170,7 +170,7 @@ function normalizeCabForApi(doc) {
   };
 }
 
-function normalizeDriverForApi(doc) {
+function normalizeDriverForApi(doc, { includePhone = false } = {}) {
   if (!doc) return doc;
   const id = doc._id ?? doc.id;
   const base = {
@@ -182,6 +182,7 @@ function normalizeDriverForApi(doc) {
     city: doc.city || inferCity(doc),
     status: doc.status || "active"
   };
+  if (!includePhone) delete base.phone;
 
   if (isLegacyDriver(doc)) {
     const pricing = {

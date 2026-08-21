@@ -132,6 +132,7 @@ const cabCoreSchema = Joi.object({
   hourlyRate: Joi.number().min(0).default(0),
   dayRate: Joi.number().min(0).default(0),
   extraHourRate: Joi.number().min(0).default(0),
+  driverAllowance: Joi.number().min(0).default(0),
   originalPrice: Joi.number().min(0).default(0),
   discountPercentage: Joi.number().min(0).max(100).default(0),
   rating: Joi.number().min(0).max(5).optional(),

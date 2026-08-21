@@ -7,6 +7,8 @@
     "dev": "nodemon src/server.js",
     "start": "nodemon src/server.js",
     "prod": "node src/server.js",
+    "test": "node --test src/utils/*.test.js",
+    "ownership:dry-run": "node scripts/ownershipDryRun.js",
     "seed": "node scripts/seedSampleData.js",
     "seed:drivers": "node scripts/seedDriversOnly.js",
     "seed:packages": "node scripts/seedPackagesOnly.js",
@@ -15,7 +17,8 @@
     "seed:cities": "node scripts/seedCities.js",
     "seed:locations": "node scripts/seedLocations.js",
     "migrate:cab-packages": "node scripts/migrateCabFarePackages.js",
-    "migrate:driver-packages": "node scripts/migrateDriverFarePackages.js"
+    "migrate:driver-packages": "node scripts/migrateDriverFarePackages.js",
+    "migrate:cab-tariff": "node scripts/applyCabziiTariff.js"
   },
   "keywords": [
     "cabzii",

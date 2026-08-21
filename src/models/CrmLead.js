@@ -30,7 +30,17 @@ const crmLeadSchema = new mongoose.Schema(
       index: true
     },
     route: { type: String, default: "", trim: true },
+    productType: {
+      type: String,
+      enum: ["cab", "bus", "driver", "tour", "other"],
+      default: "cab",
+      index: true
+    },
     vehicleType: { type: String, default: "", trim: true },
+    operator: { type: String, default: "", trim: true },
+    seats: { type: String, default: "", trim: true },
+    boardingPoint: { type: String, default: "", trim: true },
+    droppingPoint: { type: String, default: "", trim: true },
     estimatedFare: { type: Number, default: 0, min: 0 },
     assignedTo: { type: String, default: "", trim: true },
     followUpAt: { type: Date, default: null },
@@ -38,6 +48,7 @@ const crmLeadSchema = new mongoose.Schema(
     notes: { type: [noteSchema], default: [] },
     callLogs: { type: [callLogSchema], default: [] },
     chatLeadId: { type: mongoose.Schema.Types.ObjectId, ref: "ChatLead", default: null },
+    bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null },
     repeatCustomer: { type: Boolean, default: false }
   },
   { timestamps: true }
@@ -45,6 +56,8 @@ const crmLeadSchema = new mongoose.Schema(
 
 crmLeadSchema.index({ mobile: 1, createdAt: -1 });
 crmLeadSchema.index({ stage: 1, followUpAt: 1 });
+crmLeadSchema.index({ productType: 1, createdAt: -1 });
+crmLeadSchema.index({ bookingId: 1 }, { sparse: true });
 
 const CrmLead = mongoose.model("CrmLead", crmLeadSchema);
 
