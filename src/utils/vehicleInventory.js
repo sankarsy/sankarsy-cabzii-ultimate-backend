@@ -84,9 +84,9 @@ function sanitizeInventoryPayload(req, payload, existing = null) {
     throw new HttpError(403, "Vendors cannot set that availability.");
   }
 
-  if (Array.isArray(next.vehicleDocuments) && Array.isArray(existing?.vehicleDocuments)) {
+  if (Array.isArray(next.vehicleDocuments)) {
     const prevByUrl = new Map(
-      existing.vehicleDocuments.map((d) => [String(d.url || ""), d.status || "pending"])
+      (existing?.vehicleDocuments || []).map((d) => [String(d.url || ""), d.status || "pending"])
     );
     next.vehicleDocuments = next.vehicleDocuments.map((doc) => ({
       ...doc,

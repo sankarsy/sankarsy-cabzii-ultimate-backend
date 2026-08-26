@@ -55,6 +55,16 @@ describe("vehicleInventory", () => {
     assert.equal(next.availabilityStatus, "blocked");
   });
 
+  it("does not let a vendor self-verify documents on create", () => {
+    const req = { user: { role: "vendor_admin" } };
+    const next = sanitizeInventoryPayload(
+      req,
+      { vehicleDocuments: [{ docType: "rc", url: "/uploads/rc.png", status: "verified" }] },
+      null
+    );
+    assert.equal(next.vehicleDocuments[0].status, "pending");
+  });
+
   it("only active status is public catalog", () => {
     assert.equal(isPublicVehicleStatus("active"), true);
     assert.equal(isPublicVehicleStatus("draft"), false);
