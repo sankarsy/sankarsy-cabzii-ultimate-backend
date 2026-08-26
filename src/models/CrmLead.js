@@ -49,7 +49,22 @@ const crmLeadSchema = new mongoose.Schema(
     callLogs: { type: [callLogSchema], default: [] },
     chatLeadId: { type: mongoose.Schema.Types.ObjectId, ref: "ChatLead", default: null },
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null },
-    repeatCustomer: { type: Boolean, default: false }
+    repeatCustomer: { type: Boolean, default: false },
+    quoteRef: { type: String, trim: true, default: "", index: true },
+    sourcePage: { type: String, trim: true, default: "" },
+    ctaLocation: { type: String, trim: true, default: "" },
+    utmSource: { type: String, trim: true, default: "" },
+    utmMedium: { type: String, trim: true, default: "" },
+    utmCampaign: { type: String, trim: true, default: "" },
+    vehicleId: { type: String, trim: true, default: "" },
+    vehicleName: { type: String, trim: true, default: "" },
+    travelDate: { type: String, trim: true, default: "" },
+    pickupTime: { type: String, trim: true, default: "" },
+    passengerCount: { type: String, trim: true, default: "" },
+    distanceKm: { type: Number, default: 0, min: 0 },
+    tripType: { type: String, trim: true, default: "" },
+    packageLabel: { type: String, trim: true, default: "" },
+    vendorAdminPhone: { type: String, trim: true, default: "", index: true }
   },
   { timestamps: true }
 );

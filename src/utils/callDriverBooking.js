@@ -16,7 +16,7 @@ const CALL_DRIVER_OPS_STATUSES = [
 ];
 
 const CALL_DRIVER_LABELS = {
-  local: "Local Chennai Call Driver",
+  local: "Local Call Driver",
   outstation: "Outstation Call Driver",
   airport: "Airport Call Driver",
   school: "Monthly / School Driver",

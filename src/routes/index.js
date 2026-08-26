@@ -25,6 +25,8 @@ const chatLeadRoutes = require("./chatLeadRoutes");
 const crmRoutes = require("./crmRoutes");
 const enterpriseRoutes = require("./enterpriseRoutes");
 const callDriverRoutes = require("./callDriverRoutes");
+const offerRoutes = require("./offerRoutes");
+const quoteLeadRoutes = require("./quoteLeadRoutes");
 
 const router = express.Router();
 
@@ -58,5 +60,7 @@ router.use("/seo-menu", seoMenuRoutes);
 router.use("/chat-leads", chatLeadRoutes);
 router.use("/crm", crmRoutes);
 router.use("/enterprise", enterpriseRoutes);
+router.use("/offers", offerRoutes);
+router.use("/quote-leads", quoteLeadRoutes);
 
 module.exports = router;

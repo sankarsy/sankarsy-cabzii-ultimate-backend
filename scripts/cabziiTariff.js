@@ -147,7 +147,7 @@ const TARIFF = [
     exclude: ["crysta", "hycross"],
     seats: 6,
     title: "Toyota Innova 6+1",
-    vehicleName: "Toyota Innova",
+    vehicleName: "Toyota Innova 6+1",
     brand: "Toyota",
     model: "Innova",
     variant: "6+1",
@@ -172,7 +172,7 @@ const TARIFF = [
     exclude: ["crysta", "hycross"],
     seats: 7,
     title: "Toyota Innova 7+1",
-    vehicleName: "Toyota Innova",
+    vehicleName: "Toyota Innova 7+1",
     brand: "Toyota",
     model: "Innova",
     variant: "7+1",
@@ -196,7 +196,7 @@ const TARIFF = [
     tokens: ["crysta"],
     seats: 6,
     title: "Innova Crysta 6+1",
-    vehicleName: "Toyota Innova Crysta",
+    vehicleName: "Toyota Innova Crysta 6+1",
     brand: "Toyota",
     model: "Innova Crysta",
     variant: "6+1",
@@ -220,7 +220,7 @@ const TARIFF = [
     tokens: ["crysta"],
     seats: 7,
     title: "Innova Crysta 7+1",
-    vehicleName: "Toyota Innova Crysta",
+    vehicleName: "Toyota Innova Crysta 7+1",
     brand: "Toyota",
     model: "Innova Crysta",
     variant: "7+1",
@@ -388,7 +388,7 @@ const TARIFF = [
     tokens: ["luxury", "tempo"],
     seats: 14,
     title: "Luxury Tempo 14 Seater",
-    vehicleName: "Luxury Tempo Traveller",
+    vehicleName: "Luxury Tempo 14 Seater",
     brand: "Force",
     model: "Luxury Tempo",
     variant: "14 Seater",
@@ -439,7 +439,7 @@ const TARIFF = [
     tokens: ["tourister"],
     seats: 16,
     title: "Mahindra Tourister 16 Seater",
-    vehicleName: "Mahindra Tourister",
+    vehicleName: "Mahindra Tourister 16 Seater",
     brand: "Mahindra",
     model: "Tourister",
     variant: "16 Seater",
@@ -461,7 +461,8 @@ const TARIFF = [
   },
   {
     key: "minibus-21",
-    tokens: ["mini bus", "minibus"],
+    tokens: ["mini bus", "minibus", "mini-bus"],
+    anyToken: true,
     seats: 21,
     title: "21 Seater Mini Bus",
     vehicleName: "21 Seater Mini Bus",
@@ -484,7 +485,8 @@ const TARIFF = [
   },
   {
     key: "minibus-25",
-    tokens: ["mini bus", "minibus"],
+    tokens: ["mini bus", "minibus", "mini-bus"],
+    anyToken: true,
     seats: 25,
     title: "25 Seater Mini Bus",
     vehicleName: "25 Seater Mini Bus",
@@ -507,7 +509,8 @@ const TARIFF = [
   },
   {
     key: "minibus-30",
-    tokens: ["mini bus", "minibus"],
+    tokens: ["mini bus", "minibus", "mini-bus"],
+    anyToken: true,
     seats: 30,
     title: "30 Seater Mini Bus",
     vehicleName: "30 Seater Mini Bus",
@@ -538,7 +541,11 @@ function haystack(cab) {
 
 function cabMatchesTariff(cab, row) {
   const hay = haystack(cab);
-  if (!(row.tokens || []).every((t) => hay.includes(t))) return false;
+  const tokens = row.tokens || [];
+  const tokenOk = row.anyToken
+    ? tokens.some((t) => hay.includes(t))
+    : tokens.every((t) => hay.includes(t));
+  if (!tokenOk) return false;
   if ((row.exclude || []).some((t) => hay.includes(t))) return false;
   return true;
 }

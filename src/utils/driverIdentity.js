@@ -1,6 +1,7 @@
 "use strict";
 
 const { Driver } = require("../models/Driver");
+const { User } = require("../models/User");
 const { HttpError } = require("./httpError");
 const { normalizeMobileNumber } = require("./mobile");
 const { privilegedRoleForPhone } = require("./adminAccess");
@@ -65,6 +66,22 @@ function driverSessionUser(user, driver) {
   };
 }
 
+async function upsertDriverLoginUser(phone, name) {
+  if (!phone) return;
+  const user = await User.findOne({ mobileNumber: phone });
+  if (user && user.role !== "driver" && user.role !== "customer") {
+    throw new HttpError(400, "This mobile is already used for partner or admin login.");
+  }
+  if (user) {
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { mobileNumber: phone, role: "driver", name: name || user.name || "" } }
+    );
+    return;
+  }
+  await User.create({ mobileNumber: phone, role: "driver", name: name || "" });
+}
+
 module.exports = {
   normalizeDriverPhone,
   assertDriverPhoneNotVendorOrAdmin,
@@ -72,5 +89,6 @@ module.exports = {
   findActiveDriverByPhone,
   assertDriverCanLogin,
   assertNotPrivilegedDriverLogin,
-  driverSessionUser
+  driverSessionUser,
+  upsertDriverLoginUser
 };

@@ -53,13 +53,15 @@ async function nextCode() {
 
 async function updateCab(cab, row) {
   const patch = pricingPatch(row);
-  const title = cab.title || row.title;
-  const vehicleName = cab.vehicleName || row.vehicleName;
+  const title = row.title;
+  const vehicleName = row.vehicleName;
   const seo = applyVehicleSeo({
     ...cab,
     ...patch,
     title,
     vehicleName,
+    seoTitle: "",
+    seoDescription: "",
     city: cab.city || "Chennai",
     slug: cab.slug
   });
@@ -74,20 +76,20 @@ async function updateCab(cab, row) {
         ...patch,
         title,
         vehicleName,
-        brand: cab.brand || row.brand,
-        model: cab.model || row.model,
-        variant: cab.variant || row.variant || cab.variant,
-        type: cab.type || row.type,
-        category: cab.category || row.category,
+        brand: row.brand,
+        model: row.model,
+        variant: row.variant || "",
+        type: row.type,
+        category: row.category,
         seats: row.seats,
         driverAllowance: row.driverAllowance,
-        seoTitle: cab.seoTitle || seo.seoTitle,
-        seoDescription: cab.seoDescription || seo.seoDescription,
-        seo: cab.seo || seo.seo,
-        metaKeywords: cab.metaKeywords || seo.metaKeywords,
+        seoTitle: seo.seoTitle,
+        seoDescription: seo.seoDescription,
+        seo: seo.seo,
+        metaKeywords: seo.metaKeywords,
         schemaEnabled: cab.schemaEnabled !== false,
         enterpriseSeo,
-        status: cab.status === "inactive" ? cab.status : "active",
+        status: "active",
         isDeleted: false
       }
     }
@@ -163,7 +165,7 @@ async function main() {
   await mongoose.connect(uri);
   const cabs = await Cab.find({}).lean();
   const claimed = new Set();
-  const report = { updated: [], created: [], alreadyExisted: [], skippedNotInTariff: [] };
+  const report = { updated: [], created: [], alreadyExisted: [], skippedNotInTariff: [], deactivated: [] };
 
   const byKey = {};
   for (const row of TARIFF) {
@@ -178,10 +180,22 @@ async function main() {
     const exactSeats = matches.filter((cab) => Number(cab.seats) === row.seats);
 
     if (exactSeats.length) {
-      for (const cab of exactSeats) {
-        await updateCab(cab, row);
+      const [primary, ...dupes] = exactSeats;
+      await updateCab(primary, row);
+      claimed.add(String(primary._id));
+      report.updated.push({ key: row.key, id: String(primary._id), slug: primary.slug, title: row.title });
+      for (const cab of dupes) {
         claimed.add(String(cab._id));
-        report.updated.push({ key: row.key, id: String(cab._id), slug: cab.slug, title: cab.title || row.title });
+        if (!cab.isDeleted && cab.status !== "inactive") {
+          await Cab.updateOne({ _id: cab._id }, { $set: { status: "inactive" } });
+          report.deactivated.push({
+            key: row.key,
+            id: String(cab._id),
+            slug: cab.slug,
+            title: cab.title || cab.vehicleName,
+            reason: "duplicate-name"
+          });
+        }
       }
       report.alreadyExisted.push(row.key);
       continue;
@@ -222,6 +236,14 @@ async function main() {
   for (const cab of cabs) {
     if (claimed.has(String(cab._id))) continue;
     report.skippedNotInTariff.push({
+      id: String(cab._id),
+      slug: cab.slug,
+      title: cab.title || cab.vehicleName || "(untitled)"
+    });
+    if (cab.isDeleted) continue;
+    if (cab.status === "inactive") continue;
+    await Cab.updateOne({ _id: cab._id }, { $set: { status: "inactive" } });
+    report.deactivated.push({
       id: String(cab._id),
       slug: cab.slug,
       title: cab.title || cab.vehicleName || "(untitled)"

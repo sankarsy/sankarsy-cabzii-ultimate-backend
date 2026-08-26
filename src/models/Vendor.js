@@ -28,6 +28,19 @@ const vendorSchema = new mongoose.Schema(
         message: "Invalid admin phone"
       }
     },
+    city: { type: String, trim: true, default: "" },
+    location: { type: String, trim: true, default: "" },
+    driverPhone: {
+      type: String,
+      trim: true,
+      default: "",
+      validate: {
+        validator(v) {
+          return !v || /^[0-9]{10,15}$/.test(v);
+        },
+        message: "Invalid driver phone"
+      }
+    },
     isActive: { type: Boolean, default: true }
   },
   { timestamps: true }

@@ -1,8 +1,10 @@
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const sizeOf = require("image-size");
 const { requireAuth, requireRole } = require("../middlewares/auth");
+const { IMAGE_UPLOAD_RULES, sizeErrorMessage, dimensionErrorMessage } = require("../utils/imageUploadRules");
 
 const router = express.Router();
 
@@ -24,10 +26,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: IMAGE_UPLOAD_RULES.maxBytes },
   fileFilter: (req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowed.includes(file.mimetype)) {
+    if (!IMAGE_UPLOAD_RULES.mimeTypes.includes(file.mimetype)) {
       cb(new Error("Only jpg, jpeg, png, and webp are allowed."));
       return;
     }
@@ -35,26 +36,58 @@ const upload = multer({
   }
 });
 
-router.post(
-  "/",
-  requireAuth,
-  requireRole("super_admin", "vendor_admin"),
-  upload.single("file"),
-  (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: "Image file is required." });
+function runUpload(req, res, next) {
+  upload.single("file")(req, res, (err) => {
+    if (!err) {
+      next();
+      return;
     }
-    const relativeUrl = `/uploads/${req.file.filename}`;
-    return res.status(201).json({
-      success: true,
-      data: {
-        fileName: req.file.filename,
-        url: relativeUrl,
-        relativeUrl
-      }
-    });
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        success: false,
+        message: `Maximum allowed size is ${IMAGE_UPLOAD_RULES.maxMb} MB.`
+      });
+    }
+    return res.status(400).json({ success: false, message: err.message || "Upload failed." });
+  });
+}
+
+router.post("/", requireAuth, requireRole("super_admin", "vendor_admin"), runUpload, (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "Image file is required." });
   }
-);
+  const filePath = req.file.path;
+  try {
+    if (req.file.size > IMAGE_UPLOAD_RULES.maxBytes) {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ success: false, message: sizeErrorMessage(req.file.size) });
+    }
+    const dim = sizeOf(filePath);
+    const width = Number(dim?.width) || 0;
+    const height = Number(dim?.height) || 0;
+    if (width < IMAGE_UPLOAD_RULES.minWidth || height < IMAGE_UPLOAD_RULES.minHeight) {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ success: false, message: dimensionErrorMessage(width, height) });
+    }
+  } catch (err) {
+    try {
+      fs.unlinkSync(filePath);
+    } catch {
+      /* ignore */
+    }
+    return res.status(400).json({ success: false, message: err.message || "Could not read image." });
+  }
+
+  const relativeUrl = `/uploads/${req.file.filename}`;
+  return res.status(201).json({
+    success: true,
+    data: {
+      fileName: req.file.filename,
+      url: relativeUrl,
+      relativeUrl
+    }
+  });
+});
 
 /** Delete an uploaded file from disk (admin only). Body: { path: "/uploads/filename.jpg" } */
 router.delete("/", requireAuth, requireRole("super_admin", "vendor_admin"), (req, res) => {

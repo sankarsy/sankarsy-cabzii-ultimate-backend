@@ -79,8 +79,29 @@ async function listLocations(req, res) {
 
   if (and.length) filter.$and = and;
 
-  const data = await Location.find(filter).sort({ cityName: 1, name: 1 }).limit(500).lean();
+  const data = await Location.find(filter)
+    .populate("city", "name state")
+    .sort({ cityName: 1, name: 1 })
+    .limit(500)
+    .lean();
   res.json({ success: true, data });
+}
+
+async function resolveCityDoc(cityInput) {
+  const raw = String(cityInput || "").trim();
+  if (!raw) throw new HttpError(400, "City is required");
+  if (mongoose.isValidObjectId(raw)) {
+    const byId = await City.findById(raw).lean();
+    if (byId) return byId;
+  }
+  const name = raw.split(",")[0].trim();
+  const canonical = resolveCityQuery(name);
+  const escaped = escapeRegex(canonical);
+  const byName = await City.findOne({
+    $or: [{ name: new RegExp(`^${escaped}$`, "i") }, { name: new RegExp(`^${escapeRegex(name)}$`, "i") }]
+  }).lean();
+  if (byName) return byName;
+  throw new HttpError(400, `City "${name}" not found. Add it under Cities first, or pick an existing city.`);
 }
 
 async function getLocationById(req, res) {
@@ -93,13 +114,11 @@ async function getLocationById(req, res) {
 async function createLocation(req, res) {
   const { error, value } = locationSchema.validate(req.body, { stripUnknown: true });
   if (error) throw new HttpError(400, error.message);
-  if (!mongoose.isValidObjectId(value.city)) throw new HttpError(400, "Invalid city id");
-
-  const cityDoc = await City.findById(value.city).lean();
-  if (!cityDoc) throw new HttpError(400, "City not found");
+  const cityDoc = await resolveCityDoc(value.city);
 
   const data = await Location.create({
     ...value,
+    city: cityDoc._id,
     cityName: cityDoc.state ? `${cityDoc.name}, ${cityDoc.state}` : cityDoc.name
   });
 
@@ -111,15 +130,13 @@ async function updateLocation(req, res) {
   if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(400, "Invalid id");
   const { error, value } = locationSchema.validate(req.body, { stripUnknown: true });
   if (error) throw new HttpError(400, error.message);
-  if (!mongoose.isValidObjectId(value.city)) throw new HttpError(400, "Invalid city id");
-
-  const cityDoc = await City.findById(value.city).lean();
-  if (!cityDoc) throw new HttpError(400, "City not found");
+  const cityDoc = await resolveCityDoc(value.city);
 
   const data = await Location.findByIdAndUpdate(
     req.params.id,
     {
       ...value,
+      city: cityDoc._id,
       cityName: cityDoc.state ? `${cityDoc.name}, ${cityDoc.state}` : cityDoc.name
     },
     { new: true, runValidators: true }

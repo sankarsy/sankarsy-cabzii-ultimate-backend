@@ -19,7 +19,7 @@ const { finalizeCabPayload } = require("../utils/vehiclePrepare");
 const { publicAvailabilityFilter } = require("../utils/bookingAvailability");
 const { missingCabPublishFields } = require("../utils/vendorOnboarding");
 const { isSuperAdminUser } = require("../utils/adminAccess");
-const { sanitizeInventoryPayload, assertUniqueRegistration } = require("../utils/vehicleInventory");
+const { searchCabsForCustomer, wantsCityMatching } = require("../utils/cabSearchMatching");
 
 async function applyVehicleInventory(req, payload, existing = null) {
   const next = sanitizeInventoryPayload(req, payload, existing);
@@ -37,6 +37,10 @@ async function applyVehicleInventory(req, payload, existing = null) {
   return next;
 }
 
+function serializeCab(req, doc) {
+  return normalizeCabForApi(doc, { includeRegistration: isCatalogAdmin(req) });
+}
+
 function enforceVendorPublish(req, payload) {
   if (isSuperAdminUser(req) || req.user?.role !== "vendor_admin") return payload;
   if (!payload.status) payload.status = "draft";
@@ -49,13 +53,36 @@ function enforceVendorPublish(req, payload) {
   return payload;
 }
 
+const MATCH_CANDIDATE_CAP = 200;
+
 async function listCabs(req, res) {
-  const base = catalogListFilter(req, listFilterForVendor(req));
   const pq = parseListQuery(req);
+  if (wantsCityMatching(req)) {
+    const base = catalogListFilter(req, listFilterForVendor(req));
+    const filterPq = { ...pq, city: "", vendor: "" };
+    const filter = await publicAvailabilityFilter("cab", req, buildCabListFilter(base, filterPq));
+    const candidates = await Cab.find(filter).limit(MATCH_CANDIDATE_CAP).lean();
+    const result = searchCabsForCustomer(candidates, {
+      priorityCity: String(req.query.priorityCity || "").trim(),
+      category: pq.category,
+      type: pq.type,
+      seats: pq.seats,
+      page: pq.page,
+      limit: pq.limit,
+      vendorId: req.query.vendorId
+    });
+    return res.json({
+      success: true,
+      data: result.data.map((doc) => serializeCab(req, doc)),
+      meta: result.meta
+    });
+  }
+
+  const base = catalogListFilter(req, listFilterForVendor(req));
   const filter = await publicAvailabilityFilter("cab", req, buildCabListFilter(base, pq));
   const sort = cabSortClause(pq.sort);
   const { data, meta } = await paginatedFind(Cab, filter, pq, sort);
-  res.json({ success: true, data: data.map(normalizeCabForApi), meta });
+  res.json({ success: true, data: data.map((doc) => serializeCab(req, doc)), meta });
 }
 
 async function getCabById(req, res) {
@@ -73,7 +100,7 @@ async function getCabById(req, res) {
   if (isPublic) {
     await Cab.updateOne({ _id: data._id }, { $inc: { "stats.views": 1 } }).catch(() => {});
   }
-  res.json({ success: true, data: normalizeCabForApi(data) });
+  res.json({ success: true, data: serializeCab(req, data) });
 }
 
 async function createCab(req, res) {
@@ -94,7 +121,7 @@ async function createCab(req, res) {
     vendor: data.vendor,
     after: data.toObject()
   });
-  res.status(201).json({ success: true, data: normalizeCabForApi(data.toObject()) });
+  res.status(201).json({ success: true, data: serializeCab(req, data.toObject()) });
 }
 
 async function updateCab(req, res) {
@@ -127,7 +154,7 @@ async function updateCab(req, res) {
     vendor: data.vendor,
     after: data.toObject()
   });
-  res.json({ success: true, data: normalizeCabForApi(data.toObject()) });
+  res.json({ success: true, data: serializeCab(req, data.toObject()) });
 }
 
 async function deleteCab(req, res) {
@@ -185,7 +212,7 @@ async function duplicateCab(req, res) {
     vendor: data.vendor,
     after: data.toObject()
   });
-  res.status(201).json({ success: true, data: normalizeCabForApi(data.toObject()) });
+  res.status(201).json({ success: true, data: serializeCab(req, data.toObject()) });
 }
 
 async function listCurated(req, res, field) {
@@ -224,7 +251,7 @@ async function listCurated(req, res, field) {
       : { createdAt: -1 };
 
   const data = await Cab.find(filter).sort(sort).limit(limit).lean();
-  res.json({ success: true, data: data.map(normalizeCabForApi) });
+  res.json({ success: true, data: data.map((doc) => serializeCab(req, doc)) });
 }
 
 async function getFeaturedCabs(req, res) {
@@ -264,7 +291,7 @@ async function getRelatedCabs(req, res) {
   };
 
   const data = await Cab.find(filter).sort({ "stats.totalBookings": -1, rating: -1 }).limit(limit).lean();
-  res.json({ success: true, data: data.map(normalizeCabForApi) });
+  res.json({ success: true, data: data.map((doc) => serializeCab(req, doc)) });
 }
 
 module.exports = {

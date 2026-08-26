@@ -54,7 +54,7 @@ function errorHandler(err, req, res, next) {
       path: req.originalUrl,
       method: req.method,
     });
-    if (process.env.NODE_ENV !== "development") {
+    if (process.env.NODE_ENV !== "development" && !err.expose) {
       message = "Internal server error";
     }
   }

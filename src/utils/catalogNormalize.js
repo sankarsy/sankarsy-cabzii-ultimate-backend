@@ -109,7 +109,25 @@ function enrichModernCab(doc) {
   };
 }
 
-function normalizeCabForApi(doc) {
+const PUBLIC_STRIP_KEYS = [
+  "registrationNumber",
+  "vendorAdminPhone",
+  "verificationStatus",
+  "vehicleDocuments",
+  "blockedDates",
+  "vendorId"
+];
+
+function applyPublicCabPrivacy(payload, includeRegistration) {
+  if (includeRegistration) {
+    payload.registrationNumber = payload.registrationNumber || "";
+    return payload;
+  }
+  for (const key of PUBLIC_STRIP_KEYS) delete payload[key];
+  return payload;
+}
+
+function normalizeCabForApi(doc, { includeRegistration = false } = {}) {
   if (!doc) return doc;
   const id = doc._id ?? doc.id;
 
@@ -118,24 +136,27 @@ function normalizeCabForApi(doc) {
     const price = num(enriched.price);
 
     const city = enriched.city || inferCity(enriched);
-    return {
-      ...enriched,
-      _id: id,
-      id: id ? String(id) : "",
-      title: enriched.title || enriched.name || "Cab",
-      vendor: enriched.vendor || "Cabzii Partner",
-      price,
-      city,
-      registrationNumber: enriched.registrationNumber || "",
-      availabilityStatus: enriched.availabilityStatus || "available",
-      verificationStatus: enriched.verificationStatus || "approved",
-      blockedDates: Array.isArray(enriched.blockedDates) ? enriched.blockedDates : [],
-      vehicleDocuments: Array.isArray(enriched.vehicleDocuments) ? enriched.vehicleDocuments : [],
-      serviceAreas:
-        Array.isArray(enriched.serviceAreas) && enriched.serviceAreas.length
-          ? enriched.serviceAreas
-          : [city].filter(Boolean)
-    };
+    return applyPublicCabPrivacy(
+      {
+        ...enriched,
+        _id: id,
+        id: id ? String(id) : "",
+        title: enriched.title || enriched.name || "Cab",
+        vendor: enriched.vendor || "Cabzii Partner",
+        price,
+        city,
+        registrationNumber: enriched.registrationNumber || "",
+        availabilityStatus: enriched.availabilityStatus || "available",
+        verificationStatus: enriched.verificationStatus || "approved",
+        blockedDates: Array.isArray(enriched.blockedDates) ? enriched.blockedDates : [],
+        vehicleDocuments: Array.isArray(enriched.vehicleDocuments) ? enriched.vehicleDocuments : [],
+        serviceAreas:
+          Array.isArray(enriched.serviceAreas) && enriched.serviceAreas.length
+            ? enriched.serviceAreas
+            : [city].filter(Boolean)
+      },
+      includeRegistration
+    );
   }
 
   const oneWay = doc.package?.oneWay;
@@ -156,31 +177,34 @@ function normalizeCabForApi(doc) {
   const originalPrice = num(outstationOneWay?.originalPrice) || price;
   const title = doc.title || doc.name || "Cab";
 
-  return {
-    ...doc,
-    _id: id,
-    id: id ? String(id) : "",
-    title,
-    name: title,
-    vendor: doc.vendor || "Cabzii Partner",
-    type: doc.type || "Sedan",
-    seats: doc.seats || inferSeats(title, doc.type),
-    bags: doc.bags ?? (inferSeats(title, doc.type) >= 6 ? 3 : 2),
-    price,
-    originalPrice,
-    hourlyRate: local4hr ? Math.round(local4hr.price / 4) : 0,
-    dayRate: local8hr?.price || 0,
-    extraHourRate: num(outstationOneWay?.extraHourRate),
-    discountPercentage: num(oneWay?.discount) || num(doc.discountPercentage),
-    farePackages,
-    city: inferCity(doc),
-    image: doc.image || (Array.isArray(doc.cabImages) ? doc.cabImages[0] : "") || "",
-    status: doc.status || "active",
-    availabilityStatus: doc.availabilityStatus || "available",
-    registrationNumber: doc.registrationNumber || "",
-    verificationStatus: doc.verificationStatus || "approved",
-    isDeleted: doc.isDeleted === true
-  };
+  return applyPublicCabPrivacy(
+    {
+      ...doc,
+      _id: id,
+      id: id ? String(id) : "",
+      title,
+      name: title,
+      vendor: doc.vendor || "Cabzii Partner",
+      type: doc.type || "Sedan",
+      seats: doc.seats || inferSeats(title, doc.type),
+      bags: doc.bags ?? (inferSeats(title, doc.type) >= 6 ? 3 : 2),
+      price,
+      originalPrice,
+      hourlyRate: local4hr ? Math.round(local4hr.price / 4) : 0,
+      dayRate: local8hr?.price || 0,
+      extraHourRate: num(outstationOneWay?.extraHourRate),
+      discountPercentage: num(oneWay?.discount) || num(doc.discountPercentage),
+      farePackages,
+      city: inferCity(doc),
+      image: doc.image || (Array.isArray(doc.cabImages) ? doc.cabImages[0] : "") || "",
+      status: doc.status || "active",
+      availabilityStatus: doc.availabilityStatus || "available",
+      registrationNumber: doc.registrationNumber || "",
+      verificationStatus: doc.verificationStatus || "approved",
+      isDeleted: doc.isDeleted === true
+    },
+    includeRegistration
+  );
 }
 
 function normalizeDriverForApi(doc, { includePhone = false } = {}) {

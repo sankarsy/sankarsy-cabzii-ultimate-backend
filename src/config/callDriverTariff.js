@@ -51,8 +51,8 @@ const DEFAULT_CALL_DRIVER_TARIFF = {
 const CALL_DRIVER_SERVICE_CATALOG = [
   {
     id: "local",
-    title: "Local Chennai Driver",
-    blurb: "Driver for your own car within Chennai.",
+    title: "Local Driver",
+    blurb: "Driver for your own car for local city trips.",
     cta: "Book Now",
     quoteOnly: false,
     fromKey: "local.standard"

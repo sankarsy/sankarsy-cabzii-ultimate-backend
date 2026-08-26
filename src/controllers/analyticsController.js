@@ -2,8 +2,11 @@
 
 const { Booking } = require("../models/Booking");
 const { User } = require("../models/User");
+const { CrmLead } = require("../models/CrmLead");
 const { HttpError } = require("../utils/httpError");
 const { isSuperAdminUser } = require("../utils/adminAccess");
+const { isVendorAdmin, buildVendorBookingQuery } = require("../utils/vendorBookingAccess");
+const { normalizeMobileNumber } = require("../utils/mobile");
 
 function dayKey(date) {
   const d = new Date(date);
@@ -35,20 +38,30 @@ function buildDateBuckets(days) {
 }
 
 async function analyticsOverview(req, res) {
-  if (!isSuperAdminUser(req)) {
-    throw new HttpError(403, "Only super admin can view analytics.");
+  if (!isSuperAdminUser(req) && !isVendorAdmin(req)) {
+    throw new HttpError(403, "Admin only.");
   }
+
+  const vendorQuery = await buildVendorBookingQuery(req);
+  const bookingFilter = vendorQuery || {};
+  const scoped = Boolean(vendorQuery);
 
   const { buckets, start, end, safeDays } = buildDateBuckets(req.query.days);
   const bucketMap = Object.fromEntries(buckets.map((b) => [b.date, b]));
 
-  const [totalCustomers, newCustomers, allBookings, rangeBookings] = await Promise.all([
-    User.countDocuments({ role: "customer" }),
-    User.countDocuments({ role: "customer", createdAt: { $gte: start, $lte: end } }),
-    Booking.find({}).select("amount status type createdAt phone customerName").lean(),
-    Booking.find({ createdAt: { $gte: start, $lte: end } })
+  const quoteFilter = { source: "whatsapp_quote", createdAt: { $gte: start, $lte: end } };
+  if (scoped) {
+    quoteFilter.vendorAdminPhone = normalizeMobileNumber(req.user?.mobileNumber);
+  }
+
+  const [totalCustomers, newCustomers, allBookings, rangeBookings, whatsappQuotesInRange] = await Promise.all([
+    scoped ? Promise.resolve(0) : User.countDocuments({ role: "customer" }),
+    scoped ? Promise.resolve(0) : User.countDocuments({ role: "customer", createdAt: { $gte: start, $lte: end } }),
+    Booking.find(bookingFilter).select("amount status type createdAt phone customerName").lean(),
+    Booking.find({ ...bookingFilter, createdAt: { $gte: start, $lte: end } })
       .select("amount status type createdAt phone customerName")
-      .lean()
+      .lean(),
+    CrmLead.countDocuments(quoteFilter)
   ]);
 
   const statusCounts = { confirmed: 0, pending: 0, cancelled: 0, finished: 0 };
@@ -67,9 +80,13 @@ async function analyticsOverview(req, res) {
 
   let bookingsInRange = 0;
   let revenueInRange = 0;
+  let completedInRange = 0;
 
   for (const booking of rangeBookings) {
     bookingsInRange += 1;
+    if (booking.status === "finished" || booking.status === "confirmed") {
+      completedInRange += 1;
+    }
     const key = dayKey(booking.createdAt);
     if (bucketMap[key]) {
       bucketMap[key].bookings += 1;
@@ -81,42 +98,48 @@ async function analyticsOverview(req, res) {
     }
   }
 
-  const newUsersInRange = await User.find({
-    role: "customer",
-    createdAt: { $gte: start, $lte: end }
-  })
-    .select("createdAt")
-    .lean();
+  if (!scoped) {
+    const newUsersInRange = await User.find({
+      role: "customer",
+      createdAt: { $gte: start, $lte: end }
+    })
+      .select("createdAt")
+      .lean();
 
-  for (const user of newUsersInRange) {
-    const key = dayKey(user.createdAt);
-    if (bucketMap[key]) bucketMap[key].newCustomers += 1;
+    for (const user of newUsersInRange) {
+      const key = dayKey(user.createdAt);
+      if (bucketMap[key]) bucketMap[key].newCustomers += 1;
+    }
   }
 
   const spendByPhone = {};
-  for (const booking of allBookings) {
-    const phone = String(booking.phone || "").trim();
-    if (!phone) continue;
-    if (!spendByPhone[phone]) {
-      spendByPhone[phone] = {
-        phone,
-        name: booking.customerName || "Guest",
-        bookings: 0,
-        spent: 0
-      };
-    }
-    spendByPhone[phone].bookings += 1;
-    if (booking.status === "confirmed" || booking.status === "finished") {
-      spendByPhone[phone].spent += Number(booking.amount || 0);
-    }
-    if (booking.customerName && booking.customerName !== "Guest") {
-      spendByPhone[phone].name = booking.customerName;
+  if (!scoped) {
+    for (const booking of allBookings) {
+      const phone = String(booking.phone || "").trim();
+      if (!phone) continue;
+      if (!spendByPhone[phone]) {
+        spendByPhone[phone] = {
+          phone,
+          name: booking.customerName || "Guest",
+          bookings: 0,
+          spent: 0
+        };
+      }
+      spendByPhone[phone].bookings += 1;
+      if (booking.status === "confirmed" || booking.status === "finished") {
+        spendByPhone[phone].spent += Number(booking.amount || 0);
+      }
+      if (booking.customerName && booking.customerName !== "Guest") {
+        spendByPhone[phone].name = booking.customerName;
+      }
     }
   }
 
-  const topCustomers = Object.values(spendByPhone)
-    .sort((a, b) => b.spent - a.spent || b.bookings - a.bookings)
-    .slice(0, 10);
+  const topCustomers = scoped
+    ? []
+    : Object.values(spendByPhone)
+        .sort((a, b) => b.spent - a.spent || b.bookings - a.bookings)
+        .slice(0, 10);
 
   res.json({
     success: true,
@@ -126,6 +149,8 @@ async function analyticsOverview(req, res) {
         newCustomers,
         totalBookings: allBookings.length,
         bookingsInRange,
+        completedInRange,
+        whatsappQuotesInRange,
         revenueInRange,
         totalRevenue
       },

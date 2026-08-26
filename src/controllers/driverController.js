@@ -22,7 +22,8 @@ const { publicAvailabilityFilter } = require("../utils/bookingAvailability");
 const {
   normalizeDriverPhone,
   assertDriverPhoneNotVendorOrAdmin,
-  assertUniqueDriverPhone
+  assertUniqueDriverPhone,
+  upsertDriverLoginUser
 } = require("../utils/driverIdentity");
 
 const packageFareSchema = Joi.object({
@@ -155,6 +156,12 @@ async function createDriver(req, res) {
   payload.phone = await applyDriverPhoneRules(req, value, payload);
   assertDriverPhoneNotVendorOrAdmin(payload.phone, payload.vendorAdminPhone || req.user?.mobileNumber);
   const data = await Driver.create(payload);
+  try {
+    await upsertDriverLoginUser(data.phone, data.name);
+  } catch (err) {
+    await Driver.findByIdAndDelete(data._id);
+    throw err;
+  }
   await logAudit({
     req,
     action: "create",
@@ -195,6 +202,7 @@ async function updateDriver(req, res) {
   assertDriverPhoneNotVendorOrAdmin(nextValue.phone, nextValue.vendorAdminPhone || req.user?.mobileNumber);
   const data = await Driver.findOneAndUpdate(match, { $set: nextValue }, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Driver not found");
+  await upsertDriverLoginUser(data.phone, data.name);
   await logAudit({
     req,
     action: "update",

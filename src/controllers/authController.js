@@ -190,7 +190,12 @@ async function sendOtpController(req, res) {
 
   if (!smsDelivered && !allowDevFallback) {
     await OtpSession.deleteOne({ _id: session._id });
-    throw new HttpError(502, smsErrorMessage);
+    return res.status(503).json({
+      success: false,
+      otpUnavailable: true,
+      message:
+        "SMS OTP could not be sent right now. Send this trip’s package details to your WhatsApp as PDF and text."
+    });
   }
 
   lastOtpSentAt.set(mobileNumber, Date.now());
