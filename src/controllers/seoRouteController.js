@@ -7,6 +7,12 @@ const { logAudit } = require("../services/auditService");
 const { slugify } = require("../utils/slugify");
 const { ensureUniqueSlug } = require("../utils/catalogProductFields");
 const { autoSeoRouteFields } = require("../utils/seoAutoFill");
+const { createSlugIndex } = require("../utils/shortTtlSlugIndex");
+
+const seoRouteSlugIndex = createSlugIndex(async () => {
+  const rows = await SeoRoute.find({}).select("slug").lean();
+  return rows.map((row) => row.slug);
+});
 
 const seoRouteSchema = Joi.object({
   slug: Joi.string().allow("").default(""),
@@ -120,6 +126,9 @@ async function getSeoRouteBySlug(req, res) {
   if (mongoose.isValidObjectId(param) && isAdmin) {
     doc = await SeoRoute.findById(param);
   } else {
+    if (!(await seoRouteSlugIndex.hasSlug(param))) {
+      return res.status(404).json({ success: false, message: "Route page not found" });
+    }
     // Return draft/unpublished too so public resolver can block static fallbacks.
     doc = await SeoRoute.findOne({ slug: param });
   }
@@ -158,6 +167,8 @@ async function importStaticSeoRoutes(req, res) {
     results.push({ slug: data.slug, id: String(data._id) });
   }
 
+  seoRouteSlugIndex.invalidate();
+
   await logAudit({
     req,
     action: "import",
@@ -172,6 +183,7 @@ async function createSeoRoute(req, res) {
   if (error) throw new HttpError(400, error.message);
   const payload = await normalizePayload(value);
   const data = await SeoRoute.create(payload);
+  seoRouteSlugIndex.invalidate();
   await logAudit({ req, action: "create", entity: "seo_route", entityId: data._id, after: data.toObject() });
   res.status(201).json({ success: true, data: withPublicUrl(data) });
 }
@@ -183,6 +195,7 @@ async function updateSeoRoute(req, res) {
   const payload = await normalizePayload(value, req.params.id);
   const data = await SeoRoute.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Route page not found");
+  seoRouteSlugIndex.invalidate();
   await logAudit({ req, action: "update", entity: "seo_route", entityId: data._id, after: data.toObject() });
   res.json({ success: true, data: withPublicUrl(data) });
 }
@@ -191,6 +204,7 @@ async function deleteSeoRoute(req, res) {
   if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(400, "Invalid id");
   const data = await SeoRoute.findByIdAndDelete(req.params.id);
   if (!data) throw new HttpError(404, "Route page not found");
+  seoRouteSlugIndex.invalidate();
   await logAudit({ req, action: "delete", entity: "seo_route", entityId: data._id, before: data.toObject() });
   res.json({ success: true, message: "Route page deleted" });
 }

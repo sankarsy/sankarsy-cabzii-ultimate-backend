@@ -7,6 +7,12 @@ const { logAudit } = require("../services/auditService");
 const { slugify } = require("../utils/slugify");
 const { ensureUniqueSlug } = require("../utils/catalogProductFields");
 const { autoSeoServiceFields } = require("../utils/seoAutoFill");
+const { createSlugIndex } = require("../utils/shortTtlSlugIndex");
+
+const seoServiceSlugIndex = createSlugIndex(async () => {
+  const rows = await SeoService.find({}).select("slug").lean();
+  return rows.map((row) => row.slug);
+});
 
 const seoServiceSchema = Joi.object({
   slug: Joi.string().allow("").default(""),
@@ -127,6 +133,9 @@ async function getSeoServiceBySlug(req, res) {
   if (mongoose.isValidObjectId(param) && isAdmin) {
     doc = await SeoService.findById(param);
   } else {
+    if (!(await seoServiceSlugIndex.hasSlug(param))) {
+      return res.status(404).json({ success: false, message: "Service page not found" });
+    }
     // Return draft/unpublished too so public resolver can block static fallbacks.
     doc = await SeoService.findOne({ slug: param });
   }
@@ -158,6 +167,8 @@ async function importStaticSeoServices(req, res) {
     results.push({ slug: data.slug, id: String(data._id) });
   }
 
+  seoServiceSlugIndex.invalidate();
+
   await logAudit({
     req,
     action: "import",
@@ -172,6 +183,7 @@ async function createSeoService(req, res) {
   if (error) throw new HttpError(400, error.message);
   const payload = await normalizePayload(value);
   const data = await SeoService.create(payload);
+  seoServiceSlugIndex.invalidate();
   await logAudit({ req, action: "create", entity: "seo_service", entityId: data._id, after: data.toObject() });
   res.status(201).json({ success: true, data: withPublicUrl(data) });
 }
@@ -183,6 +195,7 @@ async function updateSeoService(req, res) {
   const payload = await normalizePayload(value, req.params.id);
   const data = await SeoService.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Service page not found");
+  seoServiceSlugIndex.invalidate();
   await logAudit({ req, action: "update", entity: "seo_service", entityId: data._id, after: data.toObject() });
   res.json({ success: true, data: withPublicUrl(data) });
 }
@@ -191,6 +204,7 @@ async function deleteSeoService(req, res) {
   if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(400, "Invalid id");
   const data = await SeoService.findByIdAndDelete(req.params.id);
   if (!data) throw new HttpError(404, "Service page not found");
+  seoServiceSlugIndex.invalidate();
   await logAudit({ req, action: "delete", entity: "seo_service", entityId: data._id, before: data.toObject() });
   res.json({ success: true, message: "Service page deleted" });
 }
