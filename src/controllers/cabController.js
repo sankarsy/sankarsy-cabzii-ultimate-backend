@@ -17,6 +17,37 @@ const {
 const { normalizeCabForApi } = require("../utils/catalogNormalize");
 const { finalizeCabPayload } = require("../utils/vehiclePrepare");
 const { publicAvailabilityFilter } = require("../utils/bookingAvailability");
+const { missingCabPublishFields } = require("../utils/vendorOnboarding");
+const { isSuperAdminUser } = require("../utils/adminAccess");
+const { sanitizeInventoryPayload, assertUniqueRegistration } = require("../utils/vehicleInventory");
+
+async function applyVehicleInventory(req, payload, existing = null) {
+  const next = sanitizeInventoryPayload(req, payload, existing);
+  await assertUniqueRegistration(Cab, next.registrationNumber, existing?._id);
+  if (!Array.isArray(next.serviceAreas) || next.serviceAreas.length === 0) {
+    const areas = [
+      next.city || existing?.city || "",
+      ...(Array.isArray(next.pickupLocations) ? next.pickupLocations : existing?.pickupLocations || [])
+    ]
+      .map((s) => String(s || "").trim())
+      .filter(Boolean);
+    next.serviceAreas = [...new Set(areas)];
+  }
+  if (!next.availabilityStatus) next.availabilityStatus = existing?.availabilityStatus || "available";
+  return next;
+}
+
+function enforceVendorPublish(req, payload) {
+  if (isSuperAdminUser(req) || req.user?.role !== "vendor_admin") return payload;
+  if (!payload.status) payload.status = "draft";
+  if (payload.status === "active") {
+    const missing = missingCabPublishFields(payload);
+    if (missing.length) {
+      throw new HttpError(400, `Cannot set Active until you add: ${missing.join(", ")}.`);
+    }
+  }
+  return payload;
+}
 
 async function listCabs(req, res) {
   const base = catalogListFilter(req, listFilterForVendor(req));
@@ -46,9 +77,13 @@ async function getCabById(req, res) {
 }
 
 async function createCab(req, res) {
-  const payload = await applyAuthenticatedVendorOwnership(
+  const payload = await applyVehicleInventory(
     req,
-    await finalizeCabPayload(req.body, {}, null)
+    enforceVendorPublish(
+      req,
+      await applyAuthenticatedVendorOwnership(req, await finalizeCabPayload(req.body, {}, null))
+    ),
+    null
   );
   const data = await Cab.create(payload);
   await logAudit({
@@ -74,9 +109,12 @@ async function updateCab(req, res) {
     body.farePackages = mergeFarePackages(existing.farePackages, body.farePackages);
   }
 
-  const payload = await applyAuthenticatedVendorOwnership(
+  const payload = await applyVehicleInventory(
     req,
-    await finalizeCabPayload(body, existing, existing._id),
+    enforceVendorPublish(
+      req,
+      await applyAuthenticatedVendorOwnership(req, await finalizeCabPayload(body, existing, existing._id), existing)
+    ),
     existing
   );
   const data = await Cab.findOneAndUpdate(match, { $set: payload }, { new: true, runValidators: true });
@@ -129,11 +167,14 @@ async function duplicateCab(req, res) {
     lastBooked: null
   };
   clone.status = "inactive";
+  clone.registrationNumber = "";
+  clone.availabilityStatus = "available";
+  clone.blockedDates = [];
 
-  const payload = await applyAuthenticatedVendorOwnership(
+  const payload = await applyVehicleInventory(
     req,
-    await finalizeCabPayload(clone, {}, null),
-    source
+    await applyAuthenticatedVendorOwnership(req, await finalizeCabPayload(clone, {}, null), source),
+    null
   );
   const data = await Cab.create(payload);
   await logAudit({

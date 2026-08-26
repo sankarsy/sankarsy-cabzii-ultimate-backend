@@ -32,6 +32,41 @@ const cabSchema = new mongoose.Schema(
     year: { type: Number, min: 1990, max: 2035 },
     serviceForm: { type: String, trim: true, default: "One Way" },
     pickupLocations: { type: [String], default: [] },
+    serviceAreas: { type: [String], default: [] },
+    registrationNumber: { type: String, trim: true, default: "", index: true },
+    availabilityStatus: {
+      type: String,
+      enum: ["available", "busy", "blocked", "offline"],
+      default: "available",
+      index: true
+    },
+    blockedDates: { type: [String], default: [] },
+    verificationStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "approved",
+      index: true
+    },
+    vehicleDocuments: {
+      type: [
+        {
+          docType: {
+            type: String,
+            enum: ["rc", "insurance", "permit", "fitness", "other"],
+            default: "other"
+          },
+          url: { type: String, trim: true, default: "" },
+          status: {
+            type: String,
+            enum: ["pending", "verified", "rejected"],
+            default: "pending"
+          },
+          expiresAt: { type: String, trim: true, default: "" },
+          label: { type: String, trim: true, default: "" }
+        }
+      ],
+      default: []
+    },
     featured: { type: Boolean, default: false, index: true },
     recommended: { type: Boolean, default: false, index: true },
     bestseller: { type: Boolean, default: false, index: true },
@@ -83,7 +118,12 @@ const cabSchema = new mongoose.Schema(
     enterpriseSeo: { type: vehicleEnterpriseSeoSchema, default: () => ({}) },
     cabId: { type: String, trim: true, default: "" },
     ...catalogProductFields,
-    status: { type: String, enum: ["active", "inactive"], default: "active", index: true },
+    status: {
+      type: String,
+      enum: ["active", "inactive", "draft", "under_verification", "maintenance", "suspended"],
+      default: "active",
+      index: true
+    },
     isDeleted: { type: Boolean, default: false, index: true }
   },
   { timestamps: true }
@@ -91,6 +131,9 @@ const cabSchema = new mongoose.Schema(
 
 cabSchema.index({ productCode: 1 }, { unique: true, sparse: true });
 cabSchema.index({ title: "text", vehicleName: "text", brand: "text", model: "text", city: "text" });
+cabSchema.index({ vendorAdminPhone: 1, status: 1, availabilityStatus: 1 });
+cabSchema.index({ city: 1, category: 1, status: 1, availabilityStatus: 1 });
+cabSchema.index({ registrationNumber: 1, isDeleted: 1 });
 
 const Cab = mongoose.model("Cab", cabSchema);
 

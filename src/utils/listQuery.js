@@ -34,6 +34,8 @@ function parseListQuery(req) {
   const fuelType = (req.query?.fuelType ?? "").trim();
   const transmission = (req.query?.transmission ?? "").trim();
   const status = (req.query?.status ?? "").trim();
+  const availabilityStatus = (req.query?.availabilityStatus ?? "").trim();
+  const verificationStatus = (req.query?.verificationStatus ?? "").trim();
   const featured = req.query?.featured === "1" || req.query?.featured === "true";
   const recommended = req.query?.recommended === "1" || req.query?.recommended === "true";
   const bestseller = req.query?.bestseller === "1" || req.query?.bestseller === "true";
@@ -56,6 +58,8 @@ function parseListQuery(req) {
     fuelType,
     transmission,
     status,
+    availabilityStatus,
+    verificationStatus,
     featured,
     recommended,
     bestseller,
@@ -135,7 +139,7 @@ function cityNameClause(city) {
 }
 
 function buildCabListFilter(baseFilter, pq) {
-  const { q, type, city, brand, category, seats, fuelType, transmission, status, featured, recommended, bestseller, maxPrice, features } = pq;
+  const { q, type, city, brand, category, seats, fuelType, transmission, status, availabilityStatus, verificationStatus, featured, recommended, bestseller, maxPrice, features } = pq;
   const parts = [];
   if (baseFilter && Object.keys(baseFilter).length > 0) parts.push(baseFilter);
   const text = textOrClause(
@@ -155,7 +159,8 @@ function buildCabListFilter(baseFilter, pq) {
       "seo",
       "seoTitle",
       "seoDescription",
-      "features"
+      "features",
+      "registrationNumber"
     ],
     q
   );
@@ -170,6 +175,8 @@ function buildCabListFilter(baseFilter, pq) {
   if (fuelType) parts.push({ fuelType: new RegExp(escapeRegex(fuelType), "i") });
   if (transmission) parts.push({ transmission: new RegExp(escapeRegex(transmission), "i") });
   if (status) parts.push({ status });
+  if (availabilityStatus) parts.push({ availabilityStatus });
+  if (verificationStatus) parts.push({ verificationStatus });
   for (const clause of [
     boolFilter("featured", featured),
     boolFilter("recommended", recommended),
@@ -180,7 +187,7 @@ function buildCabListFilter(baseFilter, pq) {
   if (maxPrice) {
     parts.push({ $or: [{ startingPrice: { $lte: maxPrice } }, { price: { $lte: maxPrice } }] });
   }
-  if (features.length) parts.push({ features: { $all: features } });
+  if (Array.isArray(features) && features.length) parts.push({ features: { $all: features } });
   if (parts.length === 0) return {};
   if (parts.length === 1) return parts[0];
   return { $and: parts };

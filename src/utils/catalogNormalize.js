@@ -117,6 +117,7 @@ function normalizeCabForApi(doc) {
     const enriched = enrichModernCab(doc);
     const price = num(enriched.price);
 
+    const city = enriched.city || inferCity(enriched);
     return {
       ...enriched,
       _id: id,
@@ -124,7 +125,16 @@ function normalizeCabForApi(doc) {
       title: enriched.title || enriched.name || "Cab",
       vendor: enriched.vendor || "Cabzii Partner",
       price,
-      city: enriched.city || inferCity(enriched)
+      city,
+      registrationNumber: enriched.registrationNumber || "",
+      availabilityStatus: enriched.availabilityStatus || "available",
+      verificationStatus: enriched.verificationStatus || "approved",
+      blockedDates: Array.isArray(enriched.blockedDates) ? enriched.blockedDates : [],
+      vehicleDocuments: Array.isArray(enriched.vehicleDocuments) ? enriched.vehicleDocuments : [],
+      serviceAreas:
+        Array.isArray(enriched.serviceAreas) && enriched.serviceAreas.length
+          ? enriched.serviceAreas
+          : [city].filter(Boolean)
     };
   }
 
@@ -166,6 +176,9 @@ function normalizeCabForApi(doc) {
     city: inferCity(doc),
     image: doc.image || (Array.isArray(doc.cabImages) ? doc.cabImages[0] : "") || "",
     status: doc.status || "active",
+    availabilityStatus: doc.availabilityStatus || "available",
+    registrationNumber: doc.registrationNumber || "",
+    verificationStatus: doc.verificationStatus || "approved",
     isDeleted: doc.isDeleted === true
   };
 }

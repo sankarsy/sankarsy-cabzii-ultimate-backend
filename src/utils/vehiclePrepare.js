@@ -104,6 +104,20 @@ const cabCoreSchema = Joi.object({
   year: Joi.number().integer().min(1990).max(2035).optional(),
   serviceForm: Joi.string().allow("").default("One Way"),
   pickupLocations: Joi.array().items(Joi.string()).default([]),
+  serviceAreas: Joi.array().items(Joi.string()).default([]),
+  registrationNumber: Joi.string().allow("", null),
+  availabilityStatus: Joi.string().valid("available", "busy", "blocked", "offline"),
+  verificationStatus: Joi.string().valid("pending", "approved", "rejected"),
+  blockedDates: Joi.array().items(Joi.string()),
+  vehicleDocuments: Joi.array().items(
+    Joi.object({
+      docType: Joi.string().valid("rc", "insurance", "permit", "fitness", "other"),
+      url: Joi.string().allow("", null),
+      status: Joi.string().valid("pending", "verified", "rejected"),
+      expiresAt: Joi.string().allow("", null),
+      label: Joi.string().allow("", null)
+    })
+  ),
   featured: Joi.boolean().default(false),
   recommended: Joi.boolean().default(false),
   bestseller: Joi.boolean().default(false),
@@ -157,7 +171,9 @@ const cabCoreSchema = Joi.object({
   faq: Joi.array().items(vehicleFaqSchema).default([]),
   breadcrumb: Joi.string().allow("").default(""),
   enterpriseSeo: enterpriseSeoSchema,
-  status: Joi.string().valid("active", "inactive").default("active")
+  status: Joi.string()
+    .valid("active", "inactive", "draft", "under_verification", "maintenance", "suspended")
+    .default("active")
 }).concat(Joi.object(catalogJoiFields));
 
 async function ensureUniqueProductCode(code, excludeId) {
