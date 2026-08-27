@@ -38,6 +38,8 @@ router.delete("/seo-templates/:id", requireAuth, requireRole("super_admin"), asy
 router.post("/seo-templates/preview", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.renderSeoPreview));
 
 router.get("/search-console", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.listSearchConsole));
+router.get("/search-console/status", requireAuth, requireRole("super_admin"), asyncHandler(seoRev.gscConnectionStatus));
+router.post("/search-console/sync", requireAuth, requireRole("super_admin"), asyncHandler(seoRev.syncGsc));
 router.post("/search-console", requireAuth, requireRole("super_admin"), asyncHandler(seoRev.createGscRow));
 router.put("/search-console/:id", requireAuth, requireRole("super_admin"), asyncHandler(seoRev.updateGscRow));
 router.delete("/search-console/:id", requireAuth, requireRole("super_admin"), asyncHandler(seoRev.deleteGscRow));

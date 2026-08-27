@@ -17,9 +17,11 @@ const {
   parsePeriod,
   inferCitySlug,
   operationalServiceKey,
-  recommendNoindex,
+  recommendIndexReview,
   recommendVendors
 } = require("../utils/seoRevenueMath");
+const { canonicalizeGscPage, parseLandingMeta, gscSafeRange } = require("../utils/gscCanonical");
+const { publicGscStatus } = require("../utils/gscConfig");
 
 const FEATURED_SPOTLIGHT = [
   {
@@ -91,14 +93,22 @@ function avgGmv(bucket) {
   return { available: true, value: Math.round(bucket.gmv / bucket.completedBookings) };
 }
 
-function gscForLanding(gscByPage, landingPage) {
+function gscForLanding(gscByPage, landingPage, gscConnected) {
+  if (!gscConnected) {
+    return {
+      clicks: unavailable("GSC DATA NOT CONNECTED"),
+      impressions: unavailable("GSC DATA NOT CONNECTED"),
+      ctr: unavailable("GSC DATA NOT CONNECTED"),
+      position: unavailable("GSC DATA NOT CONNECTED")
+    };
+  }
   const row = gscByPage.get(landingPage);
   if (!row) {
     return {
-      clicks: unavailable("GSC DATA = NOT CONNECTED or no row for this URL"),
-      impressions: unavailable("GSC DATA = NOT CONNECTED or no row for this URL"),
-      ctr: unavailable("GSC DATA = NOT CONNECTED or no row for this URL"),
-      position: unavailable("GSC DATA = NOT CONNECTED or no row for this URL")
+      clicks: unavailable("not in GSC for this range"),
+      impressions: unavailable("not in GSC for this range"),
+      ctr: unavailable("not in GSC for this range"),
+      position: unavailable("not in GSC for this range")
     };
   }
   return {
@@ -107,6 +117,53 @@ function gscForLanding(gscByPage, landingPage) {
     ctr: { available: true, value: row.ctr },
     position: { available: true, value: row.position }
   };
+}
+
+function selectGscRows(allRows, range) {
+  const api = allRows.filter(
+    (r) =>
+      r.source === "gsc_api" &&
+      r.startDate === range.gsc.start &&
+      r.endDate === range.gsc.end
+  );
+  if (api.length) {
+    return { rows: api, status: "GSC_API", connected: true, rangeMatch: true };
+  }
+  const imported = allRows.filter((r) => r.source !== "gsc_api");
+  if (imported.length) {
+    return { rows: imported, status: "IMPORTED SNAPSHOTS", connected: true, rangeMatch: false };
+  }
+  return { rows: [], status: "NOT CONNECTED", connected: false, rangeMatch: true };
+}
+
+function aggregateGsc(rows) {
+  const pageRows = rows.filter((r) => r.dimension === "page" || (r.source === "gsc_api" && !r.keyword));
+  const queryRows = rows.filter((r) => r.keyword);
+  const forPages = pageRows.length ? pageRows : queryRows;
+  const gscByPage = new Map();
+  for (const row of forPages) {
+    const page = canonicalizeGscPage(row.landingPage || "");
+    if (!page) continue;
+    const prev = gscByPage.get(page) || { clicks: 0, impressions: 0, position: 0, n: 0 };
+    prev.clicks += Number(row.clicks) || 0;
+    prev.impressions += Number(row.impressions) || 0;
+    prev.position += Number(row.position) || 0;
+    prev.n += 1;
+    gscByPage.set(page, prev);
+  }
+  for (const [, row] of gscByPage) {
+    row.position = row.n ? Math.round((row.position / row.n) * 10) / 10 : 0;
+    row.ctr = row.impressions ? row.clicks / row.impressions : 0;
+  }
+  const gscByKeyword = queryRows.map((row) => ({
+    keyword: row.keyword,
+    clicks: Number(row.clicks) || 0,
+    impressions: Number(row.impressions) || 0,
+    ctr: Number(row.ctr) || (Number(row.impressions) ? Number(row.clicks) / Number(row.impressions) : 0),
+    position: Number(row.position) || 0,
+    landingPage: canonicalizeGscPage(row.landingPage || "")
+  }));
+  return { gscByPage, gscByKeyword };
 }
 
 function sortTop(map, limit = 20) {
@@ -125,12 +182,14 @@ function sortTopGmv(map, limit = 20) {
 
 async function buildSeoRevenueReport(query) {
   const period = parsePeriod(query);
+  const gscRange = gscSafeRange(period);
+  const gscStatus = publicGscStatus();
   const bookingMatch = {
     createdAt: { $gte: period.start, $lte: period.end },
     type: { $in: ["cab", "driver", "tour"] }
   };
 
-  const [bookings, seoEvents, gscRows, insights, cabCityRows, pilgrimageIds] = await Promise.all([
+  const [bookings, seoEvents, gscAllRows, insights, cabCityRows, pilgrimageIds] = await Promise.all([
     Booking.find(bookingMatch)
       .select(
         "amount finalAmount status type pickup drop serviceTripType tripType roundTrip seoAttribution packageId createdAt"
@@ -146,7 +205,12 @@ async function buildSeoRevenueReport(query) {
         }
       }
     ]),
-    SearchConsoleSnapshot.find({}).select("keyword clicks impressions ctr position landingPage snapshotDate").lean().limit(5000),
+    SearchConsoleSnapshot.find({})
+      .select(
+        "keyword clicks impressions ctr position landingPage snapshotDate source dimension startDate endDate country device searchAppearance"
+      )
+      .lean()
+      .limit(20000),
     SeoPageInsight.find({}).lean().limit(500),
     Cab.aggregate([
       { $match: { isDeleted: { $ne: true }, status: "active" } },
@@ -155,33 +219,10 @@ async function buildSeoRevenueReport(query) {
     Package.find({ category: { $regex: /pilgrim/i } }).select("_id").lean()
   ]);
 
+  const selectedGsc = selectGscRows(gscAllRows, gscRange);
+  const gscConnected = selectedGsc.connected;
+  const { gscByPage, gscByKeyword } = aggregateGsc(selectedGsc.rows);
   const pilgrimageSet = new Set(pilgrimageIds.map((p) => String(p._id)));
-  const gscConnected = gscRows.length > 0;
-  const gscByPage = new Map();
-  const gscByKeyword = [];
-  for (const row of gscRows) {
-    const page = String(row.landingPage || "").split("?")[0];
-    if (page) {
-      const prev = gscByPage.get(page) || { clicks: 0, impressions: 0, ctr: 0, position: 0, n: 0 };
-      prev.clicks += Number(row.clicks) || 0;
-      prev.impressions += Number(row.impressions) || 0;
-      prev.position += Number(row.position) || 0;
-      prev.n += 1;
-      gscByPage.set(page, prev);
-    }
-    gscByKeyword.push({
-      keyword: row.keyword,
-      clicks: Number(row.clicks) || 0,
-      impressions: Number(row.impressions) || 0,
-      ctr: Number(row.ctr) || 0,
-      position: Number(row.position) || 0,
-      landingPage: page
-    });
-  }
-  for (const [, row] of gscByPage) {
-    row.position = row.n ? Math.round((row.position / row.n) * 10) / 10 : 0;
-    row.ctr = row.impressions ? row.clicks / row.impressions : 0;
-  }
 
   const sessionsByPage = new Map();
   const startsByPage = new Map();
@@ -285,11 +326,13 @@ async function buildSeoRevenueReport(query) {
   const cabCountByCity = new Map(cabCityRows.map((r) => [String(r._id || "").toLowerCase(), r.count]));
 
   const decorate = (row, landingPage) => {
-    const gsc = gscForLanding(gscByPage, landingPage);
+    const gsc = gscForLanding(gscByPage, landingPage, gscConnected);
     const sessions = sessionsByPage.get(landingPage) || 0;
     const funnelStarts = startsByPage.get(landingPage) || 0;
+    const meta = parseLandingMeta(landingPage);
     return {
       landingPage,
+      ...meta,
       ...row,
       gmv: { available: true, value: row.gmv, label: "booking_fare_gmv" },
       averageBookingValue: avgGmv(row),
@@ -320,119 +363,151 @@ async function buildSeoRevenueReport(query) {
   const noindexReport = noindexPaths.map((url) => {
     const gsc = gscByPage.get(url);
     const attributed = attributedPages.get(url) || emptyBucket();
-    const impressions = gsc ? gsc.impressions : null;
-    const clicks = gsc ? gsc.clicks : null;
+    const sessions = sessionsByPage.get(url) || 0;
+    const starts = startsByPage.get(url) || attributed.bookingStarts;
+    const impressions = gscConnected && gsc ? gsc.impressions : null;
+    const clicks = gscConnected && gsc ? gsc.clicks : null;
     return {
       url,
-      impressions: gsc ? { available: true, value: gsc.impressions } : unavailable("GSC DATA = NOT CONNECTED or no row"),
-      clicks: gsc ? { available: true, value: gsc.clicks } : unavailable("GSC DATA = NOT CONNECTED or no row"),
+      ...parseLandingMeta(url),
+      impressions: gscConnected && gsc ? { available: true, value: gsc.impressions } : unavailable(gscConnected ? "not in GSC for this range" : "GSC DATA NOT CONNECTED"),
+      clicks: gscConnected && gsc ? { available: true, value: gsc.clicks } : unavailable(gscConnected ? "not in GSC for this range" : "GSC DATA NOT CONNECTED"),
+      ctr: gscConnected && gsc ? { available: true, value: gsc.ctr } : unavailable(gscConnected ? "not in GSC for this range" : "GSC DATA NOT CONNECTED"),
+      position: gscConnected && gsc ? { available: true, value: gsc.position } : unavailable(gscConnected ? "not in GSC for this range" : "GSC DATA NOT CONNECTED"),
+      seoViews: { available: true, value: sessions },
+      bookingStarts: { available: true, value: starts },
       bookings: { available: true, value: attributed.completedBookings },
+      completedBookings: { available: true, value: attributed.completedBookings },
       gmv: { available: true, value: attributed.gmv, label: "booking_fare_gmv" },
       currentStatus: "noindex,follow",
-      recommendation: recommendNoindex({
+      recommendation: recommendIndexReview({
         impressions,
         clicks,
         completedBookings: attributed.completedBookings,
         gmv: attributed.gmv
-      })
+      }),
+      indexationUnchanged: true
     };
   });
 
   const vendorExpansion = [...operationalCities.entries()].map(([city, bucket]) => {
     const listings = cabCountByCity.get(city) || 0;
+    let cityImpressions = 0;
+    let cityGscFound = false;
+    if (gscConnected) {
+      for (const [page, row] of gscByPage) {
+        if (parseLandingMeta(page).city === city) {
+          cityImpressions += row.impressions;
+          cityGscFound = true;
+        }
+      }
+    }
     return {
       city,
       operationalCompletedBookings: bucket.completedBookings,
       operationalGmv: bucket.gmv,
       activeCabListings: listings,
-      gscImpressions: gscConnected
-        ? unavailable("not mapped to a single city URL in this row")
-        : unavailable("GSC DATA = NOT CONNECTED"),
+      gscImpressions: cityGscFound
+        ? { available: true, value: cityImpressions }
+        : unavailable(gscConnected ? "not in GSC for this range" : "GSC DATA NOT CONNECTED"),
       recommendation: recommendVendors({
         completedBookings: bucket.completedBookings,
         activeCabListings: listings,
-        gscImpressionsAvailable: false
+        gscImpressionsAvailable: cityGscFound
       })
     };
   }).sort((a, b) => b.operationalCompletedBookings - a.operationalCompletedBookings);
 
-  const commercialIntent = /taxi|cab|airport|acting.?driver|outstation|tempo|rental|pilgrim|one.?way|hourly/i;
-  const queries = gscConnected
-    ? {
-        status: "IMPORTED SNAPSHOTS",
+  const queryEmpty = {
+    status: "GSC DATA NOT CONNECTED",
+    topByClicks: [],
+    topByImpressions: [],
+    topByAttributedBookings: [],
+    highImpressionsLowCtr: [],
+    highCommercialIntentQueries: []
+  };
+  const queries = !gscConnected
+    ? queryEmpty
+    : {
+        status: selectedGsc.status,
+        topByClicks: [...gscByKeyword].sort((a, b) => b.clicks - a.clicks).slice(0, 20),
+        topByImpressions: [...gscByKeyword].sort((a, b) => b.impressions - a.impressions).slice(0, 20),
+        topByAttributedBookings: gscByKeyword
+          .map((q) => {
+            const bucket = attributedPages.get(q.landingPage) || emptyBucket();
+            return {
+              ...q,
+              attributedCompletedBookings: bucket.completedBookings,
+              attributedGmv: bucket.gmv
+            };
+          })
+          .filter((q) => q.attributedCompletedBookings > 0)
+          .sort((a, b) => b.attributedCompletedBookings - a.attributedCompletedBookings)
+          .slice(0, 20),
         highImpressionsLowCtr: gscByKeyword
           .filter((q) => q.impressions >= 50 && q.ctr < 0.03)
           .sort((a, b) => b.impressions - a.impressions)
           .slice(0, 20),
-        highClicksLowBookingConversion: gscByKeyword
-          .filter((q) => q.clicks >= 10)
-          .map((q) => {
-            const bucket = attributedPages.get(q.landingPage) || emptyBucket();
-            const conv = rateOrNA(bucket.completedBookings, q.clicks);
-            return { ...q, completedBookings: bucket.completedBookings, conversion: conv };
-          })
-          .filter((q) => !q.conversion.available || q.conversion.value < 0.02)
-          .sort((a, b) => b.clicks - a.clicks)
-          .slice(0, 20),
-        lowImpressionsHighBookingConversion: gscByKeyword
-          .filter((q) => q.impressions > 0 && q.impressions < 50 && q.clicks > 0)
-          .map((q) => {
-            const bucket = attributedPages.get(q.landingPage) || emptyBucket();
-            const conv = rateOrNA(bucket.completedBookings, q.clicks);
-            return { ...q, completedBookings: bucket.completedBookings, conversion: conv };
-          })
-          .filter((q) => q.conversion.available && q.conversion.value >= 0.1)
-          .sort((a, b) => b.conversion.value - a.conversion.value)
-          .slice(0, 20),
-        highBookingValueRoutes: sortTopGmv(
-          new Map([...attributedPages].filter(([k]) => k.startsWith("/routes/"))),
-          20
-        ).map((r) => ({ landingPage: r.key, completedBookings: r.completedBookings, gmv: r.gmv })),
         highCommercialIntentQueries: gscByKeyword
-          .filter((q) => commercialIntent.test(q.keyword || ""))
+          .filter((q) => /taxi|cab|airport|acting.?driver|outstation|tempo|rental|pilgrim|one.?way|hourly/i.test(q.keyword || ""))
           .sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions)
           .slice(0, 20)
-      }
-    : {
-        status: "GSC DATA = NOT CONNECTED",
-        highImpressionsLowCtr: [],
-        highClicksLowBookingConversion: [],
-        lowImpressionsHighBookingConversion: [],
-        highBookingValueRoutes: sortTopGmv(
-          new Map([...attributedPages].filter(([k]) => k.startsWith("/routes/"))),
-          20
-        ).map((r) => ({ landingPage: r.key, completedBookings: r.completedBookings, gmv: r.gmv })),
-        highCommercialIntentQueries: []
       };
 
   const topAttributedByBookings = sortTop(attributedPages, 20).map((r) => decorate(r, r.key));
   const topAttributedByGmv = sortTopGmv(attributedPages, 20).map((r) => decorate(r, r.key));
 
   const pageKeys = new Set([...sessionsByPage.keys(), ...attributedPages.keys(), ...gscByPage.keys()]);
+  const pagePerformance = [...pageKeys]
+    .map((page) => decorate(attributedPages.get(page) || emptyBucket(), page))
+    .sort((a, b) => {
+      const ac = a.clicks?.available ? a.clicks.value : -1;
+      const bc = b.clicks?.available ? b.clicks.value : -1;
+      return bc - ac || b.completedBookings - a.completedBookings;
+    })
+    .slice(0, 100);
+
+  const highImpressionsLowCtrPages = gscConnected
+    ? [...gscByPage.entries()]
+        .filter(([, row]) => row.impressions >= 50 && row.ctr < 0.03)
+        .sort((a, b) => b[1].impressions - a[1].impressions)
+        .slice(0, 10)
+        .map(([page, row]) => ({ landingPage: page, impressions: row.impressions, ctr: row.ctr, clicks: row.clicks }))
+    : [];
+
+  const highClicksLowBookings = gscConnected
+    ? [...gscByPage.entries()]
+        .map(([page, row]) => ({
+          landingPage: page,
+          clicks: row.clicks,
+          completedBookings: (attributedPages.get(page) || emptyBucket()).completedBookings,
+          note: "GSC clicks are demand, not a conversion rate."
+        }))
+        .filter((r) => r.clicks >= 10 && r.completedBookings <= 1)
+        .sort((a, b) => b.clicks - a.clicks)
+        .slice(0, 10)
+    : [];
+
   const highTrafficLowBookings = [];
   const lowTrafficHighConversion = [];
   for (const page of pageKeys) {
     const bucket = attributedPages.get(page) || emptyBucket();
     const sessions = sessionsByPage.get(page) || 0;
-    const gsc = gscByPage.get(page);
-    const traffic = gsc ? gsc.clicks : sessions;
-    const trafficSource = gsc ? "gsc_clicks" : sessions ? "first_party_seo_sessions" : "";
-    if (!trafficSource) continue;
-    if (traffic >= 10 && bucket.completedBookings <= 1) {
+    if (sessions >= 10 && bucket.completedBookings <= 1) {
       highTrafficLowBookings.push({
         landingPage: page,
-        traffic,
-        trafficSource,
+        traffic: sessions,
+        trafficSource: "first_party_seo_sessions",
         completedBookings: bucket.completedBookings,
         gmv: bucket.gmv
       });
     }
-    const conv = rateOrNA(bucket.completedBookings, traffic);
-    if (traffic > 0 && traffic <= 15 && conv.available && conv.value >= 0.2) {
+    const conv = rateOrNA(bucket.completedBookings, sessions);
+    if (sessions > 0 && sessions <= 15 && conv.available && conv.value >= 0.2) {
       lowTrafficHighConversion.push({
         landingPage: page,
-        traffic,
-        trafficSource,
+        traffic: sessions,
+        trafficSource: "first_party_seo_sessions",
         completedBookings: bucket.completedBookings,
         conversion: conv,
         gmv: bucket.gmv
@@ -441,6 +516,10 @@ async function buildSeoRevenueReport(query) {
   }
   highTrafficLowBookings.sort((a, b) => b.traffic - a.traffic);
   lowTrafficHighConversion.sort((a, b) => (b.conversion.value || 0) - (a.conversion.value || 0));
+
+  const highDemandLowSupply = vendorExpansion
+    .filter((v) => v.recommendation === "ADD VENDORS" || (v.gscImpressions?.available && v.gscImpressions.value >= 100 && v.activeCabListings <= 1))
+    .slice(0, 10);
 
   const cityRows = sortTop(operationalCities, 20).map((r) => ({
     city: r.key,
@@ -470,21 +549,29 @@ async function buildSeoRevenueReport(query) {
       label: period.label,
       from: period.start.toISOString(),
       to: period.end.toISOString(),
-      days: period.days
+      days: period.days,
+      bookingRange: gscRange.booking,
+      gscRange: gscRange.gsc,
+      rangesDiffer: gscRange.rangesDiffer,
+      rangeWarning: gscRange.warning
     },
     sources: {
       ga4: { status: "NOT CONNECTED", detail: "No GA4 property ID / Data API in env. seo_page_view is client dataLayer/gtag only when GTM is installed." },
       gsc: {
-        status: gscConnected ? "IMPORTED SNAPSHOTS" : "NOT CONNECTED",
-        setupRequirement: [
-          "Live Search Console API is not implemented in this codebase (no googleapis client, no GOOGLE_SEARCH_CONSOLE_* env).",
-          "Grant a Google Cloud service account access to the Search Console property for https://cabzii.in.",
-          "Enable the Search Console API, then add a connector or import CSV/JSON snapshots in Admin → SEO revenue / Enterprise → Search Console.",
-          "Until then: GSC DATA = NOT CONNECTED."
-        ],
+        status: gscConnected ? selectedGsc.status : "NOT CONNECTED",
+        configured: gscStatus.configured,
+        property: gscStatus.property,
+        canonicalOrigin: gscStatus.canonicalOrigin,
+        credentialSource: gscStatus.credentialSource,
+        rangeMatch: selectedGsc.rangeMatch,
+        setupRequirement: gscStatus.setupRequirement,
         detail: gscConnected
-          ? "Figures are from SearchConsoleSnapshot imports. They are not live Search Console API and may not match the booking date filter."
-          : "GSC DATA = NOT CONNECTED"
+          ? selectedGsc.status === "GSC_API"
+            ? `Search Console API rows for ${gscRange.gsc.start} → ${gscRange.gsc.end}.`
+            : "Imported/manual snapshots. They may not match the booking date filter."
+          : gscStatus.configured
+            ? "GSC API is configured. Sync this date range to pull rows. GSC DATA NOT CONNECTED for the selected period until then."
+            : "GSC DATA NOT CONNECTED"
       },
       bookings: { status: "CONNECTED", detail: "Mongo Booking documents. Bus/hotel excluded." },
       firstPartySeoEvents: { status: "CONNECTED", detail: "SeoEvent collection from landing beacons. Historical rows start empty until Phase 3 traffic is recorded." },
@@ -498,7 +585,9 @@ async function buildSeoRevenueReport(query) {
     attribution: {
       method: "Last SEO landing stored in browser sessionStorage, copied onto Booking.seoAttribution at create if viewedAt is within the window. Bookings without that field are not attributed to an SEO URL.",
       window: ATTRIBUTION_WINDOW_LABEL,
-      doNotInferFromPickup: true
+      doNotInferFromPickup: true,
+      gscClicksAreNotSessions: true,
+      conversionWarning: "SEO conversion uses first-party seo_page_view sessions, not GSC clicks."
     },
     totals: {
       operationalBookingStarts: operationalStarts,
@@ -510,6 +599,7 @@ async function buildSeoRevenueReport(query) {
       truncated
     },
     spotlight,
+    pagePerformance,
     topSeoPagesByCompletedBookings: topAttributedByBookings,
     topSeoPagesByGmv: topAttributedByGmv,
     topCities: cityRows,
@@ -521,6 +611,17 @@ async function buildSeoRevenueReport(query) {
     noindexReport,
     vendorExpansion,
     queries,
+    opportunities: {
+      highImpressionsLowCtr: highImpressionsLowCtrPages,
+      highClicksLowBookings,
+      lowTrafficHighConversion: lowTrafficHighConversion.slice(0, 10),
+      highBookingsHighGmv: topAttributedByGmv.slice(0, 10).map((r) => ({
+        landingPage: r.landingPage,
+        completedBookings: r.completedBookings,
+        gmv: r.gmv
+      })),
+      highDemandLowSupply
+    },
     insights: insights.map((i) => ({
       id: String(i._id),
       landingPage: i.landingPage,
@@ -553,6 +654,7 @@ async function buildSeoRevenueReport(query) {
         .filter((v, i, a) => a.indexOf(v) === i)
         .slice(0, 10),
       highTrafficLowBookings: highTrafficLowBookings.slice(0, 10),
+      highClicksLowBookings,
       lowTrafficHighConversion: lowTrafficHighConversion.slice(0, 10),
       highGmvAttributed: topAttributedByGmv.slice(0, 10).map((r) => ({
         landingPage: r.landingPage,

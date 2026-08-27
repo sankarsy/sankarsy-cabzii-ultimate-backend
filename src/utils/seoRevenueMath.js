@@ -173,16 +173,20 @@ function operationalServiceKey(booking = {}) {
   return "cab-booking";
 }
 
-function recommendNoindex({ impressions, clicks, completedBookings, gmv }) {
-  const hasGsc = impressions != null || clicks != null;
-  const hasBookings = Number(completedBookings) > 0 || Number(gmv) > 0;
-  if (!hasGsc && !hasBookings) {
-    return "KEEP NOINDEX";
-  }
-  if (Number(clicks) >= 20 || Number(completedBookings) >= 3) {
-    return "REVIEW FOR REINDEX";
-  }
+function recommendIndexReview({ impressions, clicks, completedBookings, gmv }) {
+  const hasGsc = impressions != null && Number.isFinite(Number(impressions));
+  const imp = Number(impressions) || 0;
+  const clk = Number(clicks) || 0;
+  const bookings = Number(completedBookings) || 0;
+  const money = Number(gmv) || 0;
+  if (!hasGsc && bookings === 0 && money === 0) return "KEEP NOINDEX";
+  if (clk >= 20 || bookings >= 3 || (imp >= 200 && clk >= 5)) return "POTENTIAL REINDEX";
+  if ((hasGsc && (imp > 0 || clk > 0)) || bookings > 0 || money > 0) return "REVIEW";
   return "KEEP NOINDEX";
+}
+
+function recommendNoindex(args) {
+  return recommendIndexReview(args);
 }
 
 function recommendVendors({ completedBookings, activeCabListings, gscImpressionsAvailable }) {
@@ -209,6 +213,7 @@ module.exports = {
   inferCitySlug,
   operationalServiceKey,
   recommendNoindex,
+  recommendIndexReview,
   recommendVendors,
   CITY_DIRECTORY
 };

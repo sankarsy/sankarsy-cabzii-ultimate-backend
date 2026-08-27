@@ -21,6 +21,7 @@ const { logAudit } = require("../services/auditService");
 const { slugify } = require("../utils/slugify");
 const { buildSeoFromTemplate, renderTemplate } = require("../utils/templateEngine");
 const { isSuperAdminUser } = require("../utils/adminAccess");
+const { canonicalizeGscPage } = require("../utils/gscCanonical");
 
 const faqItemJoi = Joi.object({
   question: Joi.string().required(),
@@ -105,14 +106,17 @@ const seoTemplateSchema = Joi.object({
 });
 
 const gscSchema = Joi.object({
-  keyword: Joi.string().required(),
+  keyword: Joi.string().allow("").default(""),
   clicks: Joi.number().default(0),
   impressions: Joi.number().default(0),
   ctr: Joi.number().default(0),
   position: Joi.number().default(0),
   landingPage: Joi.string().allow("").default(""),
   opportunityScore: Joi.number().default(0),
-  snapshotDate: Joi.string().allow("").default("")
+  snapshotDate: Joi.string().allow("").default(""),
+  country: Joi.string().allow("").default(""),
+  device: Joi.string().allow("").default(""),
+  searchAppearance: Joi.string().allow("").default("")
 });
 
 const relatedSchema = Joi.object({
@@ -335,9 +339,16 @@ async function importSearchConsole(req, res) {
   const docs = [];
   for (const row of rows.slice(0, 5000)) {
     const { error, value } = gscSchema.validate(row, { stripUnknown: true, convert: true });
-    if (!error) docs.push(value);
+    if (!error && (value.keyword || value.landingPage)) {
+      if (value.landingPage) value.landingPage = canonicalizeGscPage(value.landingPage);
+      value.source = "import";
+      docs.push(value);
+    }
   }
-  await SearchConsoleSnapshot.deleteMany({ snapshotDate: docs[0]?.snapshotDate || "" });
+  await SearchConsoleSnapshot.deleteMany({
+    source: { $in: ["import", "manual"] },
+    snapshotDate: docs[0]?.snapshotDate || ""
+  });
   const inserted = await SearchConsoleSnapshot.insertMany(docs, { ordered: false });
   res.json({ success: true, data: { imported: inserted.length } });
 }
@@ -529,6 +540,8 @@ async function bulkImport(req, res) {
       } else if (entity === "gsc") {
         const { error, value } = gscSchema.validate(row, { stripUnknown: true, convert: true });
         if (error) throw error;
+        if (value.landingPage) value.landingPage = canonicalizeGscPage(value.landingPage);
+        value.source = "import";
         await SearchConsoleSnapshot.create(value);
       } else {
         throw new Error(`Unsupported entity: ${entity}`);

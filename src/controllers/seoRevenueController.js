@@ -6,8 +6,11 @@ const { SeoPageInsight } = require("../models/SeoPageInsight");
 const { SearchConsoleSnapshot } = require("../models/SearchConsoleSnapshot");
 const { HttpError } = require("../utils/httpError");
 const { isSuperAdminUser } = require("../utils/adminAccess");
-const { sanitizeSeoEvent } = require("../utils/seoRevenueMath");
+const { sanitizeSeoEvent, parsePeriod } = require("../utils/seoRevenueMath");
 const { getSeoRevenueReport, invalidateSeoRevenueCache } = require("../services/seoRevenueReportService");
+const { publicGscStatus } = require("../utils/gscConfig");
+const { gscSafeRange, canonicalizeGscPage } = require("../utils/gscCanonical");
+const { syncSearchConsole } = require("../services/gscSyncService");
 const { logAudit } = require("../services/auditService");
 
 async function ingestSeoEvent(req, res) {
@@ -21,6 +24,31 @@ async function seoRevenueOverview(req, res) {
   if (!isSuperAdminUser(req)) throw new HttpError(403, "Super admin only.");
   const data = await getSeoRevenueReport(req.query || {});
   res.json({ success: true, data });
+}
+
+async function gscConnectionStatus(req, res) {
+  if (!isSuperAdminUser(req)) throw new HttpError(403, "Super admin only.");
+  res.json({ success: true, data: publicGscStatus() });
+}
+
+async function syncGsc(req, res) {
+  if (!isSuperAdminUser(req)) throw new HttpError(403, "Super admin only.");
+  const period = parsePeriod({ ...(req.query || {}), ...(req.body || {}) });
+  const range = gscSafeRange(period);
+  try {
+    const data = await syncSearchConsole({ startDate: range.gsc.start, endDate: range.gsc.end });
+    invalidateSeoRevenueCache();
+    await logAudit({
+      req,
+      action: "gsc.sync",
+      entity: "search-console",
+      after: { startDate: data.startDate, endDate: data.endDate, stored: data.stored, property: data.property }
+    });
+    res.json({ success: true, data: { ...data, ranges: range } });
+  } catch (err) {
+    if (err.code === "GSC_NOT_CONFIGURED") throw new HttpError(400, "GSC DATA NOT CONNECTED");
+    throw new HttpError(502, err.message || "GSC sync failed.");
+  }
 }
 
 const insightSchema = Joi.object({
@@ -101,20 +129,28 @@ async function deleteInsight(req, res) {
 }
 
 const gscRowSchema = Joi.object({
-  keyword: Joi.string().required(),
+  keyword: Joi.string().allow("").default(""),
   clicks: Joi.number().min(0).default(0),
   impressions: Joi.number().min(0).default(0),
   ctr: Joi.number().min(0).default(0),
   position: Joi.number().min(0).default(0),
   landingPage: Joi.string().allow("").default(""),
   opportunityScore: Joi.number().min(0).max(100).default(0),
-  snapshotDate: Joi.string().allow("").default("")
+  snapshotDate: Joi.string().allow("").default(""),
+  country: Joi.string().allow("").default(""),
+  device: Joi.string().allow("").default(""),
+  searchAppearance: Joi.string().allow("").default(""),
+  startDate: Joi.string().allow("").default(""),
+  endDate: Joi.string().allow("").default("")
 });
 
 async function createGscRow(req, res) {
   if (!isSuperAdminUser(req)) throw new HttpError(403, "Super admin only.");
   const { error, value } = gscRowSchema.validate(req.body, { stripUnknown: true, convert: true });
   if (error) throw new HttpError(400, error.message);
+  if (!value.keyword && !value.landingPage) throw new HttpError(400, "keyword or landingPage is required.");
+  if (value.landingPage) value.landingPage = canonicalizeGscPage(value.landingPage);
+  value.source = "manual";
   const data = await SearchConsoleSnapshot.create(value);
   invalidateSeoRevenueCache();
   res.status(201).json({ success: true, data });
@@ -124,6 +160,7 @@ async function updateGscRow(req, res) {
   if (!isSuperAdminUser(req)) throw new HttpError(403, "Super admin only.");
   const { error, value } = gscRowSchema.validate(req.body, { stripUnknown: true, convert: true });
   if (error) throw new HttpError(400, error.message);
+  if (value.landingPage) value.landingPage = canonicalizeGscPage(value.landingPage);
   const data = await SearchConsoleSnapshot.findByIdAndUpdate(req.params.id, value, { new: true }).lean();
   if (!data) throw new HttpError(404, "Snapshot not found.");
   invalidateSeoRevenueCache();
@@ -142,6 +179,8 @@ async function deleteGscRow(req, res) {
 module.exports = {
   ingestSeoEvent,
   seoRevenueOverview,
+  gscConnectionStatus,
+  syncGsc,
   listInsights,
   createInsight,
   updateInsight,

@@ -9,6 +9,7 @@ const {
   bookingFareGmv,
   parsePeriod,
   recommendNoindex,
+  recommendIndexReview,
   inferCitySlug,
   operationalServiceKey
 } = require("./seoRevenueMath");
@@ -60,6 +61,17 @@ describe("SEO revenue math", () => {
 
   it("keeps noindex when there is no GSC and no bookings", () => {
     assert.equal(recommendNoindex({ impressions: null, clicks: null, completedBookings: 0, gmv: 0 }), "KEEP NOINDEX");
+  });
+
+  it("classifies weak GSC as REVIEW and strong clicks as POTENTIAL REINDEX", () => {
+    assert.equal(
+      recommendIndexReview({ impressions: 40, clicks: 2, completedBookings: 0, gmv: 0 }),
+      "REVIEW"
+    );
+    assert.equal(
+      recommendIndexReview({ impressions: 400, clicks: 25, completedBookings: 0, gmv: 0 }),
+      "POTENTIAL REINDEX"
+    );
   });
 
   it("infers Chennai from pickup text without inventing GMV", () => {
