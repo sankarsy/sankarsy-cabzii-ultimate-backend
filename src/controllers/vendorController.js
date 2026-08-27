@@ -8,6 +8,7 @@ const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 const { privilegedRoleForPhone, isSuperAdminUser } = require("../utils/adminAccess");
 const { normalizeMobileNumber } = require("../utils/mobile");
+const { digitsPhone, contactPhoneDigits, vendorOwningAdminPhone } = require("../utils/vendorPhone");
 const {
   assertDriverPhoneNotVendorOrAdmin,
   assertUniqueDriverPhone
@@ -25,10 +26,6 @@ const vendorSchema = Joi.object({
   isActive: Joi.boolean().default(true)
 });
 
-function digitsPhone(raw) {
-  return normalizeMobileNumber(raw) || "";
-}
-
 async function assertAdminPhoneFree(adminPhone, excludeVendorId) {
   const mobile = digitsPhone(adminPhone);
   if (!mobile) return;
@@ -37,10 +34,8 @@ async function assertAdminPhoneFree(adminPhone, excludeVendorId) {
     throw new HttpError(400, "This mobile belongs to a super admin. Use a different phone for the vendor admin login.");
   }
 
-  const otherVendor = await Vendor.findOne({
-    _id: excludeVendorId ? { $ne: excludeVendorId } : { $exists: true },
-    $or: [{ adminPhone: mobile }, { adminPhone: adminPhone }]
-  }).select("_id name").lean();
+  const vendors = await Vendor.find({}).select("_id name adminPhone").lean();
+  const otherVendor = vendorOwningAdminPhone(vendors, mobile, excludeVendorId);
   if (otherVendor) {
     throw new HttpError(409, `This mobile is already used by vendor "${otherVendor.name}".`);
   }
@@ -48,14 +43,8 @@ async function assertAdminPhoneFree(adminPhone, excludeVendorId) {
   const user = await User.findOne({ mobileNumber: mobile }).select("role mobileNumber").lean();
   if (!user) return;
 
-  if (excludeVendorId) {
-    const current = await Vendor.findById(excludeVendorId).select("adminPhone").lean();
-    const currentMobile = digitsPhone(current?.adminPhone);
-    if (currentMobile === mobile) return;
-  }
-
   if (user.role === "vendor_admin") {
-    throw new HttpError(409, "This mobile number is already registered as a vendor admin.");
+    return;
   }
   if (user.role === "super_admin" || user.role === "driver") {
     throw new HttpError(409, "This mobile number is already registered. Use a different number.");
@@ -206,6 +195,7 @@ async function createVendor(req, res) {
   const { adminPassword, ...vendorFields } = value;
   if (vendorFields.adminPhone) vendorFields.adminPhone = digitsPhone(vendorFields.adminPhone) || vendorFields.adminPhone;
   if (vendorFields.driverPhone) vendorFields.driverPhone = digitsPhone(vendorFields.driverPhone) || vendorFields.driverPhone;
+  vendorFields.contactPhone = contactPhoneDigits(vendorFields.contactPhone);
 
   const data = await Vendor.create(vendorFields);
 
@@ -264,6 +254,7 @@ async function updateVendor(req, res) {
   const { adminPassword, ...vendorFields } = value;
   if (vendorFields.adminPhone) vendorFields.adminPhone = digitsPhone(vendorFields.adminPhone) || vendorFields.adminPhone;
   if (vendorFields.driverPhone) vendorFields.driverPhone = digitsPhone(vendorFields.driverPhone) || vendorFields.driverPhone;
+  vendorFields.contactPhone = contactPhoneDigits(vendorFields.contactPhone);
 
   const data = await Vendor.findByIdAndUpdate(req.params.id, vendorFields, { new: true, runValidators: true });
 

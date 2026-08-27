@@ -20,6 +20,7 @@ const { publicAvailabilityFilter } = require("../utils/bookingAvailability");
 const { missingCabPublishFields } = require("../utils/vendorOnboarding");
 const { isSuperAdminUser } = require("../utils/adminAccess");
 const { searchCabsForCustomer, wantsCityMatching } = require("../utils/cabSearchMatching");
+const { sanitizeInventoryPayload, assertUniqueRegistration } = require("../utils/vehicleInventory");
 
 async function applyVehicleInventory(req, payload, existing = null) {
   const next = sanitizeInventoryPayload(req, payload, existing);
