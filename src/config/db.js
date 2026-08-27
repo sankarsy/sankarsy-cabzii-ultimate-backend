@@ -1,6 +1,15 @@
 const mongoose = require("mongoose");
 const { env } = require("./env");
 
+function databaseNameFromMongoUri(uri) {
+  try {
+    const name = decodeURIComponent(new URL(uri).pathname.replace(/^\//, "").split("/")[0] || "");
+    return name.trim();
+  } catch {
+    return "";
+  }
+}
+
 async function connectDb() {
   const uri = env.mongodbUri;
   if (/mongodb\+srv:\/\/[^@]+@f62xoll\.mongodb\.net/i.test(uri)) {
@@ -8,11 +17,13 @@ async function connectDb() {
       'Invalid MONGODB_URI: use your full Atlas host (e.g. cluster0.xxxxx.mongodb.net) or the 3-shard connection string from Atlas — not "@f62xoll.mongodb.net" alone.'
     );
   }
+  const dbName = databaseNameFromMongoUri(uri) || process.env.MONGODB_DB_NAME || "cabzii";
   await mongoose.connect(uri, {
+    dbName,
     serverSelectionTimeoutMS: 15000,
     maxPoolSize: 10
   });
-  console.log("MongoDB connected");
+  console.log(`MongoDB connected (${dbName})`);
 
   try {
     const { seedPackagesIfEmpty } = require("../utils/seedPackagesIfEmpty");
@@ -36,4 +47,4 @@ async function connectDb() {
   }
 }
 
-module.exports = { connectDb };
+module.exports = { connectDb, databaseNameFromMongoUri };
