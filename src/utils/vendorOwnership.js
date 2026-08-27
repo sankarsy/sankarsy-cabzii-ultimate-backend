@@ -3,6 +3,7 @@
 const { env } = require("../config/env");
 const { Vendor } = require("../models/Vendor");
 const { normalizeMobileNumber } = require("./mobile");
+const { vendorOwningAdminPhone } = require("./vendorPhone");
 
 /** Names that must never be treated as an automatic vendor match. */
 const GENERIC_VENDOR_NAMES = new Set(["cabzii partner", "cabzii"]);
@@ -176,12 +177,22 @@ function indexVendorAccounts(vendorDocs = [], vendorAdminUsers = []) {
   return { byPhone, byName };
 }
 
+async function findVendorAccountByPhone(rawPhone, { requireActive = true } = {}) {
+  const phone = normalizeMobileNumber(rawPhone);
+  if (!phone) return null;
+  const vendors = await Vendor.find({}).select("name adminPhone isActive").lean();
+  const hit = vendorOwningAdminPhone(vendors, phone, null);
+  if (!hit) return null;
+  if (requireActive && hit.isActive === false) return null;
+  return hit;
+}
+
 async function resolveAuthenticatedVendor(req) {
   const phone = normalizeMobileNumber(req.user?.mobileNumber);
   if (!phone) return { phone: "", name: "" };
 
   const fromEnv = env.vendorAdminMap[phone] || "";
-  const vendorDoc = await Vendor.findOne({ adminPhone: phone }).select("name adminPhone isActive").lean();
+  const vendorDoc = await findVendorAccountByPhone(phone, { requireActive: false });
   const name = exactVendorName(vendorDoc?.name || fromEnv || req.user.vendorName || "");
   return { phone, name };
 }
@@ -208,5 +219,6 @@ module.exports = {
   classifyBookingOwnership,
   indexVendorAccounts,
   resolveAuthenticatedVendor,
-  applyAuthenticatedVendorOwnership
+  applyAuthenticatedVendorOwnership,
+  findVendorAccountByPhone
 };

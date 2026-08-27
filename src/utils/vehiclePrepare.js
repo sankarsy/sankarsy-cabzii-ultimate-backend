@@ -36,7 +36,7 @@ const vehiclePackageSchema = Joi.object({
   extraHourRate: Joi.number().min(0).default(0),
   sortOrder: Joi.number().default(0),
   active: Joi.boolean().default(true)
-});
+}).unknown(true);
 
 const vehicleImageSchema = Joi.object({
   url: Joi.string().required(),
@@ -45,19 +45,19 @@ const vehicleImageSchema = Joi.object({
   title: Joi.string().allow("").default(""),
   caption: Joi.string().allow("").default(""),
   sortOrder: Joi.number().default(0)
-});
+}).unknown(true);
 
 const vehicleFaqSchema = Joi.object({
   question: Joi.string().allow("").default(""),
   answer: Joi.string().allow("").default("")
-});
+}).unknown(true);
 
 const vehicleSeoReviewSchema = Joi.object({
   name: Joi.string().allow("").default(""),
   rating: Joi.number().min(1).max(5).default(5),
   review: Joi.string().allow("").default(""),
   location: Joi.string().allow("").default("")
-});
+}).unknown(true);
 
 const enterpriseSeoSchema = Joi.object({
   robots: Joi.string().allow("").default("index,follow"),
@@ -89,11 +89,11 @@ const enterpriseSeoSchema = Joi.object({
   relatedBlogs: Joi.array().items(Joi.string()).default([]),
   relatedServices: Joi.array().items(Joi.string()).default([]),
   seoScore: Joi.number().min(0).max(100).default(0)
-}).default();
+}).unknown(true).default();
 
 const cabCoreSchema = Joi.object({
   title: Joi.string().required(),
-  vendor: Joi.string().required(),
+  vendor: Joi.string().allow("").default(""),
   type: Joi.string().required(),
   category: Joi.string().allow("").default(""),
   vehicleModel: Joi.string().allow("").default(""),
@@ -116,7 +116,7 @@ const cabCoreSchema = Joi.object({
       status: Joi.string().valid("pending", "verified", "rejected"),
       expiresAt: Joi.string().allow("", null),
       label: Joi.string().allow("", null)
-    })
+    }).unknown(true)
   ),
   featured: Joi.boolean().default(false),
   recommended: Joi.boolean().default(false),
@@ -295,6 +295,7 @@ async function finalizeCabPayload(value, existing = {}, existingId) {
   }
   payload.productCode = await ensureUniqueProductCode(payload.productCode, existingId);
   if (!payload.cabId) payload.cabId = payload.productCode || payload.slug || "";
+  if (!payload.vendor) payload.vendor = existing.vendor || "Cabzii";
 
   return normalizeCatalogMediaFields(payload);
 }

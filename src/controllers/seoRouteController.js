@@ -27,7 +27,7 @@ const seoRouteSchema = Joi.object({
   highlights: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string().allow("")).default([]),
   popularStops: Joi.array().items(Joi.string()).default([]),
   faqs: Joi.array()
-    .items(Joi.object({ question: Joi.string().required(), answer: Joi.string().allow("").default("") }))
+    .items(Joi.object({ question: Joi.string().required(), answer: Joi.string().allow("").default("") }).unknown(true))
     .default([]),
   images: Joi.array().items(Joi.string()).default([]),
   schemaJson: Joi.string().allow("").default(""),

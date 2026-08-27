@@ -15,7 +15,7 @@ const seoCityPageSchema = Joi.object({
   h1: Joi.string().allow("").default(""),
   body: Joi.string().allow("").default(""),
   faqs: Joi.array()
-    .items(Joi.object({ question: Joi.string().required(), answer: Joi.string().allow("").default("") }))
+    .items(Joi.object({ question: Joi.string().required(), answer: Joi.string().allow("").default("") }).unknown(true))
     .default([]),
   schemaJson: Joi.string().allow("").default(""),
   image: Joi.string().allow("").default(""),

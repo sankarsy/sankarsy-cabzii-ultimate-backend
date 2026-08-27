@@ -25,8 +25,16 @@ function errorHandler(err, req, res, next) {
   // Mongo duplicate key
   if (err.code === 11000) {
     statusCode = 409;
-    const field = Object.keys(err.keyValue || {})[0];
-    message = `${field} already exists`;
+    const keyValue = err.keyValue || {};
+    const fields = Object.keys(keyValue);
+    if (fields.includes("name") && fields.includes("state")) {
+      message = `City "${keyValue.name}" already exists. Open it from the list and click Edit.`;
+    } else if (fields.includes("name")) {
+      message = `"${keyValue.name}" already exists. Open it from the list and click Edit.`;
+    } else {
+      const field = fields[0];
+      message = field ? `${field} already exists` : "This record already exists";
+    }
   }
 
   // Mongoose validation

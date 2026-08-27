@@ -8,4 +8,13 @@ function slugify(input) {
     .replace(/^-+|-+$/g, "");
 }
 
-module.exports = { slugify };
+function escapeRegex(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Missing isActive must still count as active (legacy rows). */
+function activeDocumentsFilter(activeOnly) {
+  return activeOnly ? { isActive: { $ne: false } } : {};
+}
+
+module.exports = { slugify, escapeRegex, activeDocumentsFilter };

@@ -3,12 +3,12 @@ const bcrypt = require("bcryptjs");
 const { env } = require("../config/env");
 const { OtpSession } = require("../models/OtpSession");
 const { User } = require("../models/User");
-const { Vendor } = require("../models/Vendor");
 const { generateOtp, sendOtp } = require("../services/otpService");
 const { signAccessToken } = require("../services/tokenService");
 const { HttpError } = require("../utils/httpError");
 const { normalizeMobileNumber } = require("../utils/mobile");
 const { vendorNameForUser } = require("../utils/vendorAccess");
+const { findVendorAccountByPhone } = require("../utils/vendorOwnership");
 const { logAudit } = require("../services/auditService");
 const {
   findActiveDriverByPhone,
@@ -101,12 +101,12 @@ async function canAccessPartnerAsync(mobileNumber) {
   if (canAccessPartner(mobileNumber)) return true;
   const user = await User.findOne({ mobileNumber }).select("role").lean();
   if (user?.role === "vendor_admin" || user?.role === "super_admin") return true;
-  const vendor = await Vendor.findOne({ adminPhone: mobileNumber, isActive: true }).select("_id").lean();
+  const vendor = await findVendorAccountByPhone(mobileNumber, { requireActive: true });
   return Boolean(vendor);
 }
 
 async function vendorNameForMobile(mobileNumber) {
-  const vendor = await Vendor.findOne({ adminPhone: mobileNumber, isActive: true }).select("name").lean();
+  const vendor = await findVendorAccountByPhone(mobileNumber, { requireActive: true });
   if (vendor?.name) return vendor.name;
   return env.vendorAdminMap[mobileNumber] || "";
 }
@@ -118,7 +118,7 @@ async function verifyPartnerPassword(mobileNumber, password) {
   }
 
   if (!canAccessPartner(mobileNumber) && user?.role !== "vendor_admin" && user?.role !== "super_admin") {
-    const vendor = await Vendor.findOne({ adminPhone: mobileNumber, isActive: true }).select("_id").lean();
+    const vendor = await findVendorAccountByPhone(mobileNumber, { requireActive: true });
     if (!vendor) return false;
   }
 

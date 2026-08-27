@@ -4,6 +4,7 @@ const { Location } = require("../models/Location");
 const { City } = require("../models/City");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
+const { activeDocumentsFilter } = require("../utils/slugify");
 
 const locationSchema = Joi.object({
   city: Joi.string().required(),
@@ -43,7 +44,7 @@ async function buildCityFilter(cityQuery) {
   const canonical = resolveCityQuery(cityQuery);
   const escaped = escapeRegex(canonical);
   const cityDocs = await City.find({
-    isActive: true,
+    isActive: { $ne: false },
     $or: [{ name: new RegExp(`^${escaped}$`, "i") }, { name: new RegExp(escaped, "i") }]
   }).lean();
 
@@ -58,7 +59,7 @@ async function buildCityFilter(cityQuery) {
 
 async function listLocations(req, res) {
   const activeOnly = req.query.active !== "0" && req.query.active !== "false";
-  const filter = activeOnly ? { isActive: true } : {};
+  const filter = activeDocumentsFilter(activeOnly);
   const and = [];
 
   if (req.query.cityId && mongoose.isValidObjectId(req.query.cityId)) {

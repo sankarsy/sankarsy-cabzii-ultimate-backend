@@ -15,7 +15,7 @@ const { parseListQuery, buildPackageListFilter, paginatedFind, catalogListFilter
 
 const packageCoreSchema = Joi.object({
   name: Joi.string().required(),
-  vendor: Joi.string().required(),
+  vendor: Joi.string().allow("").default(""),
   duration: Joi.string().allow("").default(""),
   packageType: Joi.string().allow("").default(""),
   state: Joi.string().allow("").default(""),
@@ -34,7 +34,7 @@ const packageCoreSchema = Joi.object({
         day: Joi.number().integer().min(1).default(1),
         title: Joi.string().allow("").default(""),
         details: Joi.string().allow("").default("")
-      })
+      }).unknown(true)
     )
     .default([]),
   faqs: Joi.array()
@@ -42,7 +42,7 @@ const packageCoreSchema = Joi.object({
       Joi.object({
         question: Joi.string().allow("").default(""),
         answer: Joi.string().allow("").default("")
-      })
+      }).unknown(true)
     )
     .default([]),
   price: Joi.number().required(),
@@ -68,7 +68,7 @@ const packageCoreSchema = Joi.object({
         label: Joi.string().allow("").default(""),
         seats: Joi.number().integer().min(1).default(4),
         multiplier: Joi.number().min(0.5).max(3).default(1)
-      })
+      }).unknown(true)
     )
     .default([]),
   seoTitle: Joi.string().allow("").default(""),
@@ -82,7 +82,7 @@ const packageCoreSchema = Joi.object({
       Joi.object({
         question: Joi.string().allow("").default(""),
         answer: Joi.string().allow("").default("")
-      })
+      }).unknown(true)
     )
     .default([]),
   status: Joi.string().valid("active", "inactive").default("active")
@@ -126,6 +126,7 @@ async function createPackage(req, res) {
     ...productFields,
     faqs: Array.isArray(faq) ? faq : Array.isArray(value.faqs) ? value.faqs : []
   });
+  if (!payload.vendor) payload.vendor = "Cabzii";
   const data = await Package.create(payload);
   await logAudit({
     req,

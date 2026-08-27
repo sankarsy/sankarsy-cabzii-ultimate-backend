@@ -11,7 +11,7 @@ const stopSchema = Joi.object({
   name: Joi.string().allow("").default(""),
   time: Joi.string().allow("").default(""),
   landmark: Joi.string().allow("").default("")
-});
+}).unknown(true);
 
 const busSchema = Joi.object({
   operator: Joi.string().required(),
@@ -44,7 +44,7 @@ const busSchema = Joi.object({
   onTimeTotal: Joi.number().default(1113),
   layoutPreset: Joi.string().allow("").default(""),
   cancellationPolicy: Joi.array()
-    .items(Joi.object({ hoursBefore: Joi.number().default(0), refundPercent: Joi.number().default(0) }))
+    .items(Joi.object({ hoursBefore: Joi.number().default(0), refundPercent: Joi.number().default(0) }).unknown(true))
     .default([]),
   restStops: Joi.array()
     .items(
@@ -53,7 +53,7 @@ const busSchema = Joi.object({
         time: Joi.string().allow("").default(""),
         durationMin: Joi.number().default(15),
         features: Joi.array().items(Joi.string()).default([])
-      })
+      }).unknown(true)
     )
     .default([]),
   routeStops: Joi.array().items(Joi.string()).default([]),

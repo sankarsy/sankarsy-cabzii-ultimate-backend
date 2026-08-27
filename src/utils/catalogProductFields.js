@@ -47,7 +47,7 @@ const enterpriseSeoJoi = Joi.object({
         rating: Joi.number().min(1).max(5).default(5),
         review: Joi.string().allow("").default(""),
         location: Joi.string().allow("").default("")
-      })
+      }).unknown(true)
     )
     .default([]),
   relatedVehicles: Joi.array().items(Joi.string()).default([]),
@@ -56,7 +56,7 @@ const enterpriseSeoJoi = Joi.object({
   relatedBlogs: Joi.array().items(Joi.string()).default([]),
   relatedServices: Joi.array().items(Joi.string()).default([]),
   seoScore: Joi.number().min(0).max(100).default(0)
-}).default();
+}).unknown(true).default();
 
 const joiFields = {
   slug: Joi.string().allow("").default(""),
@@ -81,7 +81,7 @@ const joiFields = {
       Joi.object({
         question: Joi.string().allow("").default(""),
         answer: Joi.string().allow("").default("")
-      })
+      }).unknown(true)
     )
     .default([]),
   enterpriseSeo: enterpriseSeoJoi

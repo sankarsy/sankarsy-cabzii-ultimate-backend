@@ -9,6 +9,7 @@ const { logAudit } = require("../services/auditService");
 const { privilegedRoleForPhone, isSuperAdminUser } = require("../utils/adminAccess");
 const { normalizeMobileNumber } = require("../utils/mobile");
 const { digitsPhone, contactPhoneDigits, vendorOwningAdminPhone } = require("../utils/vendorPhone");
+const { escapeRegex, activeDocumentsFilter } = require("../utils/slugify");
 const {
   assertDriverPhoneNotVendorOrAdmin,
   assertUniqueDriverPhone
@@ -146,8 +147,11 @@ async function upsertVendorDriverLogin({ driverPhone, vendorName, city, location
 
 async function listVendors(req, res) {
   const activeOnly = req.query.active !== "0" && req.query.active !== "false";
-  const filter = activeOnly ? { isActive: true } : {};
+  const filter = activeDocumentsFilter(activeOnly);
   const data = await Vendor.find(filter).sort({ name: 1 }).lean();
+  data.forEach((v) => {
+    v.isActive = v.isActive !== false;
+  });
   if (!isSuperAdminUser(req)) {
     return res.json({
       success: true,
@@ -180,8 +184,12 @@ async function createVendor(req, res) {
   const { error, value } = vendorSchema.validate(req.body, { stripUnknown: true });
   if (error) throw new HttpError(400, error.message);
 
-  const existing = await Vendor.findOne({ name: value.name.trim() });
-  if (existing) throw new HttpError(409, "Vendor name already exists");
+  const name = String(value.name || "").trim();
+  const existing = await Vendor.findOne({
+    name: new RegExp(`^${escapeRegex(name)}$`, "i")
+  });
+  if (existing) throw new HttpError(409, `Vendor "${existing.name}" already exists. Open it from the list and click Edit.`);
+  value.name = name;
 
   if (value.adminPhone && !digitsPhone(value.adminPhone)) {
     throw new HttpError(400, "Enter a valid 10-digit admin mobile number.");
@@ -238,8 +246,11 @@ async function updateVendor(req, res) {
   if (!current) throw new HttpError(404, "Vendor not found");
 
   if (value.name && value.name.trim() !== current.name) {
-    const nameTaken = await Vendor.findOne({ name: value.name.trim(), _id: { $ne: current._id } });
-    if (nameTaken) throw new HttpError(409, "Vendor name already exists");
+    const nameTaken = await Vendor.findOne({
+      name: new RegExp(`^${escapeRegex(value.name.trim())}$`, "i"),
+      _id: { $ne: current._id }
+    });
+    if (nameTaken) throw new HttpError(409, `Vendor name already exists ("${nameTaken.name}").`);
   }
 
   if (value.adminPhone && !digitsPhone(value.adminPhone)) {

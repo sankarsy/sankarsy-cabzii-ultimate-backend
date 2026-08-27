@@ -26,7 +26,7 @@ const { canonicalizeGscPage } = require("../utils/gscCanonical");
 const faqItemJoi = Joi.object({
   question: Joi.string().required(),
   answer: Joi.string().allow("").default("")
-});
+}).unknown(true);
 
 const cmsPageSchema = Joi.object({
   slug: Joi.string().required(),
@@ -54,7 +54,7 @@ const faqSchema = Joi.object({
         entityType: Joi.string().default("global"),
         entityId: Joi.string().allow("").default(""),
         entitySlug: Joi.string().allow("").default("")
-      })
+      }).unknown(true)
     )
     .default([]),
   sortOrder: Joi.number().default(0),
