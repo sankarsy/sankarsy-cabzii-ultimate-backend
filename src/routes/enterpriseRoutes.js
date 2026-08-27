@@ -1,5 +1,6 @@
 const express = require("express");
 const ctrl = require("../controllers/enterpriseCmsController");
+const seoRev = require("../controllers/seoRevenueController");
 const { asyncHandler } = require("../utils/asyncHandler");
 const { optionalAuth, requireAuth, requireRole } = require("../middlewares/auth");
 
@@ -37,6 +38,9 @@ router.delete("/seo-templates/:id", requireAuth, requireRole("super_admin"), asy
 router.post("/seo-templates/preview", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.renderSeoPreview));
 
 router.get("/search-console", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.listSearchConsole));
+router.post("/search-console", requireAuth, requireRole("super_admin"), asyncHandler(seoRev.createGscRow));
+router.put("/search-console/:id", requireAuth, requireRole("super_admin"), asyncHandler(seoRev.updateGscRow));
+router.delete("/search-console/:id", requireAuth, requireRole("super_admin"), asyncHandler(seoRev.deleteGscRow));
 router.post("/search-console/import", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.importSearchConsole));
 
 router.get("/related-content", requireAuth, requireRole("super_admin"), asyncHandler(ctrl.listRelatedContent));

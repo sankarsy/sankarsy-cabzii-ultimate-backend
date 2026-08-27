@@ -127,6 +127,20 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "confirmed", "finished", "cancelled"],
       default: "pending"
+    },
+    /** Last SEO landing in the 7-day session window. Optional. Never inferred from pickup. */
+    seoAttribution: {
+      landingPage: { type: String, trim: true, default: "" },
+      pageType: { type: String, trim: true, default: "" },
+      city: { type: String, trim: true, default: "" },
+      service: { type: String, trim: true, default: "" },
+      origin: { type: String, trim: true, default: "" },
+      destination: { type: String, trim: true, default: "" },
+      route: { type: String, trim: true, default: "" },
+      sessionId: { type: String, trim: true, default: "" },
+      viewedAt: { type: Date, default: null },
+      attributedAt: { type: Date, default: null },
+      windowHours: { type: Number, default: 168 }
     }
   },
   { timestamps: true }
@@ -135,6 +149,8 @@ const bookingSchema = new mongoose.Schema(
 bookingSchema.index({ type: 1, itemId: 1, status: 1, date: 1 });
 bookingSchema.index({ assignedVehicleId: 1, status: 1, date: 1 });
 bookingSchema.index({ assignedDriverId: 1, status: 1, date: 1 });
+bookingSchema.index({ "seoAttribution.landingPage": 1, createdAt: 1, status: 1 });
+bookingSchema.index({ type: 1, createdAt: 1, status: 1 });
 
 const Booking = mongoose.model("Booking", bookingSchema);
 

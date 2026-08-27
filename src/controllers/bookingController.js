@@ -56,6 +56,7 @@ const {
   resolveDriverOpsStatus,
   setDriverAvailability
 } = require("../utils/callDriverBooking");
+const { sanitizeAttribution } = require("../utils/seoRevenueMath");
 
 const vendorContactSchema = Joi.object({
   name: Joi.string().allow("").default(""),
@@ -152,6 +153,17 @@ const bookingCreateSchema = Joi.object({
     notes: Joi.string().allow("").optional(),
     eventLocation: Joi.string().allow("").optional(),
     quoteRequested: Joi.boolean().optional()
+  }).optional(),
+  seoAttribution: Joi.object({
+    landingPage: Joi.string().allow("").optional(),
+    pageType: Joi.string().allow("").optional(),
+    city: Joi.string().allow("").optional(),
+    service: Joi.string().allow("").optional(),
+    origin: Joi.string().allow("").optional(),
+    destination: Joi.string().allow("").optional(),
+    route: Joi.string().allow("").optional(),
+    sessionId: Joi.string().allow("").optional(),
+    viewedAt: Joi.string().allow("").optional()
   }).optional()
 });
 
@@ -556,6 +568,10 @@ async function createBooking(req, res) {
 
   stampCabDriverSchedule(payload);
   stampCreateAssignments(payload);
+
+  delete payload.seoAttribution;
+  const seoAttribution = sanitizeAttribution(value.seoAttribution);
+  if (seoAttribution) payload.seoAttribution = seoAttribution;
 
   const data = await createBookingWithAvailability(payload);
 
