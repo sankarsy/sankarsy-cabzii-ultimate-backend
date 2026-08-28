@@ -106,7 +106,8 @@ const DEFAULT_SITE_SETTINGS = {
     { id: "family", label: "Family", image: "", desc: "Kid-friendly itineraries, spacious cabs & relaxed sightseeing for all ages." }
   ],
   pageSeo: {},
-  callDriverTariff: DEFAULT_CALL_DRIVER_TARIFF
+  callDriverTariff: DEFAULT_CALL_DRIVER_TARIFF,
+  callDriverSeo: {}
 };
 
 function deepMerge(base, patch) {

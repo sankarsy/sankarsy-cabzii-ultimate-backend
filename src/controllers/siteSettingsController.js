@@ -49,7 +49,22 @@ const settingsSchema = Joi.object({
       seoKeywords: Joi.string().allow("")
     })
   ),
-  callDriverTariff: Joi.object()
+    callDriverTariff: Joi.object(),
+  callDriverSeo: Joi.object().pattern(
+    Joi.string(),
+    Joi.object({
+      heading: Joi.string().allow(""),
+      seoTitle: Joi.string().allow(""),
+      seoDescription: Joi.string().allow(""),
+      html: Joi.string().allow(""),
+      faqs: Joi.array().items(
+        Joi.object({
+          question: Joi.string().allow(""),
+          answer: Joi.string().allow("")
+        })
+      )
+    })
+  )
 }).min(1);
 
 async function getOrCreateSettingsDoc() {
@@ -75,6 +90,9 @@ async function updateSettings(req, res) {
   const beforePlain = before.toObject();
   if (value.pageSeo) {
     value.pageSeo = deepMerge(beforePlain.pageSeo || {}, value.pageSeo);
+  }
+  if (value.callDriverSeo) {
+    value.callDriverSeo = deepMerge(beforePlain.callDriverSeo || {}, value.callDriverSeo);
   }
   const updated = await SiteSettings.findByIdAndUpdate(
     before._id,

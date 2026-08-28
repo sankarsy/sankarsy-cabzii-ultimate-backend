@@ -33,6 +33,7 @@ async function listCallDriverServices(req, res) {
     data: {
       services: publicCallDriverServices(tariff),
       tariff,
+      seo: settings.callDriverSeo && typeof settings.callDriverSeo === "object" ? settings.callDriverSeo : {},
       headline: "Need a professional driver for your own car?",
       subhead: "Choose the Call Driver service you need. Cabzii assigns a professional driver after you book."
     }
