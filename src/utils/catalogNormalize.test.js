@@ -38,4 +38,19 @@ describe("normalizeCabForApi registration privacy", () => {
     assert.equal(adminDoc.registrationNumber, "TN01AB1234");
     assert.equal(adminDoc.vendorAdminPhone, "8220873545");
   });
+
+  it("drops Unsplash sample covers and keeps admin uploads", () => {
+    const withSample = normalizeCabForApi({
+      ...sample,
+      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80",
+      gallery: ["/uploads/maruti-swift-dzire-tour-s.webp"]
+    });
+    assert.equal(withSample.image, "/uploads/maruti-swift-dzire-tour-s.webp");
+
+    const sampleOnly = normalizeCabForApi({
+      ...sample,
+      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80"
+    });
+    assert.equal(sampleOnly.image, "");
+  });
 });

@@ -2,9 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const multer = require("multer");
-const sizeOf = require("image-size");
 const { requireAuth, requireRole } = require("../middlewares/auth");
-const { IMAGE_UPLOAD_RULES, sizeErrorMessage, dimensionErrorMessage } = require("../utils/imageUploadRules");
+const { IMAGE_UPLOAD_RULES, sizeErrorMessage } = require("../utils/imageUploadRules");
 
 const router = express.Router();
 
@@ -57,25 +56,9 @@ router.post("/", requireAuth, requireRole("super_admin", "vendor_admin"), runUpl
     return res.status(400).json({ success: false, message: "Image file is required." });
   }
   const filePath = req.file.path;
-  try {
-    if (req.file.size > IMAGE_UPLOAD_RULES.maxBytes) {
-      fs.unlinkSync(filePath);
-      return res.status(400).json({ success: false, message: sizeErrorMessage(req.file.size) });
-    }
-    const dim = sizeOf(filePath);
-    const width = Number(dim?.width) || 0;
-    const height = Number(dim?.height) || 0;
-    if (width < IMAGE_UPLOAD_RULES.minWidth || height < IMAGE_UPLOAD_RULES.minHeight) {
-      fs.unlinkSync(filePath);
-      return res.status(400).json({ success: false, message: dimensionErrorMessage(width, height) });
-    }
-  } catch (err) {
-    try {
-      fs.unlinkSync(filePath);
-    } catch {
-      /* ignore */
-    }
-    return res.status(400).json({ success: false, message: err.message || "Could not read image." });
+  if (req.file.size > IMAGE_UPLOAD_RULES.maxBytes) {
+    fs.unlinkSync(filePath);
+    return res.status(400).json({ success: false, message: sizeErrorMessage(req.file.size) });
   }
 
   const relativeUrl = `/uploads/${req.file.filename}`;

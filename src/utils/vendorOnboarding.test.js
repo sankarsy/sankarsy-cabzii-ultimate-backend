@@ -3,14 +3,13 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const { missingCabPublishFields, makeQuoteRef } = require("./vendorOnboarding");
-const { IMAGE_UPLOAD_RULES, sizeErrorMessage, dimensionErrorMessage } = require("./imageUploadRules");
+const { IMAGE_UPLOAD_RULES, sizeErrorMessage } = require("./imageUploadRules");
 
 describe("vendorOnboarding", () => {
-  it("requires name, seats, primary image and pricing before Active", () => {
+  it("requires name, seats and pricing before Active", () => {
     assert.deepEqual(missingCabPublishFields({}), [
       "vehicle name",
       "seating capacity",
-      "primary image",
       "pricing"
     ]);
   });
@@ -20,7 +19,6 @@ describe("vendorOnboarding", () => {
       missingCabPublishFields({
         title: "Force Traveller #1",
         seats: 17,
-        image: "/uploads/traveller.webp",
         farePackages: { local8hr: { price: 4500 } }
       }),
       []
@@ -34,15 +32,14 @@ describe("vendorOnboarding", () => {
 });
 
 describe("imageUploadRules", () => {
-  it("caps uploads at 1 MB", () => {
-    assert.equal(IMAGE_UPLOAD_RULES.maxBytes, 1024 * 1024);
-    assert.match(sizeErrorMessage(2.4 * 1024 * 1024), /2\.4 MB/);
-    assert.match(sizeErrorMessage(2.4 * 1024 * 1024), /1 MB/);
+  it("caps uploads at 12 MB original", () => {
+    assert.equal(IMAGE_UPLOAD_RULES.maxBytes, 12 * 1024 * 1024);
+    assert.match(sizeErrorMessage(13 * 1024 * 1024), /13\.0 MB/);
+    assert.match(sizeErrorMessage(13 * 1024 * 1024), /12 MB/);
   });
 
-  it("describes the minimum pixel size", () => {
-    assert.equal(IMAGE_UPLOAD_RULES.minWidth, 1200);
-    assert.equal(IMAGE_UPLOAD_RULES.minHeight, 750);
-    assert.match(dimensionErrorMessage(800, 600), /800 × 600/);
+  it("does not require a minimum pixel size", () => {
+    assert.equal(IMAGE_UPLOAD_RULES.minWidth, 0);
+    assert.equal(IMAGE_UPLOAD_RULES.minHeight, 0);
   });
 });

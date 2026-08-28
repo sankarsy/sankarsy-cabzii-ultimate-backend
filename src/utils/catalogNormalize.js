@@ -30,6 +30,29 @@ function inferCity(doc) {
   return "Chennai";
 }
 
+function isPlaceholderProductImage(url) {
+  const u = String(url || "")
+    .trim()
+    .toLowerCase();
+  if (!u) return true;
+  if (u.includes("images.unsplash.com") || u.includes("source.unsplash.com")) return true;
+  if (u.includes("picsum.photos") || u.includes("loremflickr") || u.includes("placehold")) return true;
+  return false;
+}
+
+function firstRealImageUrl(...candidates) {
+  for (const raw of candidates) {
+    if (Array.isArray(raw)) {
+      const nested = firstRealImageUrl(...raw);
+      if (nested) return nested;
+      continue;
+    }
+    const url = String(raw?.url || raw || "").trim();
+    if (url && !isPlaceholderProductImage(url)) return url;
+  }
+  return "";
+}
+
 /** Legacy DB: package.oneWay / roundTrip with per-km offerPrice + coverage + bata */
 function fareFromLegacyPkg(pkg, includedKm) {
   if (!pkg || typeof pkg !== "object") return null;
@@ -85,11 +108,13 @@ function enrichModernCab(doc) {
     lastBooked: doc.stats?.lastBooked || null
   };
   const seo = applyVehicleSeo({ ...doc, ...synced });
-  const cover =
-    doc.image ||
-    (Array.isArray(doc.images) ? doc.images.find((i) => i.type === "cover")?.url : "") ||
-    (Array.isArray(doc.gallery) ? doc.gallery[0] : "") ||
-    "";
+  const cover = firstRealImageUrl(
+    doc.image,
+    Array.isArray(doc.images) ? doc.images.find((i) => i?.type === "cover") : "",
+    doc.images,
+    doc.gallery,
+    Array.isArray(doc.cabImages) ? doc.cabImages[0] : ""
+  );
 
   return {
     ...doc,
@@ -196,7 +221,7 @@ function normalizeCabForApi(doc, { includeRegistration = false } = {}) {
       discountPercentage: num(oneWay?.discount) || num(doc.discountPercentage),
       farePackages,
       city: inferCity(doc),
-      image: doc.image || (Array.isArray(doc.cabImages) ? doc.cabImages[0] : "") || "",
+      image: firstRealImageUrl(doc.image, Array.isArray(doc.cabImages) ? doc.cabImages[0] : ""),
       status: doc.status || "active",
       availabilityStatus: doc.availabilityStatus || "available",
       registrationNumber: doc.registrationNumber || "",
@@ -246,5 +271,6 @@ module.exports = {
   normalizeCabForApi,
   normalizeDriverForApi,
   fareFromLegacyPkg,
-  isLegacyCab
+  isLegacyCab,
+  isPlaceholderProductImage
 };

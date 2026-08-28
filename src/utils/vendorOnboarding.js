@@ -3,11 +3,6 @@
 function missingCabPublishFields(payload = {}) {
   const title = String(payload.title || payload.vehicleName || "").trim();
   const seats = Number(payload.seats);
-  const cover =
-    String(payload.image || "").trim() ||
-    (Array.isArray(payload.gallery) && payload.gallery.map(String).find((u) => u.trim())) ||
-    (Array.isArray(payload.images) && payload.images.find((img) => img && img.url)?.url) ||
-    "";
   const packs = payload.farePackages && typeof payload.farePackages === "object" ? payload.farePackages : {};
   const packPrices = Object.values(packs).map((p) => Number(p?.price || p?.originalPrice || 0));
   const hasFare =
@@ -20,7 +15,6 @@ function missingCabPublishFields(payload = {}) {
   const missing = [];
   if (!title) missing.push("vehicle name");
   if (!Number.isFinite(seats) || seats < 1) missing.push("seating capacity");
-  if (!String(cover).trim()) missing.push("primary image");
   if (!hasFare) missing.push("pricing");
   return missing;
 }
