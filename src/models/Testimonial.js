@@ -8,7 +8,8 @@ const testimonialSchema = new mongoose.Schema(
     rating: { type: Number, default: 5, min: 1, max: 5 },
     photoUrl: { type: String, default: "", trim: true },
     featured: { type: Boolean, default: false },
-    sampleReview: { type: Boolean, default: false },
+    sampleReview: { type: Boolean, default: false, index: true },
+    phone: { type: String, default: "", trim: true },
     sortOrder: { type: Number, default: 0 },
     published: { type: Boolean, default: true }
   },

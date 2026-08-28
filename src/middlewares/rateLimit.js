@@ -42,8 +42,15 @@ const authLimiter = createLimiter({
   message: "Too many requests. Please slow down.",
 });
 
+const publicReviewLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: "Too many review submissions. Please try again later.",
+});
+
 module.exports = {
   otpSendLimiter,
   otpVerifyLimiter,
   authLimiter,
+  publicReviewLimiter,
 };

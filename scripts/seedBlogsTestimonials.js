@@ -27,7 +27,7 @@ function toBlogDoc(post) {
 
 function toTestimonialDoc(item, index) {
   const { id, ...rest } = item;
-  return { ...rest, sortOrder: index, published: true };
+  return { ...rest, sortOrder: index, published: false, sampleReview: true };
 }
 
 async function main() {
