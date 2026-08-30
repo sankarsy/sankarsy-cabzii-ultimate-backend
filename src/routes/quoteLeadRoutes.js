@@ -1,6 +1,7 @@
 const express = require("express");
 const { asyncHandler } = require("../utils/asyncHandler");
 const { optionalAuth, requireAuth } = require("../middlewares/auth");
+const { publicEnquiryLimiter } = require("../middlewares/rateLimit");
 const {
   createPublicQuoteLead,
   getPublicQuote,
@@ -11,7 +12,7 @@ const {
 
 const router = express.Router();
 
-router.post("/", optionalAuth, asyncHandler(createPublicQuoteLead));
+router.post("/", publicEnquiryLimiter, optionalAuth, asyncHandler(createPublicQuoteLead));
 router.get("/public/:quoteRef/pdf", asyncHandler(getPublicQuotePdf));
 router.get("/public/:quoteRef", asyncHandler(getPublicQuote));
 router.get("/", requireAuth, asyncHandler(listQuoteLeads));

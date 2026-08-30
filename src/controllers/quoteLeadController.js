@@ -12,10 +12,21 @@ const { makeQuoteRef } = require("../utils/vendorOnboarding");
 const { normalizeMobileNumber } = require("../utils/mobile");
 const { buildQuoteText, publicQuotePayload } = require("../utils/quotePackage");
 const { buildQuotePdfBuffer } = require("../utils/quotePdf");
+const {
+  ENQUIRY_SOURCES,
+  shouldDropSpam,
+  hasMinimumIntent,
+  resolveStage,
+  buildLeadFields,
+  applyLeadUpdates
+} = require("../utils/quoteLeadEnquiry");
 
 const quoteSchema = Joi.object({
+  enquiryId: Joi.string().allow("").default(""),
   mobile: Joi.string().pattern(/^[6-9]\d{9}$/).required(),
   name: Joi.string().allow("").default(""),
+  email: Joi.string().allow("").default(""),
+  message: Joi.string().allow("").max(2000).default(""),
   service: Joi.string().allow("").default("cab"),
   vehicleId: Joi.string().allow("").default(""),
   vehicleName: Joi.string().allow("").default(""),
@@ -28,11 +39,15 @@ const quoteSchema = Joi.object({
   distanceKm: Joi.number().min(0).default(0),
   tripType: Joi.string().allow("").default(""),
   packageLabel: Joi.string().allow("").default(""),
+  source: Joi.string().allow("").default(""),
   sourcePage: Joi.string().allow("").default(""),
+  landingPage: Joi.string().allow("").default(""),
+  referrer: Joi.string().allow("").default(""),
   ctaLocation: Joi.string().allow("").default(""),
   utmSource: Joi.string().allow("").default(""),
   utmMedium: Joi.string().allow("").default(""),
-  utmCampaign: Joi.string().allow("").default("")
+  utmCampaign: Joi.string().allow("").default(""),
+  website: Joi.string().allow("").default("")
 });
 
 function leadFilterForUser(req) {
@@ -63,6 +78,7 @@ function quoteResponse(req, lead) {
   const urls = quoteUrls(req, lead.quoteRef);
   return {
     quoteRef: lead.quoteRef,
+    enquiryId: lead._id,
     id: lead._id,
     ...urls,
     text: buildQuoteText(payload, urls),
@@ -87,47 +103,49 @@ async function stampVendorFromVehicle(vehicleId) {
 async function createPublicQuoteLead(req, res) {
   const { error, value } = quoteSchema.validate(req.body, { stripUnknown: true, convert: true });
   if (error) throw new HttpError(400, error.message);
+  if (shouldDropSpam(value)) {
+    return res.status(201).json({
+      success: true,
+      data: { enquiryId: "ok", id: "ok", quoteRef: "" }
+    });
+  }
+  if (!hasMinimumIntent(value)) {
+    throw new HttpError(400, "Enter a valid mobile number and pickup or trip details.");
+  }
+
   const owned = await stampVendorFromVehicle(value.vehicleId);
-  const quoteRef = makeQuoteRef();
-  const productType = ["cab", "bus", "driver", "tour", "other"].includes(value.service) ? value.service : "cab";
-  const data = await CrmLead.create({
-    name: value.name.trim() || "WhatsApp quote",
-    mobile: value.mobile,
-    source: "whatsapp_quote",
-    stage: "new",
-    productType,
-    vehicleType: value.vehicleName || owned.vehicleName,
-    boardingPoint: value.pickup,
-    droppingPoint: value.drop,
-    route: [value.pickup, value.drop].filter(Boolean).join(" → "),
-    whatsappSent: true,
-    quoteRef,
-    sourcePage: value.sourcePage,
-    ctaLocation: value.ctaLocation || "otp_login",
-    utmSource: value.utmSource,
-    utmMedium: value.utmMedium,
-    utmCampaign: value.utmCampaign,
-    vehicleId: value.vehicleId,
-    vehicleName: value.vehicleName || owned.vehicleName,
-    travelDate: value.travelDate,
-    pickupTime: value.pickupTime,
-    passengerCount: value.passengerCount,
-    estimatedFare: Number(value.estimatedFare) || owned.price || 0,
-    distanceKm: Number(value.distanceKm) || 0,
-    tripType: value.tripType,
-    packageLabel: value.packageLabel,
-    vendorAdminPhone: owned.vendorAdminPhone
-  });
-  res.status(201).json({
+  const fields = buildLeadFields(value, owned);
+
+  let lead = null;
+  const existingId = String(value.enquiryId || "").trim();
+  if (existingId && mongoose.isValidObjectId(existingId)) {
+    lead = await CrmLead.findOne({ _id: existingId, source: { $in: ENQUIRY_SOURCES } });
+  }
+
+  let created = false;
+  if (lead) {
+    applyLeadUpdates(lead, fields);
+    await lead.save();
+  } else {
+    lead = await CrmLead.create({
+      ...fields,
+      stage: "new",
+      whatsappSent: fields.source === "whatsapp_quote",
+      quoteRef: makeQuoteRef()
+    });
+    created = true;
+  }
+
+  res.status(created ? 201 : 200).json({
     success: true,
-    data: quoteResponse(req, data)
+    data: quoteResponse(req, lead)
   });
 }
 
 async function findPublicQuote(quoteRef) {
   const ref = String(quoteRef || "").trim();
   if (!ref) throw new HttpError(400, "Quote reference required.");
-  const lead = await CrmLead.findOne({ quoteRef: ref, source: "whatsapp_quote" }).lean();
+  const lead = await CrmLead.findOne({ quoteRef: ref, source: { $in: ENQUIRY_SOURCES } }).lean();
   if (!lead) throw new HttpError(404, "Quote not found.");
   return lead;
 }
@@ -148,8 +166,8 @@ async function getPublicQuotePdf(req, res) {
 async function listQuoteLeads(req, res) {
   const scope = leadFilterForUser(req);
   const pq = parseListQuery(req);
-  const filter = { ...scope, source: "whatsapp_quote" };
-  if (req.query.status) filter.stage = req.query.status;
+  const filter = { ...scope, source: { $in: ENQUIRY_SOURCES } };
+  if (req.query.status) filter.stage = resolveStage(req.query.status) || req.query.status;
   if (req.query.service) filter.productType = req.query.service;
   if (req.query.vehicle) {
     filter.$or = [
@@ -181,10 +199,13 @@ async function listQuoteLeads(req, res) {
 
 async function updateQuoteLeadStage(req, res) {
   const scope = leadFilterForUser(req);
-  const stage = String(req.body?.stage || "").trim();
-  const allowed = ["new", "contacted", "quotation_sent", "confirmed", "lost"];
-  if (!allowed.includes(stage)) throw new HttpError(400, "Invalid status.");
-  const data = await CrmLead.findOneAndUpdate({ _id: req.params.id, ...scope }, { stage }, { new: true });
+  const stage = resolveStage(req.body?.stage || req.body?.status);
+  if (!stage) throw new HttpError(400, "Invalid status.");
+  const patch = { stage };
+  if (req.body?.name) patch.name = String(req.body.name).trim();
+  if (req.body?.mobile) patch.mobile = String(req.body.mobile).trim();
+  if (req.body?.email != null) patch.email = String(req.body.email).trim();
+  const data = await CrmLead.findOneAndUpdate({ _id: req.params.id, ...scope, source: { $in: ENQUIRY_SOURCES } }, patch, { new: true });
   if (!data) throw new HttpError(404, "Lead not found");
   res.json({ success: true, data });
 }

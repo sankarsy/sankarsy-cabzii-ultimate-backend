@@ -22,7 +22,7 @@ const crmLeadSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 80 },
     mobile: { type: String, required: true, trim: true, match: /^[6-9]\d{9}$/ },
     email: { type: String, default: "", trim: true },
-    source: { type: String, default: "website", trim: true },
+    source: { type: String, default: "website", trim: true, index: true },
     stage: {
       type: String,
       enum: ["new", "contacted", "quotation_sent", "follow_up", "confirmed", "completed", "lost"],
@@ -52,6 +52,9 @@ const crmLeadSchema = new mongoose.Schema(
     repeatCustomer: { type: Boolean, default: false },
     quoteRef: { type: String, trim: true, default: "", index: true },
     sourcePage: { type: String, trim: true, default: "" },
+    landingPage: { type: String, trim: true, default: "" },
+    referrer: { type: String, trim: true, default: "" },
+    customerMessage: { type: String, trim: true, default: "", maxlength: 2000 },
     ctaLocation: { type: String, trim: true, default: "" },
     utmSource: { type: String, trim: true, default: "" },
     utmMedium: { type: String, trim: true, default: "" },

@@ -10,7 +10,7 @@ const DEFAULT_SITE_SETTINGS = {
     phone: "+91 99441 97416",
     whatsapp: "9944197416",
     address: "Maduravoyal, Chennai, Tamil Nadu",
-    hours: "Mon–Sun: 24×7 Support"
+    hours: "Phone and WhatsApp support"
   },
   navbar: [
     { label: "Home", href: "/", visible: true, sortOrder: 1 },
@@ -56,37 +56,34 @@ const DEFAULT_SITE_SETTINGS = {
     ],
     cabTypes: ["Sedan", "SUV", "Innova"],
     trustBadges: [
-      { label: "Verified Drivers", iconKey: "verified", icon: "✅" },
-      { label: "Best Price", iconKey: "price", icon: "💰" },
-      { label: "24/7 Support", iconKey: "support", icon: "🎧" },
-      { label: "Secure", iconKey: "secure", icon: "🔒" },
-      { label: "Free Cancellation", iconKey: "cancel", icon: "🔄" }
+      { label: "Upfront fares", iconKey: "price", icon: "💰" },
+      { label: "Partner vehicles", iconKey: "verified", icon: "✅" },
+      { label: "WhatsApp updates", iconKey: "support", icon: "🎧" }
     ]
   },
   heroStats: [
-    { value: "50K+", label: "Happy Customers", iconKey: "users" },
-    { value: "10K+", label: "Trips Completed", iconKey: "car" },
-    { value: "500+", label: "Verified Drivers", iconKey: "driver" },
-    { value: "150+", label: "Cities Covered", iconKey: "pin" },
-    { value: "4.9/5", label: "Customer Rating", iconKey: "star" }
+    { value: "Upfront", label: "Fares shown", iconKey: "car" },
+    { value: "Chennai", label: "Home market", iconKey: "pin" },
+    { value: "Partner", label: "Vehicles", iconKey: "driver" },
+    { value: "WhatsApp", label: "Trip updates", iconKey: "users" }
   ],
   whySection: {
     eyebrow: "Why Cabzii",
     title: "A premium cab booking experience",
     subtitle:
-      "Trusted by riders for airport transfers, outstation trips, and local hire across Chennai and 20+ cities."
+      "Airport taxi, outstation, local packages and acting driver from Chennai and Tamil Nadu corridors."
   },
   whyStats: [
-    { value: "50K+", label: "Happy customers" },
-    { value: "Best Price", label: "Guarantee" },
-    { value: "24×7", label: "Support" },
-    { value: "Secure", label: "OTP booking" }
+    { value: "Upfront", label: "Fares shown" },
+    { value: "Partner", label: "Vehicles" },
+    { value: "Chennai", label: "Home market" },
+    { value: "WhatsApp", label: "Trip updates" }
   ],
   whyChooseUs: [
-    { title: "Verified partners", subtitle: "Background-checked drivers and trusted cab vendors across South India.", iconKey: "verified" },
-    { title: "Best price guarantee", subtitle: "Compare fares side-by-side before you pay — no hidden charges.", iconKey: "price" },
-    { title: "Secure checkout", subtitle: "OTP-verified booking with encrypted payment on cabzii.in.", iconKey: "secure" },
-    { title: "24×7 support", subtitle: "WhatsApp and phone support before, during, and after your trip.", iconKey: "support" },
+    { title: "Published Chennai tariff", subtitle: "Local, outstation and van packages are listed on the Cabzii tariff page.", iconKey: "price" },
+    { title: "Partner vehicles", subtitle: "Cabzii assigns a cab or acting driver after you confirm.", iconKey: "verified" },
+    { title: "WhatsApp and phone", subtitle: "Trip updates and booking help on WhatsApp and phone.", iconKey: "support" },
+    { title: "Fares shown first", subtitle: "Compare the fare before you confirm.", iconKey: "secure" }
   ],
   homeSections: [
     { key: "cabs", enabled: true, eyebrow: "Premium Fleet", title: "Featured Cabs", subtitle: "Compare fares and book instantly.", limit: 6, sortOrder: 1 },

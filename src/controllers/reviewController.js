@@ -92,7 +92,24 @@ async function listReviews(req, res) {
     filter.status = "approved";
   }
   const { data, meta } = await paginatedFind(Review, filter, pq, { createdAt: -1 });
-  res.json({ success: true, data, meta });
+  const publicOnly = !(isAdmin && req.query.admin === "1");
+  const payload = publicOnly
+    ? data.map((row) => {
+        const o = row.toObject ? row.toObject() : row;
+        return {
+          _id: o._id,
+          customerName: o.customerName,
+          rating: o.rating,
+          text: o.text,
+          serviceUsed: o.serviceUsed,
+          bookingDate: o.bookingDate,
+          itemType: o.itemType,
+          status: "approved",
+          createdAt: o.createdAt
+        };
+      })
+    : data;
+  res.json({ success: true, data: payload, meta });
 }
 
 /** Public: rating summary (average, total, distribution) of approved reviews for an item. */

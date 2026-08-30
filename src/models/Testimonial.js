@@ -10,6 +10,8 @@ const testimonialSchema = new mongoose.Schema(
     featured: { type: Boolean, default: false },
     sampleReview: { type: Boolean, default: false, index: true },
     phone: { type: String, default: "", trim: true },
+    serviceType: { type: String, default: "", trim: true },
+    tripRoute: { type: String, default: "", trim: true },
     sortOrder: { type: Number, default: 0 },
     published: { type: Boolean, default: true }
   },

@@ -48,9 +48,29 @@ const publicReviewLimiter = createLimiter({
   message: "Too many review submissions. Please try again later.",
 });
 
+/** Public enquiry upsert — generous enough for form updates, not per-keystroke. */
+const publicEnquiryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+    return forwarded || req.ip || "unknown";
+  },
+  validate: false,
+  handler: (req, res) => {
+    return res.status(429).json({
+      success: false,
+      message: "Too many enquiry requests. Please try again later."
+    });
+  }
+});
+
 module.exports = {
   otpSendLimiter,
   otpVerifyLimiter,
   authLimiter,
   publicReviewLimiter,
+  publicEnquiryLimiter,
 };
