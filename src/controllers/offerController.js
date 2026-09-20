@@ -4,6 +4,7 @@ const { Offer } = require("../models/Offer");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 const { offers, services, routes, imageRemap } = require("../data/defaultHomeCards");
+const { homeCardDedupeKey, dedupeHomeCards } = require("../utils/homeCards");
 
 const SECTIONS = ["offers", "services", "routes"];
 
@@ -42,6 +43,19 @@ async function ensureHomeCards() {
       await Offer.insertMany(SEED_BY_SECTION[section]);
     }
   }
+
+  const rows = await Offer.find({}).sort({ updatedAt: -1, createdAt: -1 }).select("_id section title href").lean();
+  const seen = new Set();
+  const duplicateIds = [];
+  for (const row of rows) {
+    const key = homeCardDedupeKey(row);
+    if (seen.has(key)) duplicateIds.push(row._id);
+    else seen.add(key);
+  }
+  if (duplicateIds.length) {
+    await Offer.deleteMany({ _id: { $in: duplicateIds } });
+  }
+
   homeCardsReady = true;
 }
 
@@ -58,7 +72,7 @@ async function listOffers(req, res) {
   const filter = includeAll ? {} : { published: true };
   if (section) filter.section = section;
   const data = await Offer.find(filter).sort({ sortOrder: 1, createdAt: -1 }).lean();
-  res.json({ success: true, data });
+  res.json({ success: true, data: includeAll ? data : dedupeHomeCards(data) });
 }
 
 async function getOfferById(req, res) {

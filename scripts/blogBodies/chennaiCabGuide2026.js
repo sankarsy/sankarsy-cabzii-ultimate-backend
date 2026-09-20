@@ -4,7 +4,7 @@
 module.exports = `
 <h2>Cab booking in Chennai — quick overview</h2>
 <p>Chennai is one of India&apos;s busiest cities for outstation travel, airport runs and local errands. Whether you need a <strong>cab booking in Chennai</strong> for a same-day airport drop, a weekend trip to Pondicherry, or a family pilgrimage, Cabzii lets you compare Dzire, Ertiga, Innova and Tempo fares before you pay.</p>
-<p>Search <strong>taxi booking near me</strong> or <strong>travels near me</strong> and you will see dozens of operators — Cabzii brings verified vendors onto one platform with OTP login, upfront package slabs and 24/7 online booking on <a href="https://cabzii.in/cab-booking/chennai">cab booking Chennai</a>.</p>
+<p>Search <strong>taxi booking near me</strong> or <strong>travels near me</strong> and you will see dozens of operators — Cabzii brings verified vendors onto one platform with OTP login, upfront package slabs and 24/7 online booking on <a href="https://www.cabzii.in/car-rental/chennai-city-cabs">cab booking Chennai</a>.</p>
 
 <h2>How to book a cab in Chennai (4 steps)</h2>
 <ol>
@@ -16,7 +16,7 @@ module.exports = `
 
 <h2>Acting driver in Chennai — when to hire a chauffeur</h2>
 <p>An <strong>acting driver in Chennai</strong> drives <em>your</em> car — ideal for weddings, multi-stop business days, or when you already own a sedan/SUV. Packages mirror cab slabs: hourly local, full-day and outstation with allowance included.</p>
-<p>Need to <strong>call driver in Chennai</strong> for tomorrow? Book online on Cabzii instead of hunting phone numbers — you get vendor name, package label and fare before the trip starts. Browse <a href="https://cabzii.in/acting-driver/chennai">acting driver Chennai</a> or open the <a href="https://cabzii.in/drivers">drivers catalog</a>.</p>
+<p>Need to <strong>call driver in Chennai</strong> for tomorrow? Book online on Cabzii instead of hunting phone numbers — you get vendor name, package label and fare before the trip starts. Browse <a href="https://www.cabzii.in/call-drivers-chennai">acting driver Chennai</a> or open the <a href="https://cabzii.in/drivers">drivers catalog</a>.</p>
 
 <h2>Taxi booking near me &amp; travels near me</h2>
 <p>Most Chennai travellers search <strong>taxi booking near me</strong> or <strong>travels near me</strong> from T. Nagar, OMR, Anna Nagar, Velachery, Tambaram or near Chennai Airport (MAA). Cabzii uses your selected city to prioritise nearby vendors and show realistic package fares — not surge surprises after the trip.</p>
@@ -25,7 +25,7 @@ module.exports = `
   <li><strong>Airport taxi</strong> — domestic/international terminal pickup with flight buffer.</li>
   <li><strong>Outstation</strong> — one way or round trip to Bengaluru, Pondicherry, Tirupati and more.</li>
 </ul>
-<p>Start at <a href="https://cabzii.in/cabs">Browse cabs</a> or the dedicated <a href="https://cabzii.in/cab-booking/chennai">Chennai cab hub</a>.</p>
+<p>Start at <a href="https://cabzii.in/cabs">Browse cabs</a> or the dedicated <a href="https://www.cabzii.in/car-rental/chennai-city-cabs">Chennai cab hub</a>.</p>
 
 <h2>Tirupati taxi from Chennai — route &amp; booking tips</h2>
 <p><strong>Tirupati taxi Chennai</strong> is among the most booked outstation routes from Tamil Nadu&apos;s capital. Distance is roughly 135 km (about 3–4 hours depending on traffic). Book a sedan for couples, Innova for families, or Tempo for groups heading to Tirumala foothills.</p>
@@ -57,8 +57,8 @@ module.exports = `
 <h2>Ready to book?</h2>
 <p>Use the links below for instant online booking — no phone tag required.</p>
 <ul>
-  <li><a href="https://cabzii.in/cab-booking/chennai"><strong>Cab booking in Chennai</strong></a></li>
-  <li><a href="https://cabzii.in/acting-driver/chennai"><strong>Acting driver in Chennai</strong></a></li>
+  <li><a href="https://www.cabzii.in/car-rental/chennai-city-cabs"><strong>Cab booking in Chennai</strong></a></li>
+  <li><a href="https://www.cabzii.in/call-drivers-chennai"><strong>Acting driver in Chennai</strong></a></li>
   <li><a href="https://cabzii.in/routes/chennai-to-tirupati-cab"><strong>Tirupati taxi from Chennai</strong></a></li>
   <li><a href="https://cabzii.in/services/airport-taxi/chennai">Chennai airport taxi</a></li>
   <li><a href="https://cabzii.in/services/outstation-cab/chennai">Outstation cab Chennai</a></li>

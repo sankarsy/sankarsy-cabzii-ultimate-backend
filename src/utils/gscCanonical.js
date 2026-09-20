@@ -1,5 +1,7 @@
 "use strict";
 
+const { cityCabLandingPath, actingDriverLandingPath } = require("./seoPublicPaths");
+
 const DEFAULT_CANONICAL_ORIGIN = "https://www.cabzii.in";
 
 const CITY_SLUG_ALIASES = {
@@ -64,14 +66,36 @@ function foldAliasPath(pathname) {
   const normalized = pathname.replace(/\/+$/, "") || "/";
   const parts = normalized.split("/").filter(Boolean);
 
+  if (parts.length === 1) {
+    const slug = parts[0];
+    if (
+      slug === "call-drivers-chennai" ||
+      slug === "acting-driver-chennai" ||
+      slug === "call-driver-chennai" ||
+      slug === "hire-drivers-chennai" ||
+      slug === "hire-acting-drivers-chennai"
+    ) {
+      return "/call-drivers-chennai";
+    }
+  }
+
   if (parts.length === 2) {
     const [prefix, city] = parts;
+    if (prefix === "car-rental" && String(city).endsWith("-city-cabs")) {
+      return cityCabLandingPath(resolveCitySlug(city.slice(0, -"-city-cabs".length)));
+    }
     if (SERVICE_URL_PREFIXES.has(prefix)) {
       const serviceSlug = prefix === "holiday-packages" ? "tour-packages" : prefix;
       return `/services/${serviceSlug}/${resolveCitySlug(city)}`;
     }
     if (TRAVELS_URL_PREFIXES.has(prefix)) {
-      return `/cab-booking/${resolveCitySlug(city)}`;
+      return cityCabLandingPath(resolveCitySlug(city));
+    }
+    if (prefix === "cab-booking") {
+      return cityCabLandingPath(resolveCitySlug(city));
+    }
+    if (prefix === "acting-driver") {
+      return actingDriverLandingPath(resolveCitySlug(city));
     }
   }
 
@@ -89,10 +113,6 @@ function foldAliasPath(pathname) {
   if (parts.length === 3 && parts[0] === "services") {
     const service = parts[1] === "holiday-packages" ? "tour-packages" : parts[1];
     return `/services/${service}/${resolveCitySlug(parts[2])}`;
-  }
-
-  if (parts.length === 2 && (parts[0] === "acting-driver" || parts[0] === "cab-booking")) {
-    return `/${parts[0]}/${resolveCitySlug(parts[1])}`;
   }
 
   return normalized;
@@ -133,6 +153,18 @@ function parseLandingMeta(landingPage = "") {
       meta.city = m[1];
       meta.service = "one-way-cab";
     }
+    return meta;
+  }
+  if (parts[0] === "car-rental" && parts[1] && String(parts[1]).endsWith("-city-cabs")) {
+    meta.pageType = "city-hub";
+    meta.service = "cab-booking";
+    meta.city = parts[1].slice(0, -"-city-cabs".length);
+    return meta;
+  }
+  if (parts[0] === "call-drivers-chennai") {
+    meta.pageType = "acting-driver";
+    meta.service = "acting-driver";
+    meta.city = "chennai";
     return meta;
   }
   if (parts[0] === "acting-driver" && parts[1]) {

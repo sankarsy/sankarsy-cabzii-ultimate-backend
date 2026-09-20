@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { faqItemSchema, seoMetaSchema } = require("../schemas/cmsSchemas");
 
-/** Per-city SEO meta for /cab-booking/{city} and /acting-driver/{city}. */
+/** Per-city SEO meta. Live URLs: /car-rental/{city}-city-cabs and /acting-driver/{city} (Chennai → /call-drivers-chennai). */
 const seoCityPageSchema = new mongoose.Schema(
   {
     pageType: {

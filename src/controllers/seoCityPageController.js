@@ -4,7 +4,7 @@ const { SeoCityPage } = require("../models/SeoCityPage");
 const { HttpError } = require("../utils/httpError");
 const { parseListQuery, paginatedFind } = require("../utils/listQuery");
 const { logAudit } = require("../services/auditService");
-const { slugify } = require("../utils/slugify");
+const { seoCityPublicPath } = require("../utils/seoPublicPaths");
 
 const seoCityPageSchema = Joi.object({
   pageType: Joi.string().valid("cab-booking", "acting-driver").required(),
@@ -40,7 +40,7 @@ function normalizePayload(value) {
 function withPublicUrl(doc) {
   if (!doc) return doc;
   const plain = typeof doc.toObject === "function" ? doc.toObject() : { ...doc };
-  return { ...plain, publicPath: `/${plain.pageType}/${plain.citySlug}` };
+  return { ...plain, publicPath: seoCityPublicPath(plain.pageType, plain.citySlug) };
 }
 
 async function listSeoCityPages(req, res) {
