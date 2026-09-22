@@ -31,6 +31,10 @@ const SEED_BY_SECTION = { offers, services, routes };
 let homeCardsReady = false;
 
 async function ensureHomeCards() {
+  await Offer.updateMany(
+    { href: "/holidays?category=pilgrimage&q=tirupati" },
+    { $set: { href: "/tour-packages/tirupati-balaji-darshan-tirupati" } }
+  );
   if (homeCardsReady) return;
   await Offer.updateMany({ $or: [{ section: { $exists: false } }, { section: "" }, { section: null }] }, { $set: { section: "offers" } });
 

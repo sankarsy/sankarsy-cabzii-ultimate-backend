@@ -45,7 +45,7 @@ const offers = [
     iconKey: "holiday",
     color: "from-rose-500 to-pink-400",
     image: OFFER_IMG.tirupati,
-    href: "/holidays?category=pilgrimage&q=tirupati",
+    href: "/tour-packages/tirupati-balaji-darshan-tirupati",
     code: "TIRUPATI",
     fare: "",
     validTill: "31st Jul, 2026",

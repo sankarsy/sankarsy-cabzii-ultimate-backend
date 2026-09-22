@@ -46,7 +46,30 @@ const settingsSchema = Joi.object({
       productName: Joi.string().allow(""),
       seoTitle: Joi.string().allow(""),
       seoDescription: Joi.string().allow(""),
-      seoKeywords: Joi.string().allow("")
+      seoKeywords: Joi.string().allow(""),
+      pageLinks: Joi.array().items(
+        Joi.object({
+          id: Joi.string().allow(""),
+          title: Joi.string().allow(""),
+          intro: Joi.string().allow(""),
+          layout: Joi.string().valid("cards", "city-routes", "pills").allow(""),
+          links: Joi.array().items(
+            Joi.object({
+              label: Joi.string().required(),
+              href: Joi.string().required(),
+              hint: Joi.string().allow(""),
+              children: Joi.array().items(
+                Joi.object({
+                  label: Joi.string().required(),
+                  href: Joi.string().required(),
+                  hint: Joi.string().allow(""),
+                  children: Joi.array().optional()
+                })
+              )
+            })
+          )
+        })
+      )
     })
   ),
     callDriverTariff: Joi.object(),
