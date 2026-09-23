@@ -132,6 +132,64 @@ describe("price tampering", () => {
     assert.equal(stored.amount, 3000);
     assert.equal(stored.finalAmount, 3000);
     assert.equal(stored.baseFare, 3000);
+    assert.equal(stored.advanceAmount, 3000);
+    assert.equal(stored.payMode, "full");
+  });
+
+  it("stores 50% advance for cab bookings without changing trip total", () => {
+    const snapshot = composeFare({
+      baseFare: 3000,
+      couponResult: { code: "", discount: 0 },
+      pricingSource: "package",
+      serviceType: "cab"
+    });
+    assert.equal(snapshot.finalAmount, 3000);
+    assert.equal(snapshot.advanceAmount, 1500);
+    assert.equal(snapshot.balanceAmount, 1500);
+    assert.equal(snapshot.payMode, "advance");
+  });
+
+  it("uses admin pricePerKm for extra km instead of package extraKmRate", () => {
+    const priced = {
+      price: 3000,
+      pricePerKm: 15,
+      packages: [{ packageType: "one_way", price: 3000, includedKm: 250, extraKmRate: 22, active: true }]
+    };
+    const fare = resolveVehicleFare(
+      priced,
+      {
+        tripType: "outstation",
+        pickupLat: 13.08,
+        pickupLng: 80.27,
+        dropLat: 12.97,
+        dropLng: 77.59
+      },
+      "cab"
+    );
+    assert.match(fare.pricingSource, /distance:15\/km/);
+  });
+
+  it("keeps local/hourly on package fare even when pickup and drop are set", () => {
+    const localCab = {
+      price: 2000,
+      packages: [{ packageType: "local_8hr", price: 2000, includedHours: 8, includedKm: 80, extraKmRate: 14, active: true }]
+    };
+    const fare = resolveVehicleFare(
+      localCab,
+      {
+        tripType: "hourly",
+        packageHours: 8,
+        pickup: "T Nagar",
+        drop: "Anna Nagar",
+        pickupLat: 13.04,
+        pickupLng: 80.23,
+        dropLat: 13.08,
+        dropLng: 80.21
+      },
+      "cab"
+    );
+    assert.equal(fare.baseFare, 2000);
+    assert.equal(fare.pricingSource, "package:local_1day");
   });
 
   it("TEST 3: client discount=5000 is ignored", () => {

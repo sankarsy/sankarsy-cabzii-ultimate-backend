@@ -1,6 +1,7 @@
 const Joi = require("joi");
 const { SiteSettings } = require("../models/SiteSettings");
 const { mergeSiteSettings, deepMerge } = require("../config/siteSettingsDefaults");
+const { mergeCallDriverTariff, CALL_DRIVER_TARIFF_VERSION } = require("../config/callDriverTariff");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 
@@ -47,6 +48,15 @@ const settingsSchema = Joi.object({
       seoTitle: Joi.string().allow(""),
       seoDescription: Joi.string().allow(""),
       seoKeywords: Joi.string().allow(""),
+      h1: Joi.string().allow(""),
+      intro: Joi.string().allow(""),
+      html: Joi.string().allow(""),
+      faqs: Joi.array().items(
+        Joi.object({
+          question: Joi.string().allow(""),
+          answer: Joi.string().allow("")
+        })
+      ),
       pageLinks: Joi.array().items(
         Joi.object({
           id: Joi.string().allow(""),
@@ -73,6 +83,25 @@ const settingsSchema = Joi.object({
     })
   ),
     callDriverTariff: Joi.object(),
+  callDriverPage: Joi.object({
+    title: Joi.string().allow(""),
+    subtitle: Joi.string().allow(""),
+    intro: Joi.string().allow(""),
+    sections: Joi.array().items(
+      Joi.object({
+        heading: Joi.string().allow(""),
+        body: Joi.string().allow("")
+      })
+    ),
+    services: Joi.object().pattern(
+      Joi.string(),
+      Joi.object({
+        title: Joi.string().allow(""),
+        blurb: Joi.string().allow(""),
+        cta: Joi.string().allow("")
+      })
+    )
+  }),
   callDriverSeo: Joi.object().pattern(
     Joi.string(),
     Joi.object({
@@ -116,6 +145,13 @@ async function updateSettings(req, res) {
   }
   if (value.callDriverSeo) {
     value.callDriverSeo = deepMerge(beforePlain.callDriverSeo || {}, value.callDriverSeo);
+  }
+  if (value.callDriverTariff) {
+    value.callDriverTariff = mergeCallDriverTariff({
+      ...(beforePlain.callDriverTariff || {}),
+      ...value.callDriverTariff,
+      version: CALL_DRIVER_TARIFF_VERSION
+    });
   }
   const updated = await SiteSettings.findByIdAndUpdate(
     before._id,

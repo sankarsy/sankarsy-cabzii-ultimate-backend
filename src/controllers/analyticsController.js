@@ -3,6 +3,7 @@
 const { Booking } = require("../models/Booking");
 const { User } = require("../models/User");
 const { CrmLead } = require("../models/CrmLead");
+const { ENQUIRY_SOURCES } = require("../utils/quoteLeadEnquiry");
 const { HttpError } = require("../utils/httpError");
 const { isSuperAdminUser } = require("../utils/adminAccess");
 const { isVendorAdmin, buildVendorBookingQuery } = require("../utils/vendorBookingAccess");
@@ -49,7 +50,7 @@ async function analyticsOverview(req, res) {
   const { buckets, start, end, safeDays } = buildDateBuckets(req.query.days);
   const bucketMap = Object.fromEntries(buckets.map((b) => [b.date, b]));
 
-  const quoteFilter = { source: "whatsapp_quote", createdAt: { $gte: start, $lte: end } };
+  const quoteFilter = { source: { $in: ENQUIRY_SOURCES }, createdAt: { $gte: start, $lte: end } };
   if (scoped) {
     quoteFilter.vendorAdminPhone = normalizeMobileNumber(req.user?.mobileNumber);
   }

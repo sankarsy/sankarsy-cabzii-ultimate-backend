@@ -34,6 +34,7 @@ function cabPackageIdFromTrip(trip = {}, catalog) {
 }
 
 function extraKmFrom(pkg, catalog) {
+  if (num(catalog?.pricePerKm) > 0) return num(catalog.pricePerKm);
   if (num(pkg?.extraKmRate) > 0) return num(pkg.extraKmRate);
   if (num(pkg?.extraKm) > 0) return num(pkg.extraKm);
   const base = num(catalog?.price);
@@ -167,7 +168,7 @@ function resolveVehicleFare(catalog, trip, kind) {
 
   const tripType = String(trip.tripType || trip.serviceTripType || "").toLowerCase();
   const distanceKm = trustedDistanceKm(trip);
-  const useDistance = distanceKm > 0 && (tripType === "outstation" || (trip.pickup && trip.drop));
+  const useDistance = distanceKm > 0 && tripType === "outstation";
   const batta = tripType === "outstation" ? num(catalog?.driverAllowance) : 0;
 
   if (!useDistance) {
@@ -254,12 +255,25 @@ function resolveTourFare(pkg, input) {
 }
 
 /**
- * @returns {{ baseFare: number, discount: number, tax: number, fees: number, finalAmount: number, pricingSource: string, couponCode: string, distanceKm: number|null, vendor: string, vendorAdminPhone: string }}
+ * @returns {{ baseFare: number, discount: number, tax: number, fees: number, finalAmount: number, amount: number, advanceAmount: number, balanceAmount: number, payMode: string, pricingSource: string, couponCode: string, distanceKm: number|null, vendor: string, vendorAdminPhone: string }}
  */
-function composeFare({ baseFare, fees = 0, couponResult, pricingSource, distanceKm = null, vendor = "", vendorAdminPhone = "" }) {
+function composeFare({
+  baseFare,
+  fees = 0,
+  couponResult,
+  pricingSource,
+  distanceKm = null,
+  vendor = "",
+  vendorAdminPhone = "",
+  serviceType = ""
+}) {
   const tax = 0;
   const discount = Math.max(0, num(couponResult?.discount));
   const finalAmount = Math.max(0, Math.round(num(baseFare) + num(fees) + tax - discount));
+  const kind = String(serviceType || "").toLowerCase();
+  const payMode = kind === "cab" || kind === "driver" ? "advance" : "full";
+  const advanceAmount = payMode === "advance" ? Math.round(finalAmount * 0.5) : finalAmount;
+  const balanceAmount = Math.max(0, finalAmount - advanceAmount);
   return {
     baseFare: Math.round(num(baseFare)),
     discount,
@@ -267,6 +281,9 @@ function composeFare({ baseFare, fees = 0, couponResult, pricingSource, distance
     fees: Math.round(num(fees)),
     finalAmount,
     amount: finalAmount,
+    advanceAmount,
+    balanceAmount,
+    payMode,
     pricingSource: pricingSource || "catalog",
     couponCode: couponResult?.code || "",
     distanceKm,

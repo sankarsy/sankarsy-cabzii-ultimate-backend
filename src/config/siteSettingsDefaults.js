@@ -1,5 +1,6 @@
 /** Default site content — used when DB is empty and as merge base for partial updates. */
 const { DEFAULT_CALL_DRIVER_TARIFF, mergeCallDriverTariff } = require("./callDriverTariff");
+const { DEFAULT_CALL_DRIVER_PAGE, mergeCallDriverPage } = require("./callDriverPage");
 
 const DEFAULT_SITE_SETTINGS = {
   siteName: "cabzii.in",
@@ -104,7 +105,8 @@ const DEFAULT_SITE_SETTINGS = {
   ],
   pageSeo: {},
   callDriverTariff: DEFAULT_CALL_DRIVER_TARIFF,
-  callDriverSeo: {}
+  callDriverSeo: {},
+  callDriverPage: DEFAULT_CALL_DRIVER_PAGE
 };
 
 function deepMerge(base, patch) {
@@ -124,6 +126,7 @@ function deepMerge(base, patch) {
 function mergeSiteSettings(stored) {
   const merged = deepMerge(DEFAULT_SITE_SETTINGS, stored || {});
   merged.callDriverTariff = mergeCallDriverTariff(merged.callDriverTariff);
+  merged.callDriverPage = mergeCallDriverPage(merged.callDriverPage);
   return merged;
 }
 

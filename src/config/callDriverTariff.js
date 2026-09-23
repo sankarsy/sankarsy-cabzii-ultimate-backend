@@ -2,43 +2,62 @@
 
 const CALL_DRIVER_SERVICE_TYPES = ["local", "outstation", "airport", "school", "corporate", "valet"];
 
+/** Bump when published rates change so stale SiteSettings rows do not keep old extra-hour / per-day slabs. */
+const CALL_DRIVER_TARIFF_VERSION = 3;
+
 const DEFAULT_CALL_DRIVER_TARIFF = {
+  version: CALL_DRIVER_TARIFF_VERSION,
   nightStartHour: 22,
-  nightEndHour: 6,
+  nightStartMinute: 15,
+  nightEndHour: 5,
+  nightEndMinute: 30,
+  cancelCharge: 100,
   local: {
-    minHours: 4,
-    standard: 500,
-    premium: 600,
-    extraHourStandard: 80,
+    minHours: 3,
+    standard: 450,
+    premium: 450,
+    extraHourStandard: 100,
     extraHourPremium: 100,
-    nightCharge: 100
+    nightCharge: 100,
+    dropChargeMin: 50,
+    dropCharge: 100,
+    dropKm: 5,
+    outOfCityCharge: 100,
+    outOfCityKm: 40
   },
   outstation: {
     perDayHours: 12,
-    perDayStandard: 1100,
-    perDayPremium: 1200,
-    longKmThreshold: 400,
-    perDayLongStandard: 1200,
-    perDayLongPremium: 1300,
-    extraHourStandard: 80,
+    perDayStandard: 1500,
+    perDayPremium: 1500,
+    extraHourStandard: 100,
     extraHourPremium: 100,
-    nightCharge: 100,
-    foodStayNote: "Food and accommodation for the driver are the customer's responsibility."
+    oneWayMinKm: 250,
+    oneWayRate: 1700,
+    cancelCharge: 100,
+    foodStayNote:
+      "Return trips: driver accommodation is extra (you arrange stay — not in this fare). One-way ₹1,700 includes bus fare for the driver."
   },
   airport: {
-    minHours: 4,
-    standard: 500,
-    premium: 600,
-    extraHourStandard: 80,
+    minHours: 3,
+    standard: 450,
+    premium: 450,
+    extraHourStandard: 100,
     extraHourPremium: 100,
     nightCharge: 100
   },
   valet: {
-    driverRate: 650,
+    driverRate: 600,
     minHours: 5,
-    extraHour: 70,
+    extraHour: 100,
     supervisorRate: 700,
     driversPerSupervisor: 10
+  },
+  monthly: {
+    extraHour: 60,
+    normal10: 22000,
+    normal12: 22000,
+    luxury10: 24000,
+    luxury12: 26000
   },
   school: {
     quoteOnly: true
@@ -78,7 +97,8 @@ const CALL_DRIVER_SERVICE_CATALOG = [
     title: "Monthly Driver",
     blurb: "School, personal or regular monthly driver requirement.",
     cta: "Request Quote",
-    quoteOnly: true
+    quoteOnly: true,
+    fromKey: "monthly.normal10"
   },
   {
     id: "corporate",
@@ -102,17 +122,39 @@ function num(value, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function bumpExtraHour(block) {
+  const next = { ...(block || {}) };
+  if (num(next.extraHourStandard) === 80) next.extraHourStandard = 100;
+  if (num(next.extraHourPremium) === 80) next.extraHourPremium = 100;
+  if (num(next.extraHour) === 70) next.extraHour = 100;
+  return next;
+}
+
+function bumpOutstationDayRate(block) {
+  const next = bumpExtraHour(block);
+  if ([1100, 1200, 1300].includes(num(next.perDayStandard))) next.perDayStandard = 1500;
+  if ([1100, 1200, 1300].includes(num(next.perDayPremium))) next.perDayPremium = 1500;
+  return next;
+}
+
 function mergeCallDriverTariff(stored) {
   const src = stored && typeof stored === "object" ? stored : {};
+  const stale = num(src.version, 0) < CALL_DRIVER_TARIFF_VERSION;
+  const rates = stale ? {} : src;
   return {
-    nightStartHour: num(src.nightStartHour, DEFAULT_CALL_DRIVER_TARIFF.nightStartHour),
-    nightEndHour: num(src.nightEndHour, DEFAULT_CALL_DRIVER_TARIFF.nightEndHour),
-    local: { ...DEFAULT_CALL_DRIVER_TARIFF.local, ...(src.local || {}) },
-    outstation: { ...DEFAULT_CALL_DRIVER_TARIFF.outstation, ...(src.outstation || {}) },
-    airport: { ...DEFAULT_CALL_DRIVER_TARIFF.airport, ...(src.airport || {}) },
-    valet: { ...DEFAULT_CALL_DRIVER_TARIFF.valet, ...(src.valet || {}) },
-    school: { ...DEFAULT_CALL_DRIVER_TARIFF.school, ...(src.school || {}) },
-    corporate: { ...DEFAULT_CALL_DRIVER_TARIFF.corporate, ...(src.corporate || {}) }
+    version: CALL_DRIVER_TARIFF_VERSION,
+    nightStartHour: num(rates.nightStartHour, DEFAULT_CALL_DRIVER_TARIFF.nightStartHour),
+    nightStartMinute: num(rates.nightStartMinute, DEFAULT_CALL_DRIVER_TARIFF.nightStartMinute),
+    nightEndHour: num(rates.nightEndHour, DEFAULT_CALL_DRIVER_TARIFF.nightEndHour),
+    nightEndMinute: num(rates.nightEndMinute, DEFAULT_CALL_DRIVER_TARIFF.nightEndMinute),
+    cancelCharge: num(rates.cancelCharge, DEFAULT_CALL_DRIVER_TARIFF.cancelCharge),
+    local: bumpExtraHour({ ...DEFAULT_CALL_DRIVER_TARIFF.local, ...(rates.local || {}) }),
+    outstation: bumpOutstationDayRate({ ...DEFAULT_CALL_DRIVER_TARIFF.outstation, ...(rates.outstation || {}) }),
+    airport: bumpExtraHour({ ...DEFAULT_CALL_DRIVER_TARIFF.airport, ...(rates.airport || {}) }),
+    valet: bumpExtraHour({ ...DEFAULT_CALL_DRIVER_TARIFF.valet, ...(rates.valet || {}) }),
+    monthly: { ...DEFAULT_CALL_DRIVER_TARIFF.monthly, ...(rates.monthly || {}) },
+    school: { ...DEFAULT_CALL_DRIVER_TARIFF.school, ...(rates.school || {}) },
+    corporate: { ...DEFAULT_CALL_DRIVER_TARIFF.corporate, ...(rates.corporate || {}) }
   };
 }
 
@@ -131,12 +173,13 @@ function publicCallDriverServices(tariff) {
     blurb: svc.blurb,
     cta: svc.cta,
     quoteOnly: Boolean(svc.quoteOnly),
-    fromPrice: svc.quoteOnly ? null : tariffFromPrice(merged, svc.fromKey)
+    fromPrice: svc.quoteOnly && !svc.fromKey ? null : tariffFromPrice(merged, svc.fromKey)
   }));
 }
 
 module.exports = {
   CALL_DRIVER_SERVICE_TYPES,
+  CALL_DRIVER_TARIFF_VERSION,
   DEFAULT_CALL_DRIVER_TARIFF,
   CALL_DRIVER_SERVICE_CATALOG,
   mergeCallDriverTariff,

@@ -270,6 +270,7 @@ async function paginatedFind(Model, filter, { page, limit, priorityCity }, sort 
 }
 
 module.exports = {
+  escapeRegex,
   parseListQuery,
   buildCabListFilter,
   buildPackageListFilter,

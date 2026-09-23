@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const { CrmLead } = require("../models/CrmLead");
 const { Cab } = require("../models/Cab");
 const { HttpError } = require("../utils/httpError");
-const { parseListQuery, paginatedFind } = require("../utils/listQuery");
+const { parseListQuery, paginatedFind, escapeRegex } = require("../utils/listQuery");
 const { isSuperAdminUser } = require("../utils/adminAccess");
 const { isVendorAdmin } = require("../utils/vendorBookingAccess");
 const { makeQuoteRef } = require("../utils/vendorOnboarding");
@@ -192,6 +192,29 @@ async function listQuoteLeads(req, res) {
       }
     }
     if (!Object.keys(filter.createdAt).length) delete filter.createdAt;
+  }
+  const q = String(pq.q || req.query.q || req.query.search || "").trim();
+  if (q) {
+    const rx = new RegExp(escapeRegex(q), "i");
+    const digits = q.replace(/\D/g, "");
+    const searchOr = [
+      { quoteRef: rx },
+      { mobile: rx },
+      { name: rx },
+      { boardingPoint: rx },
+      { droppingPoint: rx },
+      { route: rx },
+      { tripType: rx },
+      { vehicleName: rx },
+      { sourcePage: rx }
+    ];
+    if (digits.length >= 4) searchOr.push({ mobile: new RegExp(escapeRegex(digits.slice(-10))) });
+    if (filter.$or) {
+      filter.$and = [{ $or: filter.$or }, { $or: searchOr }];
+      delete filter.$or;
+    } else {
+      filter.$or = searchOr;
+    }
   }
   const { data, meta } = await paginatedFind(CrmLead, filter, pq, { createdAt: -1 });
   res.json({ success: true, data, meta });

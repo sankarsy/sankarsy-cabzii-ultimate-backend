@@ -4,6 +4,7 @@ const { SeoCityPage } = require("../models/SeoCityPage");
 const { HttpError } = require("../utils/httpError");
 const { parseListQuery, paginatedFind } = require("../utils/listQuery");
 const { logAudit } = require("../services/auditService");
+const { slugify } = require("../utils/slugify");
 const { seoCityPublicPath } = require("../utils/seoPublicPaths");
 
 const seoCityPageSchema = Joi.object({

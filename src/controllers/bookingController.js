@@ -138,6 +138,10 @@ const bookingCreateSchema = Joi.object({
     days: Joi.number().min(0).allow(null).optional(),
     estimatedKm: Joi.number().min(0).allow(null).optional(),
     pickupTime: Joi.string().allow("").optional(),
+    tripMode: Joi.string().valid("return", "one_way", "one-way", "oneway").allow("").optional(),
+    oneWay: Joi.boolean().optional(),
+    date: Joi.string().allow("").optional(),
+    travelDate: Joi.string().allow("").optional(),
     returnDate: Joi.string().allow("").optional(),
     airport: Joi.string().allow("").optional(),
     airportDirection: Joi.string().allow("").optional(),
@@ -241,7 +245,8 @@ async function computeServerFare(value, user) {
         pricingSource: resolved.pricingSource,
         distanceKm: resolved.estimatedKm || value.distanceKm || null,
         vendor: "Cabzii",
-        vendorAdminPhone: settings.contact?.whatsapp || settings.contact?.phone || ""
+        vendorAdminPhone: settings.contact?.whatsapp || settings.contact?.phone || "",
+        serviceType: "driver"
       })
     };
   }
@@ -268,7 +273,8 @@ async function computeServerFare(value, user) {
         pricingSource: resolved.pricingSource,
         distanceKm: resolved.distanceKm || null,
         vendor: item.vendor || "",
-        vendorAdminPhone: item.vendorAdminPhone || ""
+        vendorAdminPhone: item.vendorAdminPhone || "",
+        serviceType: value.type
       })
     };
   }
@@ -293,7 +299,8 @@ async function computeServerFare(value, user) {
         couponResult,
         pricingSource: resolved.pricingSource,
         vendor: item.vendor || "",
-        vendorAdminPhone: item.vendorAdminPhone || ""
+        vendorAdminPhone: item.vendorAdminPhone || "",
+        serviceType: "tour"
       })
     };
   }
@@ -321,7 +328,8 @@ async function computeServerFare(value, user) {
         couponResult,
         pricingSource: resolved.pricingSource,
         vendor: item.vendor || item.operator || "",
-        vendorAdminPhone: item.vendorAdminPhone || ""
+        vendorAdminPhone: item.vendorAdminPhone || "",
+        serviceType: "bus"
       })
     };
   }

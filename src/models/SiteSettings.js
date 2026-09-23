@@ -42,7 +42,8 @@ const siteSettingsSchema = new mongoose.Schema(
     homepageBuilder: { type: mongoose.Schema.Types.Mixed, default: () => ({ blocks: [], version: 1 }) },
     vendorModuleAccess: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
     callDriverTariff: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
-    callDriverSeo: { type: mongoose.Schema.Types.Mixed, default: () => ({}) }
+    callDriverSeo: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    callDriverPage: { type: mongoose.Schema.Types.Mixed, default: () => ({}) }
   },
   { timestamps: true }
 );

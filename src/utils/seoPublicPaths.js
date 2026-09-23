@@ -16,8 +16,18 @@ function seoCityPublicPath(pageType, citySlug) {
   return cityCabLandingPath(citySlug);
 }
 
+function seoLandingPublicPath(slug) {
+  const s = String(slug || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return s ? `/pages/${s}` : "/pages";
+}
+
 module.exports = {
   cityCabLandingPath,
   actingDriverLandingPath,
-  seoCityPublicPath
+  seoCityPublicPath,
+  seoLandingPublicPath
 };

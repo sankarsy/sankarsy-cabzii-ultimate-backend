@@ -7,5 +7,6 @@ const router = express.Router();
 
 router.get("/", asyncHandler(getPublicSettings));
 router.put("/", requireAuth, requireRole("super_admin"), asyncHandler(updateSettings));
+router.patch("/", requireAuth, requireRole("super_admin"), asyncHandler(updateSettings));
 
 module.exports = router;
