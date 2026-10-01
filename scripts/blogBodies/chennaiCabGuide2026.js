@@ -4,7 +4,7 @@
 module.exports = `
 <h2>Cab booking in Chennai — quick overview</h2>
 <p>Chennai is one of India&apos;s busiest cities for outstation travel, airport runs and local errands. Whether you need a <strong>cab booking in Chennai</strong> for a same-day airport drop, a weekend trip to Pondicherry, or a family pilgrimage, Cabzii lets you compare Dzire, Ertiga, Innova and Tempo fares before you pay.</p>
-<p>Search <strong>taxi booking near me</strong> or <strong>travels near me</strong> and you will see dozens of operators — Cabzii brings verified vendors onto one platform with OTP login, upfront package slabs and 24/7 online booking on <a href="https://www.cabzii.in/car-rental/chennai-city-cabs">cab booking Chennai</a>.</p>
+<p>Search <strong>taxi booking near me</strong> or <strong>travels near me</strong> and you will see dozens of operators — Cabzii brings verified vendors onto one platform with OTP login, upfront package slabs and 24/7 online booking on <a href="https://www.cabzii.in/chennai">cab booking Chennai</a>.</p>
 
 <h2>How to book a cab in Chennai (4 steps)</h2>
 <ol>
@@ -25,7 +25,7 @@ module.exports = `
   <li><strong>Airport taxi</strong> — domestic/international terminal pickup with flight buffer.</li>
   <li><strong>Outstation</strong> — one way or round trip to Bengaluru, Pondicherry, Tirupati and more.</li>
 </ul>
-<p>Start at <a href="https://cabzii.in/cabs">Browse cabs</a> or the dedicated <a href="https://www.cabzii.in/car-rental/chennai-city-cabs">Chennai cab hub</a>.</p>
+<p>Start at <a href="https://cabzii.in/cabs">Browse cabs</a> or the dedicated <a href="https://www.cabzii.in/chennai">Chennai cab hub</a>.</p>
 
 <h2>Tirupati taxi from Chennai — route &amp; booking tips</h2>
 <p><strong>Tirupati taxi Chennai</strong> is among the most booked outstation routes from Tamil Nadu&apos;s capital. Distance is roughly 135 km (about 3–4 hours depending on traffic). Book a sedan for couples, Innova for families, or Tempo for groups heading to Tirumala foothills.</p>
@@ -57,7 +57,7 @@ module.exports = `
 <h2>Ready to book?</h2>
 <p>Use the links below for instant online booking — no phone tag required.</p>
 <ul>
-  <li><a href="https://www.cabzii.in/car-rental/chennai-city-cabs"><strong>Cab booking in Chennai</strong></a></li>
+  <li><a href="https://www.cabzii.in/chennai"><strong>Cab booking in Chennai</strong></a></li>
   <li><a href="https://www.cabzii.in/call-drivers-chennai"><strong>Acting driver in Chennai</strong></a></li>
   <li><a href="https://cabzii.in/routes/chennai-to-tirupati-cab"><strong>Tirupati taxi from Chennai</strong></a></li>
   <li><a href="https://cabzii.in/services/airport-taxi/chennai">Chennai airport taxi</a></li>

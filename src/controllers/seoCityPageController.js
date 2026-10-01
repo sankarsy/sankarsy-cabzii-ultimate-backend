@@ -8,15 +8,26 @@ const { slugify } = require("../utils/slugify");
 const { seoCityPublicPath } = require("../utils/seoPublicPaths");
 
 const seoCityPageSchema = Joi.object({
-  pageType: Joi.string().valid("cab-booking", "acting-driver").required(),
+  pageType: Joi.string().valid("cab-booking", "acting-driver", "airport-cab-booking").required(),
   citySlug: Joi.string().required(),
   seoTitle: Joi.string().required(),
   seoDescription: Joi.string().allow("").default(""),
   seo: Joi.string().allow("").default(""),
   h1: Joi.string().allow("").default(""),
+  lead: Joi.string().allow("").default(""),
+  aboutCity: Joi.string().allow("").default(""),
   body: Joi.string().allow("").default(""),
   faqs: Joi.array()
     .items(Joi.object({ question: Joi.string().required(), answer: Joi.string().allow("").default("") }).unknown(true))
+    .default([]),
+  touristPlaces: Joi.array()
+    .items(
+      Joi.object({
+        title: Joi.string().required(),
+        body: Joi.string().allow("").default(""),
+        href: Joi.string().allow("").default("")
+      }).unknown(true)
+    )
     .default([]),
   schemaJson: Joi.string().allow("").default(""),
   image: Joi.string().allow("").default(""),

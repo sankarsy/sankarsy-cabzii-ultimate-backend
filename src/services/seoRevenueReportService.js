@@ -22,13 +22,14 @@ const {
 } = require("../utils/seoRevenueMath");
 const { canonicalizeGscPage, parseLandingMeta, gscSafeRange } = require("../utils/gscCanonical");
 const { publicGscStatus } = require("../utils/gscConfig");
+const { airportTaxiPublicPath } = require("../utils/seoPublicPaths");
 
 const FEATURED_SPOTLIGHT = [
   {
     id: "chennai-airport",
     title: "CHENNAI",
     subtitle: "Airport Taxi",
-    landingPage: "/services/airport-taxi/chennai",
+    landingPage: "/chennai/airport-cab-booking",
     city: "chennai",
     service: "airport-taxi"
   },
@@ -46,7 +47,7 @@ const FEATURED_SPOTLIGHT = [
     id: "coimbatore-airport",
     title: "COIMBATORE",
     subtitle: "Airport Taxi",
-    landingPage: "/services/airport-taxi/coimbatore",
+    landingPage: "/coimbatore/airport-cab-booking",
     city: "coimbatore",
     service: "airport-taxi"
   }
@@ -312,7 +313,7 @@ async function buildSeoRevenueReport(query) {
     const citySlug = inferCitySlug(booking.pickup) || inferCitySlug(booking.drop);
     const svc = operationalServiceKey(booking);
     if (svc === "airport-taxi" && citySlug) {
-      const path = `/services/airport-taxi/${citySlug}`;
+      const path = airportTaxiPublicPath(citySlug);
       if (!airportPages.has(path)) airportPages.set(path, { ...emptyBucket(), operationalOnly: true });
       if (!booking.seoAttribution?.landingPage) addMoney(airportPages.get(path), booking);
     }

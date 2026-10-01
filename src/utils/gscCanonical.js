@@ -1,6 +1,6 @@
 "use strict";
 
-const { cityCabLandingPath, actingDriverLandingPath } = require("./seoPublicPaths");
+const { cityCabLandingPath, actingDriverLandingPath, airportCabBookingPath, airportTaxiPublicPath, isAirportCabBookingCity } = require("./seoPublicPaths");
 
 const DEFAULT_CANONICAL_ORIGIN = "https://www.cabzii.in";
 
@@ -34,6 +34,41 @@ const SERVICE_URL_PREFIXES = new Set([
 ]);
 
 const TRAVELS_URL_PREFIXES = new Set(["travels", "travel", "travel-agency"]);
+
+const APP_ROOT_PAGES = new Set([
+  "cabs",
+  "drivers",
+  "holidays",
+  "services",
+  "routes",
+  "blogs",
+  "about",
+  "contact",
+  "faq",
+  "tariff",
+  "locations",
+  "testimonials",
+  "admin",
+  "account",
+  "login",
+  "signin",
+  "payment",
+  "booking",
+  "search",
+  "pages",
+  "buses",
+  "hotels",
+  "flights",
+  "trains",
+  "call-driver",
+  "acting-driver",
+  "cab-booking",
+  "car-rental",
+  "track-booking",
+  "terms-and-conditions",
+  "legal-declaration",
+  "cancellation-policy"
+]);
 
 function resolveCitySlug(raw) {
   const key = String(raw || "").toLowerCase();
@@ -75,7 +110,7 @@ function foldAliasPath(pathname) {
       slug === "hire-drivers-chennai" ||
       slug === "hire-acting-drivers-chennai"
     ) {
-      return "/call-drivers-chennai";
+      return actingDriverLandingPath("chennai");
     }
   }
 
@@ -86,7 +121,9 @@ function foldAliasPath(pathname) {
     }
     if (SERVICE_URL_PREFIXES.has(prefix)) {
       const serviceSlug = prefix === "holiday-packages" ? "tour-packages" : prefix;
-      return `/services/${serviceSlug}/${resolveCitySlug(city)}`;
+      const citySlug = resolveCitySlug(city);
+      if (prefix === "airport-taxi") return airportTaxiPublicPath(citySlug);
+      return `/services/${serviceSlug}/${citySlug}`;
     }
     if (TRAVELS_URL_PREFIXES.has(prefix)) {
       return cityCabLandingPath(resolveCitySlug(city));
@@ -112,7 +149,21 @@ function foldAliasPath(pathname) {
 
   if (parts.length === 3 && parts[0] === "services") {
     const service = parts[1] === "holiday-packages" ? "tour-packages" : parts[1];
-    return `/services/${service}/${resolveCitySlug(parts[2])}`;
+    const city = resolveCitySlug(parts[2]);
+    if (service === "airport-taxi" && isAirportCabBookingCity(city)) {
+      return airportCabBookingPath(city);
+    }
+    return `/services/${service}/${city}`;
+  }
+
+  if (parts.length === 2 && parts[1] === "airport-cab-booking") {
+    const city = resolveCitySlug(parts[0]);
+    return airportCabBookingPath(city);
+  }
+
+  if (parts.length === 2 && parts[1] === "acting-driver") {
+    const city = resolveCitySlug(parts[0]);
+    return actingDriverLandingPath(city);
   }
 
   return normalized;
@@ -141,6 +192,18 @@ function parseLandingMeta(landingPage = "") {
     meta.pageType = parts[1] === "tour-packages" ? "tour" : "service";
     meta.service = parts[1];
     meta.city = parts[2];
+    return meta;
+  }
+  if (parts[1] === "airport-cab-booking" && parts[0]) {
+    meta.pageType = "service";
+    meta.service = "airport-taxi";
+    meta.city = parts[0];
+    return meta;
+  }
+  if (parts[1] === "acting-driver" && parts[0]) {
+    meta.pageType = "acting-driver";
+    meta.service = "acting-driver";
+    meta.city = parts[0];
     return meta;
   }
   if (parts[0] === "routes" && parts[1]) {
@@ -187,6 +250,12 @@ function parseLandingMeta(landingPage = "") {
   if (parts[0] === "holidays" || parts[0] === "tour-packages") {
     meta.pageType = "tour";
     meta.service = "tours";
+    return meta;
+  }
+  if (parts.length === 1 && !APP_ROOT_PAGES.has(parts[0])) {
+    meta.pageType = "city-hub";
+    meta.service = "cab-booking";
+    meta.city = parts[0];
     return meta;
   }
   return meta;

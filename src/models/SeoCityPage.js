@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 const { faqItemSchema, seoMetaSchema } = require("../schemas/cmsSchemas");
 
-/** Per-city SEO meta. Live URLs: /car-rental/{city}-city-cabs and /acting-driver/{city} (Chennai → /call-drivers-chennai). */
+/** Per-city SEO meta. Live URLs: /{city} (cabs), /{city}/airport-cab-booking, /acting-driver/{city} (Chennai → /call-drivers-chennai). */
 const seoCityPageSchema = new mongoose.Schema(
   {
     pageType: {
       type: String,
       required: true,
-      enum: ["cab-booking", "acting-driver"],
+      enum: ["cab-booking", "acting-driver", "airport-cab-booking"],
       trim: true
     },
     citySlug: { type: String, required: true, trim: true, lowercase: true },
@@ -15,8 +15,20 @@ const seoCityPageSchema = new mongoose.Schema(
     seoDescription: { type: String, default: "", trim: true },
     seo: { type: String, default: "" },
     h1: { type: String, default: "", trim: true },
+    lead: { type: String, default: "", trim: true },
+    aboutCity: { type: String, default: "", trim: true },
     body: { type: String, default: "" },
     faqs: { type: [faqItemSchema], default: [] },
+    touristPlaces: {
+      type: [
+        {
+          title: { type: String, trim: true },
+          body: { type: String, trim: true },
+          href: { type: String, trim: true, default: "" }
+        }
+      ],
+      default: []
+    },
     seoMeta: { type: seoMetaSchema, default: () => ({}) },
     schemaJson: { type: String, default: "" },
     image: { type: String, default: "", trim: true },

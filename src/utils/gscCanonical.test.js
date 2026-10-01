@@ -13,27 +13,29 @@ describe("GSC canonical page matching", () => {
   it("strips protocol, www, trailing slash, and query strings", () => {
     assert.equal(
       canonicalizeGscPage("https://www.cabzii.in/services/airport-taxi/chennai/?utm=1"),
-      "/services/airport-taxi/chennai"
+      "/chennai/airport-cab-booking"
     );
     assert.equal(
       canonicalizeGscPage("http://cabzii.in/services/airport-taxi/chennai"),
-      "/services/airport-taxi/chennai"
+      "/chennai/airport-cab-booking"
     );
   });
 
   it("keeps city-cabs landings and folds legacy city hubs onto them", () => {
-    assert.equal(canonicalizeGscPage("/car-rental/chennai-city-cabs"), "/car-rental/chennai-city-cabs");
-    assert.equal(canonicalizeGscPage("/cab-booking/chennai"), "/car-rental/chennai-city-cabs");
-    assert.equal(canonicalizeGscPage("/travels/chennai"), "/car-rental/chennai-city-cabs");
-    assert.equal(canonicalizeGscPage("/acting-driver/chennai"), "/call-drivers-chennai");
-    assert.equal(canonicalizeGscPage("/acting-driver/madurai"), "/acting-driver/madurai");
+    assert.equal(canonicalizeGscPage("/car-rental/chennai-city-cabs"), "/chennai");
+    assert.equal(canonicalizeGscPage("/cab-booking/chennai"), "/chennai");
+    assert.equal(canonicalizeGscPage("/travels/chennai"), "/chennai");
+    assert.equal(canonicalizeGscPage("/acting-driver/chennai"), "/chennai/acting-driver");
+    assert.equal(canonicalizeGscPage("/acting-driver/madurai"), "/madurai/acting-driver");
+    assert.equal(canonicalizeGscPage("/call-drivers-chennai"), "/chennai/acting-driver");
+    assert.equal(canonicalizeGscPage("/acting-driver/salem"), "/acting-driver/salem");
     const hub = parseLandingMeta("/cab-booking/chennai");
     assert.equal(hub.pageType, "city-hub");
     assert.equal(hub.city, "chennai");
     const driver = parseLandingMeta("/acting-driver/chennai");
     assert.equal(driver.pageType, "acting-driver");
     assert.equal(driver.city, "chennai");
-    assert.equal(driver.landingPage, "/call-drivers-chennai");
+    assert.equal(driver.landingPage, "/chennai/acting-driver");
   });
 
   it("folds service aliases onto canonical /services paths", () => {
@@ -52,6 +54,7 @@ describe("GSC canonical page matching", () => {
     const airport = parseLandingMeta("/services/airport-taxi/chennai");
     assert.equal(airport.city, "chennai");
     assert.equal(airport.service, "airport-taxi");
+    assert.equal(airport.landingPage, "/chennai/airport-cab-booking");
     const route = parseLandingMeta("/routes/chennai-to-tirupati-cab");
     assert.equal(route.origin, "chennai");
     assert.equal(route.destination, "tirupati");

@@ -24,7 +24,7 @@ const DEFAULT_CALL_DRIVER_PAGE = {
     },
     {
       heading: "Related Chennai bookings",
-      body: "<p>Need a Cabzii vehicle as well? Use <a href=\"/car-rental/chennai-city-cabs\">cab booking Chennai</a> or <a href=\"/services/airport-taxi/chennai\">Chennai airport taxi</a>. City guide: <a href=\"/call-drivers-chennai\">acting driver in Chennai</a>. Published cab rates: <a href=\"/tariff\">tariff</a>.</p>"
+      body: "<p>Need a Cabzii vehicle as well? Use <a href=\"/chennai\">cab booking Chennai</a> or <a href=\"/chennai/airport-cab-booking\">Chennai airport taxi</a>. City guide: <a href=\"/chennai/acting-driver\">acting driver in Chennai</a>. Published cab rates: <a href=\"/tariff\">tariff</a>.</p>"
     }
   ],
   services: {}
