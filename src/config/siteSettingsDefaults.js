@@ -18,9 +18,7 @@ const DEFAULT_SITE_SETTINGS = {
     { label: "Cabs", href: "/cabs", visible: true, sortOrder: 2 },
     { label: "Buses", href: "/buses", visible: true, sortOrder: 3 },
     { label: "Call Driver", href: "/call-driver", visible: true, sortOrder: 4 },
-    { label: "Holidays", href: "/holidays", visible: true, sortOrder: 5 },
-    { label: "Hotels", href: "/hotels", visible: false, sortOrder: 6 },
-    { label: "Flights", href: "/flights", visible: false, sortOrder: 7 }
+    { label: "Holidays", href: "/holidays", visible: true, sortOrder: 5 }
   ],
   footerQuickLinks: [
     { label: "Home", href: "/" },

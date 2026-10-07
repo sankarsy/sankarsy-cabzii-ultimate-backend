@@ -57,9 +57,6 @@ const APP_ROOT_PAGES = new Set([
   "search",
   "pages",
   "buses",
-  "hotels",
-  "flights",
-  "trains",
   "call-driver",
   "acting-driver",
   "cab-booking",
@@ -100,6 +97,10 @@ function stripToPath(input = "") {
 function foldAliasPath(pathname) {
   const normalized = pathname.replace(/\/+$/, "") || "/";
   const parts = normalized.split("/").filter(Boolean);
+
+  if (parts[0] === "hotels" || parts[0] === "flights" || parts[0] === "trains") {
+    return "/";
+  }
 
   if (parts.length === 1) {
     const slug = parts[0];

@@ -28,7 +28,8 @@ describe("GSC canonical page matching", () => {
     assert.equal(canonicalizeGscPage("/acting-driver/chennai"), "/chennai/acting-driver");
     assert.equal(canonicalizeGscPage("/acting-driver/madurai"), "/madurai/acting-driver");
     assert.equal(canonicalizeGscPage("/call-drivers-chennai"), "/chennai/acting-driver");
-    assert.equal(canonicalizeGscPage("/acting-driver/salem"), "/acting-driver/salem");
+    assert.equal(canonicalizeGscPage("/acting-driver/salem"), "/salem/acting-driver");
+    assert.equal(canonicalizeGscPage("/acting-driver/tirupati"), "/tirupati/acting-driver");
     const hub = parseLandingMeta("/cab-booking/chennai");
     assert.equal(hub.pageType, "city-hub");
     assert.equal(hub.city, "chennai");
