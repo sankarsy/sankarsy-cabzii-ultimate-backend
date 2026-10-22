@@ -15,7 +15,16 @@ const CITY_SLUG_ALIASES = {
   tiruchirappalli: "trichy",
   tanjore: "thanjavur",
   kanniyakumari: "kanyakumari",
-  thiruvannamalai: "tiruvannamalai"
+  thiruvannamalai: "tiruvannamalai",
+  puducherry: "pondicherry",
+  pondichery: "pondicherry",
+  kodai: "kodaikanal",
+  udhagamandalam: "ooty",
+  udhagai: "ooty",
+  sabarimalai: "sabarimala",
+  pamba: "sabarimala",
+  "ayyappan-kovil": "ayyappankovil",
+  ayyappankoil: "ayyappankovil"
 };
 
 const SERVICE_URL_PREFIXES = new Set([
@@ -102,6 +111,10 @@ function foldAliasPath(pathname) {
     return "/";
   }
 
+  if (parts[0] === "drivers") {
+    return "/call-driver";
+  }
+
   if (parts.length === 1) {
     const slug = parts[0];
     if (
@@ -165,6 +178,10 @@ function foldAliasPath(pathname) {
   if (parts.length === 2 && parts[1] === "acting-driver") {
     const city = resolveCitySlug(parts[0]);
     return actingDriverLandingPath(city);
+  }
+
+  if (parts.length === 1 && !APP_ROOT_PAGES.has(parts[0])) {
+    return cityCabLandingPath(resolveCitySlug(parts[0]));
   }
 
   return normalized;

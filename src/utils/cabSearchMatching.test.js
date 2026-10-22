@@ -149,6 +149,7 @@ describe("customer search matching gates and unchanged listing/booking", () => {
     assert.equal(wantsCityMatching({ query: { priorityCity: "Chennai" } }), true);
     assert.equal(wantsCityMatching({ query: { city: "Chennai" } }), false);
     assert.equal(wantsCityMatching({ query: { priorityCity: "Chennai", admin: "1" } }), false);
+    assert.equal(wantsCityMatching({ query: { priorityCity: "Chennai", match: "0" } }), false);
     assert.equal(wantsCityMatching({ query: {} }), false);
   });
 

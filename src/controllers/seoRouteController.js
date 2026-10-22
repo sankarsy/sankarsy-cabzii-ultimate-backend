@@ -8,6 +8,7 @@ const { slugify } = require("../utils/slugify");
 const { ensureUniqueSlug } = require("../utils/catalogProductFields");
 const { autoSeoRouteFields } = require("../utils/seoAutoFill");
 const { createSlugIndex } = require("../utils/shortTtlSlugIndex");
+const { upsertRouteFare } = require("../utils/routeCategoryFare");
 
 const seoRouteSlugIndex = createSlugIndex(async () => {
   const rows = await SeoRoute.find({}).select("slug").lean();
@@ -21,8 +22,10 @@ const seoRouteSchema = Joi.object({
   toCitySlug: Joi.string().allow("").default(""),
   distance: Joi.string().allow("").default(""),
   duration: Joi.string().allow("").default(""),
+  hatchbackFrom: Joi.number().min(0).default(0),
   sedanFrom: Joi.number().min(0).default(0),
   suvFrom: Joi.number().min(0).default(0),
+  vanFrom: Joi.number().min(0).default(0),
   body: Joi.string().allow("").default(""),
   highlights: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string().allow("")).default([]),
   popularStops: Joi.array().items(Joi.string()).default([]),
@@ -96,6 +99,23 @@ function withPublicUrl(doc) {
   };
 }
 
+async function syncCategoryFare(doc) {
+  if (!doc) return;
+  const hatchback = Number(doc.hatchbackFrom) || 0;
+  const sedan = Number(doc.sedanFrom) || 0;
+  const suv = Number(doc.suvFrom) || 0;
+  const van = Number(doc.vanFrom) || 0;
+  if (!hatchback && !sedan && !suv && !van) return;
+  await upsertRouteFare({
+    fromCitySlug: doc.fromCitySlug,
+    toCitySlug: doc.toCitySlug,
+    hatchback,
+    sedan,
+    suv,
+    van
+  });
+}
+
 async function listSeoRoutes(req, res) {
   const pq = parseListQuery(req);
   const isAdmin = req.user && ["super_admin", "vendor_admin"].includes(req.user.role);
@@ -165,6 +185,7 @@ async function importStaticSeoRoutes(req, res) {
     );
     upserted += 1;
     results.push({ slug: data.slug, id: String(data._id) });
+    await syncCategoryFare(data);
   }
 
   seoRouteSlugIndex.invalidate();
@@ -184,6 +205,7 @@ async function createSeoRoute(req, res) {
   const payload = await normalizePayload(value);
   const data = await SeoRoute.create(payload);
   seoRouteSlugIndex.invalidate();
+  await syncCategoryFare(data);
   await logAudit({ req, action: "create", entity: "seo_route", entityId: data._id, after: data.toObject() });
   res.status(201).json({ success: true, data: withPublicUrl(data) });
 }
@@ -196,6 +218,7 @@ async function updateSeoRoute(req, res) {
   const data = await SeoRoute.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
   if (!data) throw new HttpError(404, "Route page not found");
   seoRouteSlugIndex.invalidate();
+  await syncCategoryFare(data);
   await logAudit({ req, action: "update", entity: "seo_route", entityId: data._id, after: data.toObject() });
   res.json({ success: true, data: withPublicUrl(data) });
 }

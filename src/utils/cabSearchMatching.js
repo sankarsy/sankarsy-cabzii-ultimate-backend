@@ -39,6 +39,8 @@ function searchCabsForCustomer(candidates, query = {}) {
 function wantsCityMatching(req) {
   const admin = String(req?.query?.admin || "");
   if (admin === "1" || admin === "true") return false;
+  const match = String(req?.query?.match || "").trim();
+  if (match === "0" || match === "false") return false;
   return Boolean(String(req?.query?.priorityCity || "").trim());
 }
 

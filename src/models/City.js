@@ -4,11 +4,19 @@ const { faqItemSchema, seoMetaSchema } = require("../schemas/cmsSchemas");
 const citySchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    slug: { type: String, trim: true, lowercase: true, sparse: true, index: true },
+    slug: { type: String, trim: true, lowercase: true },
     state: { type: String, trim: true, default: "" },
     country: { type: String, trim: true, default: "India" },
     isActive: { type: Boolean, default: true },
     sortOrder: { type: Number, default: 0 },
+    /** Which public products this city may publish. Historical records stay if a flag is turned off. */
+    services: {
+      cabBooking: { type: Boolean, default: true },
+      airportTaxi: { type: Boolean, default: true },
+      actingDriver: { type: Boolean, default: true },
+      holidayTrips: { type: Boolean, default: true }
+    },
+    description: { type: String, default: "", trim: true },
     metaTitle: { type: String, default: "", trim: true },
     metaDescription: { type: String, default: "", trim: true },
     keywords: { type: String, default: "", trim: true },
@@ -27,6 +35,7 @@ const citySchema = new mongoose.Schema(
 );
 
 citySchema.index({ name: 1, state: 1 }, { unique: true });
+citySchema.index({ slug: 1 }, { unique: true, sparse: true });
 
 const City = mongoose.model("City", citySchema);
 

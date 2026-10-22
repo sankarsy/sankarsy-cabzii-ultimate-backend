@@ -17,6 +17,13 @@ const citySchema = Joi.object({
   country: Joi.string().allow("").default("India"),
   isActive: Joi.boolean().default(true),
   sortOrder: Joi.number().empty(["", null]).default(0),
+  description: Joi.string().allow("").default(""),
+  services: Joi.object({
+    cabBooking: Joi.boolean().default(true),
+    airportTaxi: Joi.boolean().default(true),
+    actingDriver: Joi.boolean().default(true),
+    holidayTrips: Joi.boolean().default(true)
+  }).default({ cabBooking: true, airportTaxi: true, actingDriver: true, holidayTrips: true }),
   metaTitle: Joi.string().allow("").default(""),
   metaDescription: Joi.string().allow("").default(""),
   keywords: Joi.string().allow("").default(""),
@@ -42,6 +49,17 @@ function normalizeCityPayload(value) {
   else out.sortOrder = Number(out.sortOrder);
   if (out.slug) out.slug = slugify(out.slug);
   else if (out.name) out.slug = slugify(out.name);
+  if (!out.services || typeof out.services !== "object") {
+    out.services = { cabBooking: true, airportTaxi: true, actingDriver: true, holidayTrips: true };
+  } else {
+    out.services = {
+      cabBooking: out.services.cabBooking !== false,
+      airportTaxi: out.services.airportTaxi !== false,
+      actingDriver: out.services.actingDriver !== false,
+      holidayTrips: out.services.holidayTrips !== false
+    };
+  }
+  if (!out.description && out.content) out.description = out.content;
   if (Array.isArray(out.faqs)) {
     out.faqs = out.faqs
       .filter((f) => f && String(f.question || "").trim())
@@ -51,6 +69,14 @@ function normalizeCityPayload(value) {
       }));
   }
   return out;
+}
+
+async function findCityBySlug(slug, excludeId) {
+  const value = slugify(slug);
+  if (!value) return null;
+  const filter = { slug: value };
+  if (excludeId) filter._id = { $ne: excludeId };
+  return City.findOne(filter).lean();
 }
 
 async function findCityByNameState(name, state, excludeId) {
@@ -68,6 +94,10 @@ async function findCityByNameState(name, state, excludeId) {
 async function listCities(req, res) {
   const activeOnly = req.query.active !== "0" && req.query.active !== "false";
   const filter = activeDocumentsFilter(activeOnly);
+  const service = String(req.query.service || "").trim();
+  if (["cabBooking", "airportTaxi", "actingDriver", "holidayTrips"].includes(service)) {
+    filter.$or = [{ [`services.${service}`]: { $ne: false } }, { [`services.${service}`]: { $exists: false } }];
+  }
   const data = await City.find(filter).sort({ sortOrder: 1, name: 1 }).lean();
   data.sort((a, b) => {
     const ac = String(a.name || "").toLowerCase() === "chennai" ? 0 : 1;
@@ -91,6 +121,8 @@ async function createCity(req, res) {
   const payload = normalizeCityPayload(value);
   const existing = await findCityByNameState(payload.name, payload.state);
   if (existing) throw new HttpError(409, `City "${payload.name}" already exists. Open it from the list and click Edit.`);
+  const slugTaken = await findCityBySlug(payload.slug);
+  if (slugTaken) throw new HttpError(409, `Slug "${payload.slug}" is already used by ${slugTaken.name}.`);
   const data = await City.create(payload);
   await logAudit({ req, action: "create", entity: "city", entityId: data._id, after: data.toObject() });
   res.status(201).json({ success: true, data });
@@ -103,6 +135,8 @@ async function updateCity(req, res) {
   const payload = normalizeCityPayload(value);
   const nameTaken = await findCityByNameState(payload.name, payload.state, req.params.id);
   if (nameTaken) throw new HttpError(409, `City "${payload.name}" already exists.`);
+  const slugTaken = await findCityBySlug(payload.slug, req.params.id);
+  if (slugTaken) throw new HttpError(409, `Slug "${payload.slug}" is already used by ${slugTaken.name}.`);
   const data = await City.findByIdAndUpdate(req.params.id, payload, {
     new: true,
     runValidators: true

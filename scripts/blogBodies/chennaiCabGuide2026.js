@@ -16,7 +16,7 @@ module.exports = `
 
 <h2>Acting driver in Chennai — when to hire a chauffeur</h2>
 <p>An <strong>acting driver in Chennai</strong> drives <em>your</em> car — ideal for weddings, multi-stop business days, or when you already own a sedan/SUV. Packages mirror cab slabs: hourly local, full-day and outstation with allowance included.</p>
-<p>Need to <strong>call driver in Chennai</strong> for tomorrow? Book online on Cabzii instead of hunting phone numbers — you get vendor name, package label and fare before the trip starts. Browse <a href="https://www.cabzii.in/call-drivers-chennai">acting driver Chennai</a> or open the <a href="https://cabzii.in/drivers">drivers catalog</a>.</p>
+<p>Need to <strong>call driver in Chennai</strong> for tomorrow? Book online on Cabzii instead of hunting phone numbers — you get vendor name, package label and fare before the trip starts. Browse <a href="https://www.cabzii.in/acting-driver/chennai">acting driver Chennai</a> or book <a href="https://www.cabzii.in/call-driver">Call Driver</a>.</p>
 
 <h2>Taxi booking near me &amp; travels near me</h2>
 <p>Most Chennai travellers search <strong>taxi booking near me</strong> or <strong>travels near me</strong> from T. Nagar, OMR, Anna Nagar, Velachery, Tambaram or near Chennai Airport (MAA). Cabzii uses your selected city to prioritise nearby vendors and show realistic package fares — not surge surprises after the trip.</p>

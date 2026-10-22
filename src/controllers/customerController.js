@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const { User } = require("../models/User");
 const { Booking } = require("../models/Booking");
 const { HttpError } = require("../utils/httpError");
-const { isSuperAdminUser } = require("../utils/adminAccess");
+const { isSuperAdminUser, privilegedRoleForPhone } = require("../utils/adminAccess");
 const { phoneLookupValues } = require("../utils/bookingQuery");
 const { normalizeMobileNumber } = require("../utils/mobile");
 
@@ -240,7 +240,46 @@ async function getCustomerById(req, res) {
   });
 }
 
+async function createCustomer(req, res) {
+  if (!isSuperAdminUser(req)) {
+    throw new HttpError(403, "Only super admin can create customers.");
+  }
+
+  const name = String(req.body?.name || "").trim();
+  const phone = normalizeMobileNumber(req.body?.mobileNumber || req.body?.phone);
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  if (!phone) throw new HttpError(400, "Enter a valid 10-digit mobile number.");
+  if (privilegedRoleForPhone(phone)) {
+    throw new HttpError(400, "This mobile is already used for partner or admin login.");
+  }
+
+  const existing = await User.findOne({ mobileNumber: phone });
+  if (existing) {
+    if (existing.role === "customer") throw new HttpError(409, "A customer with this mobile already exists.");
+    throw new HttpError(409, "This mobile is already registered with another role.");
+  }
+
+  const data = await User.create({
+    mobileNumber: phone,
+    role: "customer",
+    name,
+    email
+  });
+
+  res.status(201).json({
+    success: true,
+    data: {
+      _id: String(data._id),
+      mobileNumber: data.mobileNumber,
+      name: data.name || "",
+      email: data.email || "",
+      registered: true
+    }
+  });
+}
+
 module.exports = {
   listCustomers,
-  getCustomerById
+  getCustomerById,
+  createCustomer
 };

@@ -18,7 +18,8 @@ const DEFAULT_SITE_SETTINGS = {
     { label: "Cabs", href: "/cabs", visible: true, sortOrder: 2 },
     { label: "Buses", href: "/buses", visible: true, sortOrder: 3 },
     { label: "Call Driver", href: "/call-driver", visible: true, sortOrder: 4 },
-    { label: "Holidays", href: "/holidays", visible: true, sortOrder: 5 }
+    { label: "Holidays", href: "/holidays", visible: true, sortOrder: 5 },
+    { label: "Earn with Cabzii", href: "/earn", visible: true, sortOrder: 6 }
   ],
   footerQuickLinks: [
     { label: "Home", href: "/" },

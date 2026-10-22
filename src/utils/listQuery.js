@@ -197,7 +197,23 @@ function buildPackageListFilter(baseFilter, { q, vendor, city, duration, categor
   const parts = [];
   if (baseFilter && Object.keys(baseFilter).length > 0) parts.push(baseFilter);
   const text = textOrClause(
-    ["name", "vendor", "city", "location", "duration", "seo", "seoTitle", "seoDescription", "tags", "category"],
+    [
+      "name",
+      "vendor",
+      "city",
+      "location",
+      "destination",
+      "description",
+      "highlights",
+      "packageType",
+      "duration",
+      "seo",
+      "seoTitle",
+      "seoDescription",
+      "metaKeywords",
+      "tags",
+      "category"
+    ],
     q
   );
   if (text) parts.push(text);

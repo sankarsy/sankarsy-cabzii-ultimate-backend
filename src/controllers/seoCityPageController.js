@@ -36,6 +36,20 @@ const seoCityPageSchema = Joi.object({
   airportDetails: Joi.string().allow("").default(""),
   popularRoutes: Joi.array().items(Joi.string()).default([]),
   popularPackages: Joi.array().items(Joi.string()).default([]),
+  seoMeta: Joi.object({
+    metaTitle: Joi.string().allow("").default(""),
+    metaDescription: Joi.string().allow("").default(""),
+    keywords: Joi.string().allow("").default(""),
+    canonicalUrl: Joi.string().allow("").default(""),
+    robots: Joi.string().allow("").default("index,follow"),
+    schemaJson: Joi.string().allow("").default(""),
+    ogTitle: Joi.string().allow("").default(""),
+    ogDescription: Joi.string().allow("").default(""),
+    ogImage: Joi.string().allow("").default(""),
+    twitterTitle: Joi.string().allow("").default(""),
+    twitterDescription: Joi.string().allow("").default(""),
+    twitterImage: Joi.string().allow("").default("")
+  }).default({}),
   published: Joi.boolean().default(true)
 });
 

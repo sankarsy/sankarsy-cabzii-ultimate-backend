@@ -150,7 +150,10 @@ const CITY_DIRECTORY = [
   ["tiruvannamalai", "Tiruvannamalai"],
   ["rameswaram", "Rameswaram"],
   ["kanyakumari", "Kanyakumari"],
-  ["thanjavur", "Thanjavur"]
+  ["thanjavur", "Thanjavur"],
+  ["sabarimala", "Sabarimala"],
+  ["sabarimalai", "Sabarimala"],
+  ["ayyappankovil", "Ayyappan Kovil"]
 ];
 
 function inferCitySlug(text = "") {

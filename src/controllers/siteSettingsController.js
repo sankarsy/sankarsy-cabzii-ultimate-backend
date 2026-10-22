@@ -43,6 +43,7 @@ const settingsSchema = Joi.object({
   whatsappFab: Joi.object(),
   pageSeo: Joi.object().pattern(
     Joi.string(),
+    Joi.alternatives().try(
     Joi.object({
       productName: Joi.string().allow(""),
       seoTitle: Joi.string().allow(""),
@@ -80,7 +81,9 @@ const settingsSchema = Joi.object({
           )
         })
       )
-    })
+    }),
+    Joi.valid(null)
+    )
   ),
     callDriverTariff: Joi.object(),
   callDriverPage: Joi.object({
@@ -142,6 +145,9 @@ async function updateSettings(req, res) {
   const beforePlain = before.toObject();
   if (value.pageSeo) {
     value.pageSeo = deepMerge(beforePlain.pageSeo || {}, value.pageSeo);
+    for (const key of Object.keys(value.pageSeo)) {
+      if (value.pageSeo[key] == null) delete value.pageSeo[key];
+    }
   }
   if (value.callDriverSeo) {
     value.callDriverSeo = deepMerge(beforePlain.callDriverSeo || {}, value.callDriverSeo);

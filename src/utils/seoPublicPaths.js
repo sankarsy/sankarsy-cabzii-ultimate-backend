@@ -1,13 +1,26 @@
 "use strict";
 
 const AIRPORT_CAB_BOOKING_CITIES = ["chennai"];
-const ACTING_DRIVER_HUB_CITIES = ["chennai", "tirupati"];
-const TRICHY_CITY_ALIASES = ["tiruchi", "tiruchirappalli", "tiruchirapalli"];
+const ACTING_DRIVER_HUB_CITIES = [
+  "chennai",
+  "madurai",
+  "tirupati",
+  "trichy",
+  "coimbatore",
+  "vellore",
+  "kanchipuram",
+  "kodaikanal",
+  "ooty",
+  "pondicherry",
+  "sabarimala",
+  "ayyappankovil"
+];
+const TRICHY_CITY_ALIASES = ["tiruchi", "tiruchy", "tiruchirappalli", "tiruchirapalli"];
 
 function cityCabLandingPath(citySlug) {
   const slug = String(citySlug || "").toLowerCase();
-  if (!slug) return "/car-rental";
-  return `/${slug}`;
+  if (!slug) return "/cab-booking";
+  return `/cab-booking/${slug}`;
 }
 
 function isActingDriverHubCity(citySlug) {
@@ -17,7 +30,7 @@ function isActingDriverHubCity(citySlug) {
 function actingDriverLandingPath(citySlug) {
   const slug = String(citySlug || "").toLowerCase();
   if (!slug) return "/acting-driver";
-  return `/${slug}/acting-driver`;
+  return `/acting-driver/${slug}`;
 }
 
 function isAirportCabBookingCity(citySlug) {
