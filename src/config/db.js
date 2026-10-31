@@ -26,13 +26,6 @@ async function connectDb() {
   console.log(`MongoDB connected (${dbName})`);
 
   try {
-    const { seedPackagesIfEmpty } = require("../utils/seedPackagesIfEmpty");
-    await seedPackagesIfEmpty();
-  } catch (err) {
-    console.warn("Package auto-seed skipped:", err.message);
-  }
-
-  try {
     const { seedBusesIfEmpty } = require("../utils/seedBusesIfEmpty");
     await seedBusesIfEmpty();
   } catch (err) {

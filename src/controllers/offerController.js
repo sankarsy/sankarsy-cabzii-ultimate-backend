@@ -32,8 +32,17 @@ let homeCardsReady = false;
 
 async function ensureHomeCards() {
   await Offer.updateMany(
-    { href: "/holidays?category=pilgrimage&q=tirupati" },
-    { $set: { href: "/tour-packages/tirupati-balaji-darshan-tirupati" } }
+    {
+      href: {
+        $in: [
+          "/holidays?category=pilgrimage&q=tirupati",
+          "/tour-packages/tirupati-balaji-darshan-tirupati",
+          "/holidays",
+          "/holidays?category=pilgrimage"
+        ]
+      }
+    },
+    { $set: { href: "/chennai/outstation/chennai-to-tirupati" } }
   );
   if (homeCardsReady) return;
   await Offer.updateMany({ $or: [{ section: { $exists: false } }, { section: "" }, { section: null }] }, { $set: { section: "offers" } });

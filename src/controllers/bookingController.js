@@ -18,7 +18,7 @@ const { buildCustomerBookingQuery, bookingOwnedByUser: bookingOwnedByUserQuery }
 const { notifyCustomerBookingConfirmed } = require("../services/bookingNotifyService");
 const { isAdminUser, isSuperAdminUser, isDriverUser } = require("../utils/adminAccess");
 const { applyCoupon } = require("../utils/coupons");
-const { resolveVehicleFare, resolveBusFare, resolveTourFare, composeFare, cabPackageIdFromTrip } = require("../utils/bookingFare");
+const { resolveVehicleFare, resolveBusFare, composeFare, cabPackageIdFromTrip } = require("../utils/bookingFare");
 const { isVendorAdmin, buildVendorBookingQuery } = require("../utils/vendorBookingAccess");
 const { stripUntrustedPricing, applyFareSnapshot } = require("../utils/bookingIntegrity");
 const { BusTrip } = require("../models/BusTrip");
@@ -280,29 +280,7 @@ async function computeServerFare(value, user) {
   }
 
   if (value.type === "tour") {
-    const item = await Package.findById(value.itemId).lean();
-    if (!catalogActive(item)) throw new HttpError(400, "tour item not found");
-    const resolved = resolveTourFare(item, { cabType: value.cabType });
-    const couponResult = applyCoupon({
-      code: value.coupon,
-      serviceType: "tour",
-      tripType: "tour",
-      date: value.date,
-      baseFare: resolved.baseFare,
-      priorCompletedBookings: prior
-    });
-    return {
-      item,
-      snapshot: composeFare({
-        baseFare: resolved.baseFare,
-        fees: 0,
-        couponResult,
-        pricingSource: resolved.pricingSource,
-        vendor: item.vendor || "",
-        vendorAdminPhone: item.vendorAdminPhone || "",
-        serviceType: "tour"
-      })
-    };
+    throw new HttpError(400, "Holiday packages are no longer available. Book a cab or route instead.");
   }
 
   if (value.type === "bus") {

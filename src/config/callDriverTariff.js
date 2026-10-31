@@ -96,7 +96,7 @@ const CALL_DRIVER_SERVICE_CATALOG = [
     id: "school",
     title: "Monthly Driver",
     blurb: "School, personal or regular monthly driver requirement.",
-    cta: "Request Quote",
+    cta: "Book Now",
     quoteOnly: true,
     fromKey: "monthly.normal10"
   },
@@ -104,7 +104,7 @@ const CALL_DRIVER_SERVICE_CATALOG = [
     id: "corporate",
     title: "Corporate Driver",
     blurb: "Dedicated drivers for corporate requirements.",
-    cta: "Get Corporate Quote",
+    cta: "Book Now",
     quoteOnly: true
   },
   {

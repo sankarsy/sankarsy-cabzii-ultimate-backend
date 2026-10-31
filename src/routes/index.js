@@ -1,7 +1,6 @@
 const express = require("express");
 const authRoutes = require("./authRoutes");
 const cabRoutes = require("./cabRoutes");
-const packageRoutes = require("./packageRoutes");
 const driverRoutes = require("./driverRoutes");
 const busRoutes = require("./busRoutes");
 const driverOpsRoutes = require("./driverOpsRoutes");
@@ -39,7 +38,6 @@ router.get("/health", (req, res) => {
 
 router.use("/auth", authRoutes);
 router.use("/cabs", cabRoutes);
-router.use("/packages", packageRoutes);
 router.use("/drivers", driverRoutes);
 router.use("/call-driver", callDriverRoutes);
 router.use("/buses", busRoutes);

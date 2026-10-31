@@ -39,21 +39,6 @@ const offers = [
   },
   {
     section: "offers",
-    tag: "TEMPLE TOURS",
-    title: "Tirupati package from ₹4,999",
-    desc: "Darshan trips with verified drivers, pickup from home & flexible timings.",
-    iconKey: "holiday",
-    color: "from-rose-500 to-pink-400",
-    image: OFFER_IMG.tirupati,
-    href: "/tour-packages/tirupati-balaji-darshan-tirupati",
-    code: "TIRUPATI",
-    fare: "",
-    validTill: "31st Jul, 2026",
-    sortOrder: 20,
-    published: true
-  },
-  {
-    section: "offers",
     tag: "ONE WAY",
     title: "Chennai → Tirupati one-way",
     desc: "Pay only for one side — transparent upfront fares with no hidden charges.",
@@ -97,21 +82,6 @@ const offers = [
     sortOrder: 60,
     published: true
   },
-  {
-    section: "offers",
-    tag: "PILGRIMAGE",
-    title: "Rameswaram & Madurai tours",
-    desc: "South India temple tour packages with comfortable cabs & planned halts.",
-    iconKey: "holiday",
-    color: "from-amber-500 to-orange-400",
-    image: OFFER_IMG.rameswaram,
-    href: "/holidays?category=pilgrimage",
-    code: "TEMPLE",
-    fare: "",
-    validTill: "31st Jul, 2026",
-    sortOrder: 70,
-    published: true
-  }
 ];
 
 const services = [
@@ -240,13 +210,13 @@ const routes = [
   },
   {
     section: "routes",
-    tag: "TOUR",
-    title: "Madurai Temple Tour",
-    desc: "Meenakshi temple circuit with a comfortable cab and driver.",
-    iconKey: "holiday",
+    tag: "OUTSTATION",
+    title: "Madurai outstation cab",
+    desc: "Temple city taxi, airport drop and outstation cabs from Madurai.",
+    iconKey: "route",
     color: "from-amber-500 to-orange-400",
     image: IMG.temple,
-    href: "/holidays?category=pilgrimage&q=madurai",
+    href: "/services/outstation-cab/madurai",
     code: "",
     fare: "From ₹3,999",
     validTill: "",
