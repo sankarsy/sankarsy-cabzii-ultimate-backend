@@ -5,7 +5,6 @@ const { SeoEvent } = require("../models/SeoEvent");
 const { SearchConsoleSnapshot } = require("../models/SearchConsoleSnapshot");
 const { SeoPageInsight } = require("../models/SeoPageInsight");
 const { Cab } = require("../models/Cab");
-const { Package } = require("../models/Package");
 const noindexPaths = require("../data/seoNoindexPaths.json");
 const {
   ATTRIBUTION_WINDOW_LABEL,
@@ -187,10 +186,10 @@ async function buildSeoRevenueReport(query) {
   const gscStatus = publicGscStatus();
   const bookingMatch = {
     createdAt: { $gte: period.start, $lte: period.end },
-    type: { $in: ["cab", "driver", "tour"] }
+    type: { $in: ["cab", "driver"] }
   };
 
-  const [bookings, seoEvents, gscAllRows, insights, cabCityRows, pilgrimageIds] = await Promise.all([
+  const [bookings, seoEvents, gscAllRows, insights, cabCityRows] = await Promise.all([
     Booking.find(bookingMatch)
       .select(
         "amount finalAmount status type pickup drop serviceTripType tripType roundTrip seoAttribution packageId createdAt"
@@ -216,14 +215,12 @@ async function buildSeoRevenueReport(query) {
     Cab.aggregate([
       { $match: { isDeleted: { $ne: true }, status: "active" } },
       { $group: { _id: { $toLower: { $ifNull: ["$city", ""] } }, count: { $sum: 1 } } }
-    ]),
-    Package.find({ category: { $regex: /pilgrim/i } }).select("_id").lean()
+    ])
   ]);
 
   const selectedGsc = selectGscRows(gscAllRows, gscRange);
   const gscConnected = selectedGsc.connected;
   const { gscByPage, gscByKeyword } = aggregateGsc(selectedGsc.rows);
-  const pilgrimageSet = new Set(pilgrimageIds.map((p) => String(p._id)));
 
   const sessionsByPage = new Map();
   const startsByPage = new Map();
@@ -269,10 +266,7 @@ async function buildSeoRevenueReport(query) {
       addMoney(operationalCities.get(citySlug), booking);
     }
 
-    let serviceKey = operationalServiceKey(booking);
-    if (booking.type === "tour" && booking.packageId && pilgrimageSet.has(String(booking.packageId))) {
-      serviceKey = "pilgrimage";
-    }
+    const serviceKey = operationalServiceKey(booking);
     if (!operationalServices.has(serviceKey)) operationalServices.set(serviceKey, emptyBucket());
     addMoney(operationalServices.get(serviceKey), booking);
 

@@ -33,10 +33,6 @@ const siteSettingsSchema = new mongoose.Schema(
     whyStats: { type: [mongoose.Schema.Types.Mixed], default: () => DEFAULT_SITE_SETTINGS.whyStats },
     whyChooseUs: { type: [mongoose.Schema.Types.Mixed], default: () => DEFAULT_SITE_SETTINGS.whyChooseUs },
     homeSections: { type: [mongoose.Schema.Types.Mixed], default: () => DEFAULT_SITE_SETTINGS.homeSections },
-    holidayCategories: {
-      type: [mongoose.Schema.Types.Mixed],
-      default: () => DEFAULT_SITE_SETTINGS.holidayCategories
-    },
     whatsappFab: { type: mongoose.Schema.Types.Mixed, default: () => DEFAULT_SITE_SETTINGS.whatsappFab },
     pageSeo: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
     homepageBuilder: { type: mongoose.Schema.Types.Mixed, default: () => ({ blocks: [], version: 1 }) },

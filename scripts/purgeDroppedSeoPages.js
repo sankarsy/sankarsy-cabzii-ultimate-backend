@@ -61,7 +61,6 @@ const KEEP_SITE_PATHS = new Set([
   "/acting-driver",
   "/cab-booking",
   "/tariff",
-  "/holidays",
   "/about",
   "/contact",
   "/faq",

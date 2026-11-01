@@ -13,7 +13,7 @@ const offerSchema = new mongoose.Schema(
     desc: { type: String, trim: true, default: "" },
     iconKey: {
       type: String,
-      enum: ["car", "holiday", "route", "airport", "driver"],
+      enum: ["car", "route", "airport", "driver"],
       default: "car"
     },
     color: { type: String, trim: true, default: "from-[var(--cabzii-brand)] to-blue-500" },

@@ -39,18 +39,17 @@ const DEFAULT_SITE_SETTINGS = {
     title: "Book Cabs, Taxis & Acting Drivers Online",
     titleHighlight: "Acting Drivers",
     subtitle:
-      "Cabs, acting drivers and tour packages in Chennai, Bengaluru, Mumbai and across India — transparent fares, instant booking.",
+      "Compare sedan, SUV and Innova fares. Airport, local, outstation and acting driver booking with fares shown before you confirm.",
     image: "/images/hero-banner.png",
     promoBadge: "",
     promoTitle: "",
     promoSubtitle: "Transparent fares",
-    searchPlaceholder: "Search cabs or tours...",
+    searchPlaceholder: "Search cabs, drivers or routes...",
     tabs: [
       { id: "outstation", label: "Outstation" },
       { id: "local", label: "Local" },
       { id: "airport", label: "Airport" },
-      { id: "rental", label: "Rental" },
-      { id: "tour", label: "Tours" }
+      { id: "rental", label: "Rental" }
     ],
     cabTypes: ["Sedan", "SUV", "Innova"],
     trustBadges: [
@@ -86,20 +85,10 @@ const DEFAULT_SITE_SETTINGS = {
   homeSections: [
     { key: "cabs", enabled: true, eyebrow: "Premium Fleet", title: "Featured Cabs", subtitle: "Compare fares and book instantly.", limit: 6, sortOrder: 1 },
     { key: "drivers", enabled: true, eyebrow: "Call Driver", title: "Need a Driver for Your Own Car?", subtitle: "Book a trusted Cabzii Call Driver in Chennai and outstation.", limit: 6, sortOrder: 2, viewAllHref: "/call-driver" },
-    { key: "tours", enabled: true, eyebrow: "Explore India", title: "Tour Packages", subtitle: "Weekend getaways and group tours.", limit: 6, sortOrder: 3 },
     { key: "testimonials", enabled: true, eyebrow: "Happy Travelers", title: "Customer Testimonials", subtitle: "Real feedback from riders who booked with Cabzii.", limit: 3, sortOrder: 4, viewAllHref: "/testimonials" },
     { key: "blogs", enabled: true, eyebrow: "Latest Insights", title: "Travel Blog", subtitle: "Quick reads to help you book smarter and travel better.", limit: 3, sortOrder: 5, viewAllHref: "/blogs" }
   ],
   whatsappFab: { enabled: true, number: "9944197416" },
-  holidayCategories: [
-    { id: "pilgrimage", label: "Pilgrimage", image: "", desc: "Tirupati, Rameswaram, Madurai & more temple tours with cab, darshan & stay." },
-    { id: "beach", label: "Beach", image: "", desc: "Goa, Pondicherry & coastal getaways — sun, sand and scenic ECR drives." },
-    { id: "hill", label: "Hill Station", image: "", desc: "Ooty, Kodaikanal, Munnar & cool mountain escapes with sightseeing cabs." },
-    { id: "heritage", label: "Heritage", image: "", desc: "Forts, palaces & UNESCO wonders — Mysore, Hampi, Thanjavur and beyond." },
-    { id: "honeymoon", label: "Honeymoon", image: "", desc: "Romantic escapes with private cab, handpicked stays & flexible plans." },
-    { id: "adventure", label: "Adventure", image: "", desc: "Safari trails, trekking bases & offbeat drives for thrill seekers." },
-    { id: "family", label: "Family", image: "", desc: "Kid-friendly itineraries, spacious cabs & relaxed sightseeing for all ages." }
-  ],
   pageSeo: {},
   callDriverTariff: DEFAULT_CALL_DRIVER_TARIFF,
   callDriverSeo: {},
@@ -122,6 +111,13 @@ function deepMerge(base, patch) {
 
 function mergeSiteSettings(stored) {
   const merged = deepMerge(DEFAULT_SITE_SETTINGS, stored || {});
+  delete merged.holidayCategories;
+  if (Array.isArray(merged.homeSections)) {
+    merged.homeSections = merged.homeSections.filter((row) => row?.key !== "tours");
+  }
+  if (merged.hero && Array.isArray(merged.hero.tabs)) {
+    merged.hero.tabs = merged.hero.tabs.filter((tab) => tab?.id !== "tour" && tab?.id !== "holidays");
+  }
   merged.callDriverTariff = mergeCallDriverTariff(merged.callDriverTariff);
   merged.callDriverPage = mergeCallDriverPage(merged.callDriverPage);
   return merged;

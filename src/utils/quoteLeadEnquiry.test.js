@@ -39,9 +39,10 @@ describe("quoteLeadEnquiry", () => {
     assert.equal(resolveStage("nope"), "");
   });
 
-  it("keeps cab/driver/bus/tour product types", () => {
+  it("keeps cab/driver/bus product types", () => {
     assert.equal(mapProductType("driver"), "driver");
     assert.equal(mapProductType("airport"), "cab");
+    assert.equal(mapProductType("tour"), "cab");
   });
 
   it("reuses an existing lead instead of wiping quoteRef", () => {

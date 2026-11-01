@@ -28,7 +28,7 @@ function shouldDropSpam(value) {
 
 function mapProductType(service) {
   const s = String(service || "").trim().toLowerCase();
-  if (["cab", "bus", "driver", "tour", "other"].includes(s)) return s;
+  if (["cab", "bus", "driver", "other"].includes(s)) return s;
   return "cab";
 }
 

@@ -15,7 +15,7 @@ const offerSchema = Joi.object({
   tag: Joi.string().allow("").default(""),
   title: Joi.string().required(),
   desc: Joi.string().allow("").default(""),
-  iconKey: Joi.string().valid("car", "holiday", "route", "airport", "driver").default("car"),
+  iconKey: Joi.string().valid("car", "route", "airport", "driver").default("car"),
   color: Joi.string().allow("").default("from-[var(--cabzii-brand)] to-blue-500"),
   image: Joi.string().allow("").default(""),
   href: Joi.string().allow("").default("/cabs"),

@@ -1,11 +1,11 @@
 "use strict";
 
 /**
- * Loads catalog from ./contentData.js (cabs, packages, drivers, blogs, testimonials).
- * Default: clears cabs, packages, drivers then inserts all sample rows.
+ * Loads catalog from ./contentData.js (cabs, drivers, blogs, testimonials).
+ * Default: clears cabs, leftover holiday packages, drivers then inserts sample rows.
  * Flags:
  *   --append        Do not delete existing rows before insert (may duplicate).
- *   --with-bookings Insert 3 demo bookings (same phone); removes prior seed bookings for that phone first.
+ *   --with-bookings Insert 2 demo bookings (same phone); removes prior seed bookings for that phone first.
  */
 
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
@@ -13,7 +13,7 @@ require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") }
 const mongoose = require("mongoose");
 const path = require("path");
 
-const { cabs, packages, driverServices, blogs, testimonials } = require("./contentData");
+const { cabs, driverServices, blogs, testimonials } = require("./contentData");
 const { buildDefaultDriverFarePackages } = require(path.join(__dirname, "..", "src", "utils", "driverFarePackages"));
 const { Cab } = require(path.join(__dirname, "..", "src", "models", "Cab"));
 const { Package } = require(path.join(__dirname, "..", "src", "models", "Package"));
@@ -102,31 +102,28 @@ async function main() {
     const blogR = await Blog.deleteMany({});
     const testR = await Testimonial.deleteMany({});
     console.log(
-      `Cleared cabs=${cabR.deletedCount} packages=${pkgR.deletedCount} drivers=${drvR.deletedCount} blogs=${blogR.deletedCount} testimonials=${testR.deletedCount}`
+      `Cleared cabs=${cabR.deletedCount} leftoverPackages=${pkgR.deletedCount} drivers=${drvR.deletedCount} blogs=${blogR.deletedCount} testimonials=${testR.deletedCount}`
     );
   }
 
   const cabDocs = cabs.map(omitId);
-  const pkgDocs = packages.map(omitId);
   const driverDocs = driverServices.map(toDriverDoc);
 
   const blogDocs = blogs.map(toBlogDoc);
   const testimonialDocs = testimonials.map(toTestimonialDoc);
 
   const insertedCabs = await Cab.insertMany(cabDocs);
-  const insertedPkgs = await Package.insertMany(pkgDocs);
   const insertedDrivers = await Driver.insertMany(driverDocs);
   const insertedBlogs = await Blog.insertMany(blogDocs);
   const insertedTestimonials = await Testimonial.insertMany(testimonialDocs);
 
   console.log(
-    `Inserted cabs=${insertedCabs.length} packages=${insertedPkgs.length} drivers=${insertedDrivers.length} blogs=${insertedBlogs.length} testimonials=${insertedTestimonials.length}`
+    `Inserted cabs=${insertedCabs.length} drivers=${insertedDrivers.length} blogs=${insertedBlogs.length} testimonials=${insertedTestimonials.length}`
   );
 
   if (withBookings) {
     await Booking.deleteMany({ phone: SAMPLE_BOOKING_PHONE });
     const cabId = insertedCabs[0]._id;
-    const pkgId = insertedPkgs[0]._id;
     const drvId = insertedDrivers[0]._id;
     await Booking.insertMany([
       {
@@ -147,20 +144,6 @@ async function main() {
         customerName: "Sample User (seed)",
         phone: SAMPLE_BOOKING_PHONE,
         email: "sample@example.com",
-        type: "tour",
-        itemId: pkgId,
-        pickup: "Chandigarh",
-        drop: "Shimla",
-        date: "2026-06-20",
-        routeType: "Outstation",
-        tripType: "Round Trip",
-        amount: insertedPkgs[0].price,
-        status: "confirmed"
-      },
-      {
-        customerName: "Sample User (seed)",
-        phone: SAMPLE_BOOKING_PHONE,
-        email: "sample@example.com",
         type: "driver",
         itemId: drvId,
         pickup: "MG Road, Bengaluru",
@@ -172,7 +155,7 @@ async function main() {
         status: "pending"
       }
     ]);
-    console.log(`Inserted 3 sample bookings for phone ${SAMPLE_BOOKING_PHONE} (--with-bookings)`);
+    console.log(`Inserted 2 sample bookings for phone ${SAMPLE_BOOKING_PHONE} (--with-bookings)`);
   }
 
   await mongoose.disconnect();

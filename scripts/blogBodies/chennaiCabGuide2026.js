@@ -29,7 +29,7 @@ module.exports = `
 
 <h2>Tirupati taxi from Chennai — route &amp; booking tips</h2>
 <p><strong>Tirupati taxi Chennai</strong> is among the most booked outstation routes from Tamil Nadu&apos;s capital. Distance is roughly 135 km (about 3–4 hours depending on traffic). Book a sedan for couples, Innova for families, or Tempo for groups heading to Tirumala foothills.</p>
-<p>Compare one way vs round trip before you confirm — round trip works if you need the same cab to wait or return the same day. See fixed route fares on <a href="https://cabzii.in/routes/chennai-to-tirupati-cab">Chennai to Tirupati cab</a> or search packages on <a href="https://cabzii.in/holidays">holiday tours</a>.</p>
+<p>Compare one way vs round trip before you confirm — round trip works if you need the same cab to wait or return the same day. See fixed route fares on <a href="https://cabzii.in/chennai/outstation/chennai-to-tirupati">Chennai to Tirupati cab</a>.</p>
 
 <h2>Vehicle guide — which cab to pick?</h2>
 <table>
@@ -50,7 +50,7 @@ module.exports = `
   <li>Compare multiple vendors in one search</li>
   <li>OTP-secured booking &amp; trip history</li>
   <li>Acting driver + full cab in one account</li>
-  <li>Holiday packages with vehicle upgrade options</li>
+  <li>Bus tickets plus cab and acting-driver booking in one account</li>
   <li>Support on WhatsApp for changes</li>
 </ul>
 

@@ -255,181 +255,7 @@ const driverServices = rawCabs.map((cab, i) => {
     ...driverSeo
   };
 });
-const packages = [
-  {
-    id: 1,
-    name: "Tirupati Balaji Darshan",
-    vendor: "Sacred Trails India",
-    price: 6999,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "pilgrimage",
-    city: "Tirupati",
-    location: "Tirumala Hills",
-    image: "https://images.unsplash.com/photo-1582510003294-1b66a9c2a2b0?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: CAB_TYPES_STANDARD,
-    tags: ["Tirupati", "Darshan", "AP"],
-    seo: "Tirupati package, Balaji darshan, pilgrimage tour Tirupati, cab with darshan slots",
-    seoTitle: "Tirupati Balaji Darshan — Sacred Trails | cabzii.in",
-    seoDescription: "Guided Tirupati pilgrimage with darshan planning, hotel stay options and sedan to tempo cab choice."
-  },
-  {
-    id: 2,
-    name: "Rameswaram & Madurai Temple Circuit",
-    vendor: "Tamil Nadu Pilgrim Co.",
-    price: 11999,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "pilgrimage",
-    city: "Rameswaram",
-    location: "Ramanathaswamy Temple",
-    image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: CAB_TYPES_STANDARD,
-    tags: ["Rameswaram", "Madurai", "Temple"],
-    seo: "Rameswaram Madurai tour, South India pilgrimage, temple circuit package",
-    seoTitle: "Rameswaram Madurai Temple Circuit — cabzii.in",
-    seoDescription: "Classic Tamil Nadu temple yatra covering Rameswaram, Madurai and en-route darshan with flexible cab type."
-  },
-  {
-    id: 3,
-    name: "Shirdi Sai Baba Pilgrimage",
-    vendor: "Maharashtra Darshan",
-    price: 8499,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "pilgrimage",
-    city: "Shirdi",
-    location: "Sai Baba Temple",
-    image: "https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: CAB_TYPES_STANDARD,
-    tags: ["Shirdi", "Sai Baba", "Maharashtra"],
-    seo: "Shirdi package, Sai Baba pilgrimage, Shirdi tour from Mumbai Pune",
-    seoTitle: "Shirdi Sai Baba Pilgrimage — cabzii.in holidays",
-    seoDescription: "Comfortable Shirdi darshan package with queue assistance tips and cab upgrade to Innova or tempo."
-  },
-  {
-    id: 4,
-    name: "Varanasi Ganga Aarti Experience",
-    vendor: "Kashi Yatra",
-    price: 12999,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "pilgrimage",
-    city: "Varanasi",
-    location: "Dashashwamedh Ghat",
-    image: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: CAB_TYPES_STANDARD,
-    tags: ["Varanasi", "Ganga", "Ghat"],
-    seo: "Varanasi package, Ganga aarti tour, Kashi pilgrimage holiday",
-    seoTitle: "Varanasi Ganga Aarti Package — Kashi Yatra | cabzii.in",
-    seoDescription: "Spiritual Varanasi stay with evening Ganga aarti, Kashi Vishwanath visit and private cab transfers."
-  },
-  {
-    id: 5,
-    name: "Goa Beach & Nightlife Escape",
-    vendor: "Sunset Holidays",
-    price: 12999,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "beach",
-    city: "Goa",
-    location: "Baga Beach",
-    image: "https://images.unsplash.com/photo-1587922546307-776227941871?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: CAB_TYPES_STANDARD,
-    tags: ["Goa", "Beach", "Couple"],
-    seo: "Goa holiday package, beach tour Goa, North Goa cab package",
-    seoTitle: "Goa Beach Escape — cabzii.in",
-    seoDescription: "North Goa beaches, water sports add-ons and SUV or sedan cab for airport–hotel–beach hops."
-  },
-  {
-    id: 6,
-    name: "Kerala Backwater & Munnar",
-    vendor: "Green Kerala Trails",
-    price: 16999,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "hill",
-    city: "Kochi",
-    location: "Alleppey Houseboat",
-    image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: CAB_TYPES_STANDARD,
-    tags: ["Kerala", "Munnar", "Houseboat"],
-    seo: "Kerala package, backwater holiday, Munnar tour Kerala",
-    seoTitle: "Kerala Backwater & Munnar — cabzii.in",
-    seoDescription: "Houseboat night, Munnar tea gardens and Innova-friendly hill roads. Toll, permit & driver bata extra."
-  },
-  {
-    id: 7,
-    name: "Rajasthan Forts & Palaces",
-    vendor: "Royal Desert Routes",
-    price: 21999,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "heritage",
-    city: "Jaipur",
-    location: "Amer Fort",
-    image: "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: CAB_TYPES_STANDARD,
-    tags: ["Jaipur", "Udaipur", "Heritage"],
-    seo: "Rajasthan tour package, Jaipur Udaipur holiday, heritage India trip",
-    seoTitle: "Rajasthan Forts & Palaces — cabzii.in",
-    seoDescription: "Jaipur, Udaipur and Jodhpur heritage circuit with tempo traveller option for larger families."
-  },
-  {
-    id: 8,
-    name: "Manali & Solang Adventure",
-    vendor: "Himalaya Getaways",
-    price: 16999,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "adventure",
-    city: "Manali",
-    location: "Solang Valley",
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: CAB_TYPES_STANDARD,
-    tags: ["Manali", "Ski", "Himachal"],
-    seo: "Manali package, Solang Valley tour, Himachal adventure holiday",
-    seoTitle: "Manali Solang Adventure — cabzii.in",
-    seoDescription: "Snow activities, Rohtang permit guidance and SUV recommended for mountain roads."
-  },
-  {
-    id: 9,
-    name: "Andaman Honeymoon Bliss",
-    vendor: "Island Romance",
-    price: 28999,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "honeymoon",
-    city: "Port Blair",
-    location: "Havelock Island",
-    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: [
-      { id: "sedan", label: "Sedan", seats: 4, multiplier: 1 },
-      { id: "suv", label: "SUV", seats: 6, multiplier: 1.1 }
-    ],
-    tags: ["Andaman", "Honeymoon", "Beach"],
-    seo: "Andaman honeymoon package, Havelock holiday, couple trip Andaman",
-    seoTitle: "Andaman Honeymoon Bliss — cabzii.in",
-    seoDescription: "Romantic Andaman itinerary with ferry coordination, beach resorts and private island transfers."
-  },
-  {
-    id: 10,
-    name: "Ooty & Kodaikanal Family Hills",
-    vendor: "Nilgiri Family Tours",
-    price: 12999,
-    originalPrice: 0,
-    discountPercentage: 0,
-    category: "family",
-    city: "Ooty",
-    location: "Botanical Garden",
-    image: "https://images.unsplash.com/photo-1596435208209-6e4c4d2d0f0a?auto=format&fit=crop&w=1200&q=60",
-    cabTypes: CAB_TYPES_STANDARD,
-    tags: ["Ooty", "Kodaikanal", "Kids"],
-    seo: "Ooty Kodaikanal family package, Tamil Nadu hill holiday, Nilgiri tour",
-    seoTitle: "Ooty Kodaikanal Family Package — cabzii.in",
-    seoDescription: "Kid-friendly hill stations with toy train, lake boating and tempo traveller for extended family."
-  }
-];
+const packages = [];
 
 const blogs = [
   {
@@ -458,16 +284,6 @@ const blogs = [
     seoDescription: "Practical Tirupati pilgrimage advice plus how to book sedan, Innova or tempo on cabzii.in."
   },
   {
-    id: 2,
-    title: "How to Pick the Right Cab Type for Holiday Packages",
-    excerpt: "Sedan for couples, Innova for families, tempo for groups — match seats to your itinerary.",
-    author: "Cabzii Editorial",
-    date: "May 25, 2026",
-    seo: "holiday cab type, sedan vs Innova tour, tempo traveller pilgrimage",
-    seoTitle: "Cab Type for Holiday Packages | Cabzii Blog",
-    seoDescription: "Choose sedan, SUV, Innova or tempo when booking holiday packages. Toll, permit & driver bata extra."
-  },
-  {
     id: 3,
     title: "Chennai to Pondicherry: One-Way vs Round Trip Fares Explained",
     excerpt: "Compare one-way drops, round trips and driver allowance before you confirm on Cabzii.",
@@ -488,16 +304,6 @@ const blogs = [
     seoDescription: "Decide between acting driver packages and full cab rental for city and outstation plans."
   },
   {
-    id: 5,
-    title: "Top 5 Pilgrimage Circuits You Can Book on cabzii.in",
-    excerpt: "Tirupati, Rameswaram, Shirdi, Varanasi and more — with cab type selection on every package.",
-    author: "Sacred Trails Desk",
-    date: "May 18, 2026",
-    seo: "pilgrimage packages India, temple tour booking, cabzii holidays",
-    seoTitle: "Top Pilgrimage Circuits on Cabzii | Blog",
-    seoDescription: "Explore curated pilgrimage holiday packages with flat package fare and flexible vehicle upgrades."
-  },
-  {
     id: 6,
     title: "Airport Taxi Chennai: Terminal Pickup Checklist",
     excerpt: "Share flight number, terminal and buffer time — avoid confusion at arrivals.",
@@ -515,14 +321,14 @@ const testimonials = [
     name: "Lakshmi Venkat",
     location: "Chennai",
     message:
-      "Booked Tirupati pilgrimage package with Innova upgrade. Driver knew temple timings and total matched the quote.",
+      "Booked a Chennai to Tirupati Innova cab. Driver knew temple timings and the total matched the quote.",
     rating: 5
   },
   {
     id: 2,
     name: "Rahul Jain",
     location: "Mumbai",
-    message: "Shirdi holiday on cabzii.in was smooth — cab type selector made it easy to pick SUV for our family of five.",
+    message: "Outstation SUV booking on cabzii.in was smooth — cab type selector made it easy to pick a vehicle for our family of five.",
     rating: 5
   },
   {
@@ -543,14 +349,14 @@ const testimonials = [
     id: 5,
     name: "Sneha Patel",
     location: "Ahmedabad",
-    message: "Goa beach package — picked sedan for couple trip, price updated instantly. Would book Kerala next.",
+    message: "Airport sedan pickup was on time and the fare matched the quote. Would book Cabzii again.",
     rating: 5
   },
   {
     id: 6,
     name: "Arjun Mehta",
     location: "Pune",
-    message: "Compared vendors for Chennai sedan in one search. Holiday and cab booking both took under five minutes.",
+    message: "Compared vendors for Chennai sedan in one search. Cab booking took under five minutes.",
     rating: 5
   }
 ];

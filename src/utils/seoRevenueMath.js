@@ -46,7 +46,7 @@ function isCompletedBooking(doc = {}) {
 }
 
 function isSeoInScopeType(type) {
-  return type === "cab" || type === "driver" || type === "tour";
+  return type === "cab" || type === "driver";
 }
 
 function parsePeriod(query = {}, now = new Date()) {

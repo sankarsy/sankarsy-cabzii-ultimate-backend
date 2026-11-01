@@ -17,7 +17,7 @@ const leadSchema = Joi.object({
   source: Joi.string().allow("").default("website"),
   stage: Joi.string().valid(...STAGES).default("new"),
   route: Joi.string().allow("").default(""),
-  productType: Joi.string().valid("cab", "bus", "driver", "tour", "other").default("cab"),
+  productType: Joi.string().valid("cab", "bus", "driver", "other").default("cab"),
   vehicleType: Joi.string().allow("").default(""),
   operator: Joi.string().allow("").default(""),
   seats: Joi.string().allow("").default(""),
