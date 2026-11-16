@@ -7,9 +7,7 @@ const {
 const {
   vehiclePackageSchema,
   vehicleImageSchema,
-  vehicleFaqSchema,
-  vehicleStatsSchema,
-  vehicleEnterpriseSeoSchema
+  vehicleStatsSchema
 } = require("./vehicleSchemas");
 const { mongooseFields: catalogProductFields } = require("../utils/catalogProductFields");
 
@@ -107,15 +105,6 @@ const cabSchema = new mongoose.Schema(
     farePackages: { type: cabFarePackagesSchema, default: () => ({}) },
     farePackageLabels: { type: farePackageLabelsSchema, default: () => ({}) },
     stats: { type: vehicleStatsSchema, default: () => ({}) },
-    metaKeywords: { type: String, default: "" },
-    canonicalUrl: { type: String, default: "" },
-    schemaEnabled: { type: Boolean, default: true },
-    faq: { type: [vehicleFaqSchema], default: [] },
-    breadcrumb: { type: String, default: "" },
-    seo: { type: String, default: "" },
-    seoTitle: { type: String, default: "" },
-    seoDescription: { type: String, default: "" },
-    enterpriseSeo: { type: vehicleEnterpriseSeoSchema, default: () => ({}) },
     cabId: { type: String, trim: true, default: "" },
     ...catalogProductFields,
     status: {

@@ -9,11 +9,12 @@ const {
   ensureUniqueSlug,
   catalogLookupQuery,
   buildAutoSlug,
+  stripProductSeo,
   joiFields: catalogJoiFields
 } = require("../utils/catalogProductFields");
 const { mergeFarePackages, resolveFarePackages } = require("../utils/cabFarePackages");
 const { syncVehiclePricing, normalizePackageRow } = require("../utils/vehiclePackages");
-const { nextProductCode, applyVehicleSeo } = require("../utils/vehicleSeo");
+const { nextProductCode } = require("../utils/vehicleSeo");
 const { normalizeCatalogMediaFields } = require("../utils/mediaPath");
 
 const packageFareSchema = Joi.object({
@@ -46,50 +47,6 @@ const vehicleImageSchema = Joi.object({
   caption: Joi.string().allow("").default(""),
   sortOrder: Joi.number().default(0)
 }).unknown(true);
-
-const vehicleFaqSchema = Joi.object({
-  question: Joi.string().allow("").default(""),
-  answer: Joi.string().allow("").default("")
-}).unknown(true);
-
-const vehicleSeoReviewSchema = Joi.object({
-  name: Joi.string().allow("").default(""),
-  rating: Joi.number().min(1).max(5).default(5),
-  review: Joi.string().allow("").default(""),
-  location: Joi.string().allow("").default("")
-}).unknown(true);
-
-const enterpriseSeoSchema = Joi.object({
-  robots: Joi.string().allow("").default("index,follow"),
-  ogTitle: Joi.string().allow("").default(""),
-  ogDescription: Joi.string().allow("").default(""),
-  ogImage: Joi.string().allow("").default(""),
-  twitterTitle: Joi.string().allow("").default(""),
-  twitterDescription: Joi.string().allow("").default(""),
-  twitterImage: Joi.string().allow("").default(""),
-  h1: Joi.string().allow("").default(""),
-  h2: Joi.array().items(Joi.string().allow("")).default([]),
-  h3: Joi.array().items(Joi.string().allow("")).default([]),
-  shortDescription: Joi.string().allow("").default(""),
-  longSeoContent: Joi.string().allow("").default(""),
-  highlights: Joi.array().items(Joi.string()).default([]),
-  state: Joi.string().allow("").default("Tamil Nadu"),
-  nearbyLocations: Joi.array().items(Joi.string()).default([]),
-  nearbyAirports: Joi.array().items(Joi.string()).default([]),
-  nearbyStations: Joi.array().items(Joi.string()).default([]),
-  nearbyPlaces: Joi.array().items(Joi.string()).default([]),
-  priceUnit: Joi.string().allow("").default("Per KM"),
-  offerText: Joi.string().allow("").default(""),
-  offerEnds: Joi.string().allow("").default(""),
-  youtubeUrl: Joi.string().allow("").default(""),
-  seoReviews: Joi.array().items(vehicleSeoReviewSchema).default([]),
-  relatedVehicles: Joi.array().items(Joi.string()).default([]),
-  relatedCities: Joi.array().items(Joi.string()).default([]),
-  relatedPackages: Joi.array().items(Joi.string()).default([]),
-  relatedBlogs: Joi.array().items(Joi.string()).default([]),
-  relatedServices: Joi.array().items(Joi.string()).default([]),
-  seoScore: Joi.number().min(0).max(100).default(0)
-}).unknown(true).default();
 
 const cabCoreSchema = Joi.object({
   title: Joi.string().required(),
@@ -165,12 +122,6 @@ const cabCoreSchema = Joi.object({
     outstationRoundTrip: packageFareSchema
   }).optional(),
   farePackageLabels: Joi.object().unknown(true).optional(),
-  metaKeywords: Joi.string().allow("").default(""),
-  canonicalUrl: Joi.string().allow("").default(""),
-  schemaEnabled: Joi.boolean().default(true),
-  faq: Joi.array().items(vehicleFaqSchema).default([]),
-  breadcrumb: Joi.string().allow("").default(""),
-  enterpriseSeo: enterpriseSeoSchema,
   status: Joi.string()
     .valid("active", "inactive", "draft", "under_verification", "maintenance", "suspended")
     .default("active")
@@ -238,12 +189,6 @@ function prepareVehicleBody(value, existing = {}) {
 
   if (!merged.price && merged.startingPrice) merged.price = merged.startingPrice;
 
-  const seo = applyVehicleSeo(merged);
-  if (!merged.seoTitle) merged.seoTitle = seo.seoTitle;
-  if (!merged.seoDescription) merged.seoDescription = seo.seoDescription;
-  if (!merged.seo) merged.seo = seo.seo;
-  if (!merged.metaKeywords) merged.metaKeywords = seo.metaKeywords;
-
   if (Array.isArray(merged.images) && merged.images.length) {
     const cover = merged.images.find((img) => img.type === "cover") || merged.images[0];
     if (cover?.url) {
@@ -252,15 +197,6 @@ function prepareVehicleBody(value, existing = {}) {
       if (cover.title) merged.imageTitle = cover.title;
     }
     merged.gallery = merged.images.map((img) => img.url).filter(Boolean);
-  }
-
-  // Cover image drives OG + Twitter so admin image changes update social previews automatically.
-  if (merged.image) {
-    const es =
-      merged.enterpriseSeo && typeof merged.enterpriseSeo === "object" ? { ...merged.enterpriseSeo } : {};
-    es.ogImage = merged.image;
-    es.twitterImage = merged.image;
-    merged.enterpriseSeo = es;
   }
 
   const weakAlt = !merged.imageAlt || /^(image|photo|picture|img|car|cab image)$/i.test(String(merged.imageAlt).trim());
@@ -273,7 +209,7 @@ function prepareVehicleBody(value, existing = {}) {
     merged.imageTitle = merged.vehicleName || merged.title || merged.name || merged.imageAlt || "";
   }
 
-  return merged;
+  return stripProductSeo(merged);
 }
 
 async function finalizeCabPayload(value, existing = {}, existingId) {

@@ -7,11 +7,11 @@ const COUPONS = {
   CABZII500: {
     code: "CABZII500",
     type: "flat",
-    value: 500,
+    value: 200,
     services: ["cab"],
     tripTypes: ["outstation"],
     minFare: 1500,
-    maxDiscount: 500,
+    maxDiscount: 200,
     firstBookingOnly: true
   },
   FIRST100: {

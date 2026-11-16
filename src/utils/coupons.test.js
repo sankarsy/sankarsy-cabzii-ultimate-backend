@@ -20,7 +20,7 @@ describe("coupon validation", () => {
     assert.equal(result.discount, 0);
   });
 
-  it("CABZII500 applies flat 500 on first outstation cab booking over min fare", () => {
+  it("CABZII500 applies flat 200 on first outstation cab booking over min fare", () => {
     const result = applyCoupon({
       code: "cabzii500",
       serviceType: "cab",
@@ -30,7 +30,7 @@ describe("coupon validation", () => {
       priorCompletedBookings: 0
     });
     assert.equal(result.applied, true);
-    assert.equal(result.discount, 500);
+    assert.equal(result.discount, 200);
     assert.equal(result.code, "CABZII500");
   });
 
@@ -124,9 +124,9 @@ describe("coupon validation", () => {
       stripUntrustedPricing({ amount: 1, discount: 5000, couponDiscount: 5000, coupon: "CABZII500" }),
       snapshot
     );
-    assert.equal(stored.discount, 500);
-    assert.equal(stored.finalAmount, 2500);
-    assert.equal(stored.amount, 2500);
+    assert.equal(stored.discount, 200);
+    assert.equal(stored.finalAmount, 2800);
+    assert.equal(stored.amount, 2800);
     assert.equal(stored.couponCode, "CABZII500");
   });
 });

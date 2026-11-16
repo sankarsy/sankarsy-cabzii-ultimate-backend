@@ -6,6 +6,7 @@ const { logAudit } = require("../services/auditService");
 const { parseListQuery, paginatedFind } = require("../utils/listQuery");
 const { listFilterForVendor, docMatchForVendor, applyAuthenticatedVendorOwnership } = require("../utils/vendorAccess");
 const { isSuperAdminUser } = require("../utils/adminAccess");
+const { stripProductSeo } = require("../utils/catalogProductFields");
 
 const stopSchema = Joi.object({
   name: Joi.string().allow("").default(""),
@@ -71,11 +72,7 @@ const busSchema = Joi.object({
     status: Joi.string().allow("").default("on_time")
   }).default({}),
   status: Joi.string().valid("active", "inactive").default("active"),
-  slug: Joi.string().allow("").default(""),
-  enterpriseSeo: Joi.object().unknown(true).default({}),
-  seoTitle: Joi.string().allow("").default(""),
-  seoDescription: Joi.string().allow("").default(""),
-  seo: Joi.string().allow("").default("")
+  slug: Joi.string().allow("").default("")
 });
 
 function normCity(s) {
@@ -85,7 +82,7 @@ function normCity(s) {
 }
 
 function toApiRow(doc) {
-  const d = doc.toObject ? doc.toObject() : doc;
+  const d = stripProductSeo(doc.toObject ? doc.toObject() : doc);
   return {
     ...d,
     id: String(d._id),

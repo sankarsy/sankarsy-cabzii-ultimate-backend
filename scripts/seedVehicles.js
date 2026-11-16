@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const { Cab } = require(path.join(__dirname, "..", "src", "models", "Cab"));
 const { syncVehiclePricing } = require(path.join(__dirname, "..", "src", "utils", "vehiclePackages"));
-const { applyVehicleSeo, nextProductCode } = require(path.join(__dirname, "..", "src", "utils", "vehicleSeo"));
+const { nextProductCode } = require(path.join(__dirname, "..", "src", "utils", "vehicleSeo"));
 const { slugify } = require(path.join(__dirname, "..", "src", "utils", "slugify"));
 
 const VEHICLES = [
@@ -314,7 +314,6 @@ const VEHICLES = [
 function buildDoc(raw, index, productCode) {
   const slug = slugify(`${raw.vehicleName}-${raw.city}`);
   const synced = syncVehiclePricing(raw);
-  const seo = applyVehicleSeo({ ...raw, ...synced, slug, productCode });
   return {
     ...raw,
     slug,
@@ -329,16 +328,6 @@ function buildDoc(raw, index, productCode) {
     startingPrice: synced.startingPrice,
     pricePerKm: synced.pricePerKm,
     pricePerHour: Math.round((synced.packages.find((p) => p.packageType === "local_4hr")?.price || synced.startingPrice) / 4),
-    seoTitle: seo.seoTitle,
-    seoDescription: seo.seoDescription,
-    seo: seo.seo,
-    metaKeywords: seo.metaKeywords,
-    schemaEnabled: true,
-    faq: [
-      { question: `What is the starting price for ${raw.vehicleName} in ${raw.city}?`, answer: `Packages start from ₹${synced.startingPrice.toLocaleString("en-IN")} with verified drivers on Cabzii.` },
-      { question: "Are tolls and parking included?", answer: "Tolls and parking are billed separately unless mentioned in your package." }
-    ],
-    breadcrumb: `Home > Cabs > ${raw.city} > ${raw.vehicleName}`,
     reviewCount: raw.stats?.totalReviews || 0,
     ac: true,
     airCondition: true,

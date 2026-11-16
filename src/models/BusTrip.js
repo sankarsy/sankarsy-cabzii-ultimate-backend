@@ -76,11 +76,7 @@ const busTripSchema = new mongoose.Schema(
       status: { type: String, trim: true, default: "on_time" }
     },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
-    slug: { type: String, trim: true, default: "" },
-    enterpriseSeo: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
-    seoTitle: { type: String, trim: true, default: "" },
-    seoDescription: { type: String, trim: true, default: "" },
-    seo: { type: String, trim: true, default: "" }
+    slug: { type: String, trim: true, default: "" }
   },
   { timestamps: true }
 );

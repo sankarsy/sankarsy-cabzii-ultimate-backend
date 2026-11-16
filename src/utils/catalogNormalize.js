@@ -3,7 +3,7 @@
 const { buildDefaultFarePackages } = require("./cabFarePackages");
 const { buildDefaultDriverFarePackages } = require("./driverFarePackages");
 const { syncVehiclePricing, resolveVehiclePackages } = require("./vehiclePackages");
-const { applyVehicleSeo } = require("./vehicleSeo");
+const { stripProductSeo } = require("./catalogProductFields");
 
 function num(v, fallback = 0) {
   const n = Number(v);
@@ -107,7 +107,6 @@ function enrichModernCab(doc) {
     wishlistCount: num(doc.stats?.wishlistCount),
     lastBooked: doc.stats?.lastBooked || null
   };
-  const seo = applyVehicleSeo({ ...doc, ...synced });
   const cover = firstRealImageUrl(
     doc.image,
     Array.isArray(doc.images) ? doc.images.find((i) => i?.type === "cover") : "",
@@ -128,8 +127,6 @@ function enrichModernCab(doc) {
     stats,
     rating: stats.rating,
     reviewCount: stats.totalReviews,
-    seoTitle: doc.seoTitle || seo.seoTitle,
-    seoDescription: doc.seoDescription || seo.seoDescription,
     image: cover
   };
 }
@@ -140,7 +137,17 @@ const PUBLIC_STRIP_KEYS = [
   "verificationStatus",
   "vehicleDocuments",
   "blockedDates",
-  "vendorId"
+  "vendorId",
+  "seo",
+  "seoTitle",
+  "seoDescription",
+  "metaKeywords",
+  "canonicalUrl",
+  "schemaEnabled",
+  "breadcrumb",
+  "faq",
+  "enterpriseSeo",
+  "longSeoContent"
 ];
 
 function applyPublicCabPrivacy(payload, includeRegistration) {
@@ -252,11 +259,11 @@ function normalizeDriverForApi(doc, { includePhone = false } = {}) {
       day: num(doc.pricing?.day) || 2800,
       extraHour: num(doc.pricing?.extraHour) || 220
     };
-    return {
+    return stripProductSeo({
       ...base,
       pricing,
       farePackages: buildDefaultDriverFarePackages({ ...base, pricing })
-    };
+    });
   }
 
   const farePackages =
@@ -264,7 +271,7 @@ function normalizeDriverForApi(doc, { includePhone = false } = {}) {
       ? doc.farePackages
       : buildDefaultDriverFarePackages(base);
 
-  return { ...base, farePackages };
+  return stripProductSeo({ ...base, farePackages });
 }
 
 module.exports = {

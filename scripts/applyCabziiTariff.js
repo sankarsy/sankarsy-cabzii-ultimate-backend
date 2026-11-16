@@ -3,7 +3,7 @@
 /**
  * Apply Cabzii published tariff onto existing Cab records.
  * Updates matched vehicles; creates only missing models/variants.
- * Preserves images, SEO, slugs, IDs, vendor, city, availability.
+ * Preserves images, slugs, IDs, vendor, city, availability. Does not write product SEO.
  *
  * Usage: node scripts/applyCabziiTariff.js
  */
@@ -14,7 +14,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const { Cab } = require(path.join(__dirname, "..", "src", "models", "Cab"));
 const { syncVehiclePricing } = require(path.join(__dirname, "..", "src", "utils", "vehiclePackages"));
-const { applyVehicleSeo, nextProductCode } = require(path.join(__dirname, "..", "src", "utils", "vehicleSeo"));
+const { nextProductCode } = require(path.join(__dirname, "..", "src", "utils", "vehicleSeo"));
 const { slugify } = require(path.join(__dirname, "..", "src", "utils", "slugify"));
 const { TARIFF, cabMatchesTariff } = require("./cabziiTariff");
 
@@ -55,20 +55,6 @@ async function updateCab(cab, row) {
   const patch = pricingPatch(row);
   const title = row.title;
   const vehicleName = row.vehicleName;
-  const seo = applyVehicleSeo({
-    ...cab,
-    ...patch,
-    title,
-    vehicleName,
-    seoTitle: "",
-    seoDescription: "",
-    city: cab.city || "Chennai",
-    slug: cab.slug
-  });
-  const enterpriseSeo = {
-    ...(cab.enterpriseSeo && typeof cab.enterpriseSeo === "object" ? cab.enterpriseSeo : {}),
-    robots: "index,follow"
-  };
   await Cab.updateOne(
     { _id: cab._id },
     {
@@ -83,12 +69,6 @@ async function updateCab(cab, row) {
         category: row.category,
         seats: row.seats,
         driverAllowance: row.driverAllowance,
-        seoTitle: seo.seoTitle,
-        seoDescription: seo.seoDescription,
-        seo: seo.seo,
-        metaKeywords: seo.metaKeywords,
-        schemaEnabled: cab.schemaEnabled !== false,
-        enterpriseSeo,
         status: "active",
         isDeleted: false
       }
@@ -131,26 +111,8 @@ async function createCab(row, index) {
     images: [],
     image: "",
     gallery: [],
-    ...patch,
-    schemaEnabled: true,
-    enterpriseSeo: { robots: "index,follow", state: "Tamil Nadu" }
+    ...patch
   };
-  const seo = applyVehicleSeo(raw);
-  raw.seoTitle = seo.seoTitle;
-  raw.seoDescription = seo.seoDescription;
-  raw.seo = seo.seo;
-  raw.metaKeywords = seo.metaKeywords;
-  raw.breadcrumb = `Home > Cabs > ${city} > ${row.vehicleName}`;
-  raw.faq = [
-    {
-      question: `What is the ${row.vehicleName} rental tariff in ${city}?`,
-      answer: `Packages start from ₹${Number(patch.startingPrice).toLocaleString("en-IN")}. Extra km, extra hour and driver batta follow the Cabzii tariff.`
-    },
-    {
-      question: "Are tolls and parking included?",
-      answer: "Tariff includes fuel and driver service only. Toll, parking and entry fees are extra."
-    }
-  ];
   void index;
   const created = await Cab.create(raw);
   return created;

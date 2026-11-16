@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const { driverFarePackagesSchema, farePackageLabelsSchema } = require("./fareSchemas");
 const { mongooseFields: catalogProductFields } = require("../utils/catalogProductFields");
-const { vehicleEnterpriseSeoSchema, vehicleFaqSchema } = require("./vehicleSchemas");
 
 const driverSchema = new mongoose.Schema(
   {
@@ -39,14 +38,6 @@ const driverSchema = new mongoose.Schema(
     },
     farePackages: { type: driverFarePackagesSchema, default: () => ({}) },
     farePackageLabels: { type: farePackageLabelsSchema, default: () => ({}) },
-    seo: { type: String, default: "" },
-    seoTitle: { type: String, default: "" },
-    seoDescription: { type: String, default: "" },
-    metaKeywords: { type: String, default: "" },
-    canonicalUrl: { type: String, default: "" },
-    schemaEnabled: { type: Boolean, default: true },
-    faq: { type: [vehicleFaqSchema], default: [] },
-    enterpriseSeo: { type: vehicleEnterpriseSeoSchema, default: () => ({}) },
     ...catalogProductFields,
     status: { type: String, enum: ["active", "inactive"], default: "active", index: true },
     isDeleted: { type: Boolean, default: false, index: true }
