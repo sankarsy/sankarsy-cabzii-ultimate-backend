@@ -33,9 +33,10 @@ const PRODUCT_SEO_UNSET = {
   twitterImage: 1
 };
 
-function isProductSeoPath(href) {
+function isProductSeoPath(href, onlyCabs = false) {
   const p = String(href || "").split("?")[0].replace(/\/+$/, "") || "/";
   if (/^\/cabs\/(?!passenger$|results$)[^/]+$/.test(p)) return true;
+  if (onlyCabs) return false;
   if (/^\/drivers\/(?!passenger$|results$)[^/]+$/.test(p)) return true;
   if (/^\/buses\/[^/]+$/.test(p)) return true;
   if (/^\/packages\/[^/]+$/.test(p)) return true;
@@ -54,20 +55,29 @@ async function unsetOnCollection(db, name) {
 }
 
 async function main() {
+  const onlyCabs = process.argv.includes("--cabs");
   await connectDb();
   const db = mongoose.connection.db;
 
   await unsetOnCollection(db, "cabs");
-  await unsetOnCollection(db, "drivers");
-  await unsetOnCollection(db, "bustrips");
-  await unsetOnCollection(db, "packages");
+  if (!onlyCabs) {
+    await unsetOnCollection(db, "drivers");
+    await unsetOnCollection(db, "bustrips");
+    await unsetOnCollection(db, "packages");
+  }
 
   const settings = await SiteSettings.findOne().lean();
   if (settings?.pageSeo && typeof settings.pageSeo === "object") {
     const pageSeo = { ...settings.pageSeo };
     const removed = [];
     for (const key of Object.keys(pageSeo)) {
-      if (isProductSeoPath(key)) {
+      const path = String(key);
+      const cabSnippet =
+        onlyCabs &&
+        (/^\/cab-booking\//.test(path) ||
+          /^\/services\/(outstation-cab|one-way-cab|tempo-traveller|airport-taxi)\//.test(path) ||
+          /\/airport-cab-booking$/.test(path));
+      if (cabSnippet || isProductSeoPath(key, onlyCabs)) {
         delete pageSeo[key];
         removed.push(key);
       }
@@ -80,18 +90,28 @@ async function main() {
     console.log("siteSettings.pageSeo: none");
   }
 
-  const insightDel = await SeoPageInsight.deleteMany({
-    $or: [
-      { landingPage: { $regex: "^/cabs/(?!passenger$|results$)[^/?]+" } },
+  const insightOr = [{ landingPage: { $regex: "^/cabs/(?!passenger$|results$)[^/?]+" } }];
+  if (!onlyCabs) {
+    insightOr.push(
       { landingPage: { $regex: "^/drivers/(?!passenger$|results$)[^/?]+" } },
       { landingPage: { $regex: "^/buses/[^/?]+" } },
       { landingPage: { $regex: "^/packages/[^/?]+" } }
-    ]
-  }).catch(() => ({ deletedCount: 0 }));
+    );
+  }
+  const insightDel = await SeoPageInsight.deleteMany({ $or: insightOr }).catch(() => ({ deletedCount: 0 }));
   console.log(`seoPageInsights: deleted ${insightDel.deletedCount || 0} product rows`);
 
+  if (onlyCabs) {
+    const cityPages = await db.collection("seocitypages").deleteMany({
+      pageType: { $in: ["cab-booking", "airport-cab-booking"] }
+    });
+    const services = await db.collection("seoservices").deleteMany({});
+    console.log(`seocitypages: deleted ${cityPages.deletedCount} cab pages`);
+    console.log(`seoservices: deleted ${services.deletedCount} cab services`);
+  }
+
   await mongoose.disconnect();
-  console.log("Done. City / service / route page SEO was not changed.");
+  console.log(onlyCabs ? "Done. Cab products were kept. Acting-driver SEO was not changed." : "Done. City / service / route page SEO was not changed.");
 }
 
 main().catch((err) => {

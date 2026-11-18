@@ -22,7 +22,7 @@ const CITIES = [
     cab: {
       seoTitle: "Cab Booking in Kodaikanal | Hill Taxi | Cabzii",
       seoDescription:
-        "Book Kodaikanal cabs on Cabzii — lake, Coaker’s Walk and ghat transfers from Madurai. No local airport. Pay 50% to confirm. Tolls extra.",
+        "Book Kodaikanal cabs on Cabzii — lake, Coaker’s Walk and ghat transfers from Madurai. No local airport. Tolls extra.",
       seo: "cab booking kodaikanal, kodaikanal taxi, kodai cab, madurai to kodaikanal cab, hill station taxi kodaikanal",
       h1: "Cab Booking in Kodaikanal — Lake and Ghat Taxi",
       lead: "Book a Cabzii cab in Kodaikanal for lake loops, viewpoints and the Madurai ghat. Local hourly packages and outstation fares show before you pay. There is no Kodaikanal airport taxi — air arrivals use Madurai (IXM).",
@@ -37,7 +37,7 @@ const CITIES = [
         {
           question: "How do I book a cab in Kodaikanal?",
           answer:
-            "Use the form on this page. Enter pickup and drop, choose local or outstation, compare vehicles, then pay 50% to confirm. Tolls extra unless listed."
+            "Use the form on this page. Enter pickup and drop, choose local or outstation, compare vehicles, then confirm. Tolls extra unless listed."
         },
         {
           question: "Which car is better for the ghat?",
@@ -86,7 +86,7 @@ const CITIES = [
         productName: "Outstation Cab in Kodaikanal",
         seoTitle: "Outstation Cab Kodaikanal | Book Online | Cabzii",
         seoDescription:
-          "Book outstation cabs from Kodaikanal to Madurai, Palani and Tamil Nadu towns. Ghat-ready cars. Pay 50% to confirm. Tolls extra.",
+          "Book outstation cabs from Kodaikanal to Madurai, Palani and Tamil Nadu towns. Ghat-ready cars. Tolls extra.",
         seoKeywords: "outstation cab kodaikanal, kodaikanal to madurai cab, kodai outstation taxi, cabzii",
         intro: "Outstation from Kodaikanal uses the live booking engine — not a local airport page."
       },
@@ -95,7 +95,7 @@ const CITIES = [
         productName: "One-Way Cab in Kodaikanal",
         seoTitle: "One-Way Cab Kodaikanal | Book Online | Cabzii",
         seoDescription:
-          "Book one-way cabs from Kodaikanal. Inter-city drops without a return charge mix-up. Pay 50% to confirm. Tolls extra.",
+          "Book one-way cabs from Kodaikanal. Inter-city drops without a return charge mix-up. Tolls extra.",
         seoKeywords: "one way cab kodaikanal, kodaikanal one way taxi, cabzii",
         intro: "One-way drops from Kodaikanal to Madurai, Kodai Road and nearby towns."
       },
@@ -104,7 +104,7 @@ const CITIES = [
         productName: "Tempo Traveller in Kodaikanal",
         seoTitle: "Tempo Traveller Kodaikanal | Book Online | Cabzii",
         seoDescription:
-          "Book a tempo traveller in Kodaikanal for family hill groups. Pay 50% to confirm. Tolls extra.",
+          "Book a tempo traveller in Kodaikanal for family hill groups. Tolls extra.",
         seoKeywords: "tempo traveller kodaikanal, 12 seater kodaikanal, group cab kodai, cabzii",
         intro: "Group hill days and family ghat trips from Kodaikanal."
       }
@@ -120,7 +120,7 @@ const CITIES = [
     cab: {
       seoTitle: "Cab Booking in Ooty | Hill Station Taxi | Cabzii",
       seoDescription:
-        "Book Ooty cabs on Cabzii — Charing Cross, Botanical Garden, Coonoor and CJB ghat transfers. No local airport. Pay 50% to confirm. Tolls extra.",
+        "Book Ooty cabs on Cabzii — Charing Cross, Botanical Garden, Coonoor and CJB ghat transfers. No local airport. Tolls extra.",
       seo: "cab booking ooty, ooty taxi, udhagamandalam cab, coimbatore to ooty cab, hill station taxi ooty",
       h1: "Cab Booking in Ooty — Town and Ghat Taxi",
       lead: "Book a Cabzii cab in Ooty for town loops, Coonoor and the Coimbatore ghat. Local hourly packages and outstation fares show before you pay. There is no Ooty airport taxi — air arrivals use Coimbatore (CJB).",
@@ -135,7 +135,7 @@ const CITIES = [
         {
           question: "How do I book a cab in Ooty?",
           answer:
-            "Use the form on this page. Enter pickup and drop, choose local or outstation, compare vehicles, then pay 50% to confirm. Tolls extra unless listed."
+            "Use the form on this page. Enter pickup and drop, choose local or outstation, compare vehicles, then confirm. Tolls extra unless listed."
         },
         {
           question: "Is Coonoor a separate cab product?",
@@ -184,7 +184,7 @@ const CITIES = [
         productName: "Outstation Cab in Ooty",
         seoTitle: "Outstation Cab Ooty | Book Online | Cabzii",
         seoDescription:
-          "Book outstation cabs from Ooty to Coimbatore, Mysore and Chennai. Ghat-ready cars. Pay 50% to confirm. Tolls extra.",
+          "Book outstation cabs from Ooty to Coimbatore, Mysore and Chennai. Ghat-ready cars. Tolls extra.",
         seoKeywords: "outstation cab ooty, ooty to coimbatore cab, udhagamandalam outstation taxi, cabzii",
         intro: "Outstation from Ooty uses the live booking engine — not a local airport page."
       },
@@ -193,7 +193,7 @@ const CITIES = [
         productName: "One-Way Cab in Ooty",
         seoTitle: "One-Way Cab Ooty | Book Online | Cabzii",
         seoDescription:
-          "Book one-way cabs from Ooty. Inter-city drops without a return charge mix-up. Pay 50% to confirm. Tolls extra.",
+          "Book one-way cabs from Ooty. Inter-city drops without a return charge mix-up. Tolls extra.",
         seoKeywords: "one way cab ooty, ooty one way taxi, cabzii",
         intro: "One-way drops from Ooty to Coimbatore, Mettupalayam and Mysore."
       },
@@ -202,7 +202,7 @@ const CITIES = [
         productName: "Tempo Traveller in Ooty",
         seoTitle: "Tempo Traveller Ooty | Book Online | Cabzii",
         seoDescription:
-          "Book a tempo traveller in Ooty for family and school hill groups. Pay 50% to confirm. Tolls extra.",
+          "Book a tempo traveller in Ooty for family and school hill groups. Tolls extra.",
         seoKeywords: "tempo traveller ooty, 12 seater ooty, group cab ooty, cabzii",
         intro: "Group hill days and family ghat trips from Ooty."
       }
@@ -218,7 +218,7 @@ const CITIES = [
     cab: {
       seoTitle: "Cab Booking in Pondicherry | White Town | Cabzii",
       seoDescription:
-        "Book Pondicherry cabs on Cabzii — White Town, Promenade, Auroville and ECR from Chennai. Pay 50% to confirm. Tolls extra.",
+        "Book Pondicherry cabs on Cabzii — White Town, Promenade, Auroville and ECR from Chennai. Tolls extra.",
       seo: "cab booking pondicherry, taxi puducherry, white town cab, auroville taxi, chennai to pondicherry cab",
       h1: "Cab Booking in Pondicherry — White Town and ECR",
       lead: "Book a Cabzii cab in Pondicherry for White Town, Auroville and the Chennai ECR. Local hourly packages, outstation and PNY airport fares show before you pay.",
@@ -233,7 +233,7 @@ const CITIES = [
         {
           question: "How do I book a cab in Pondicherry?",
           answer:
-            "Use the form on this page. Enter pickup and drop, choose local, outstation or airport, compare vehicles, then pay 50% to confirm. Tolls extra unless listed."
+            "Use the form on this page. Enter pickup and drop, choose local, outstation or airport, compare vehicles, then confirm. Tolls extra unless listed."
         },
         {
           question: "Is Auroville a city hop?",
@@ -282,7 +282,7 @@ const CITIES = [
         productName: "Outstation Cab in Pondicherry",
         seoTitle: "Outstation Cab Pondicherry | Book Online | Cabzii",
         seoDescription:
-          "Book outstation cabs from Pondicherry to Chennai ECR, Tirupati and Tamil Nadu towns. Pay 50% to confirm. Tolls extra.",
+          "Book outstation cabs from Pondicherry to Chennai ECR, Tirupati and Tamil Nadu towns. Tolls extra.",
         seoKeywords: "outstation cab pondicherry, pondicherry to chennai cab, ecr cab pondicherry, cabzii",
         intro: "Outstation from Pondicherry uses the live booking engine, including ECR returns to Chennai."
       },
@@ -291,7 +291,7 @@ const CITIES = [
         productName: "One-Way Cab in Pondicherry",
         seoTitle: "One-Way Cab Pondicherry | Book Online | Cabzii",
         seoDescription:
-          "Book one-way cabs from Pondicherry. Inter-city drops without a return charge mix-up. Pay 50% to confirm. Tolls extra.",
+          "Book one-way cabs from Pondicherry. Inter-city drops without a return charge mix-up. Tolls extra.",
         seoKeywords: "one way cab pondicherry, pondicherry one way taxi, cabzii",
         intro: "One-way drops from Pondicherry to Chennai and along ECR."
       },
@@ -300,7 +300,7 @@ const CITIES = [
         productName: "Tempo Traveller in Pondicherry",
         seoTitle: "Tempo Traveller Pondicherry | Book Online | Cabzii",
         seoDescription:
-          "Book a tempo traveller in Pondicherry for family ECR and Auroville days. Pay 50% to confirm. Tolls extra.",
+          "Book a tempo traveller in Pondicherry for family ECR and Auroville days. Tolls extra.",
         seoKeywords: "tempo traveller pondicherry, 12 seater pondicherry, group cab puducherry, cabzii",
         intro: "Group White Town and Auroville days from Pondicherry."
       },

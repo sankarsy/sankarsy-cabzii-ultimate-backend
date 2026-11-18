@@ -23,7 +23,7 @@ const CITIES = [
     cab: {
       seoTitle: "Cab Booking Sabarimala | Pamba Taxi | Cabzii",
       seoDescription:
-        "Book Sabarimala cabs on Cabzii — Pamba, Nilakkal and Erumeli. No shrine-road taxi. No local airport. Pay 50% to confirm. Tolls extra.",
+        "Book Sabarimala cabs on Cabzii — Pamba, Nilakkal and Erumeli. No shrine-road taxi. No local airport. Tolls extra.",
       seo: "sabarimala taxi, sabarimalai cab, pamba taxi, nilakkal cab, ayyappa temple cab, cabzii sabarimala",
       h1: "Cab Booking in Sabarimala — Pamba and Nilakkal",
       lead: "Book a Cabzii cab to Sabarimala for Pamba or Nilakkal drop. Vehicles do not go to Sannidhanam. There is no Sabarimala airport taxi — air arrivals use Cochin (COK) or Madurai (IXM).",
@@ -43,7 +43,7 @@ const CITIES = [
         {
           question: "How do I book a cab to Sabarimala?",
           answer:
-            "Use the form on this page. Enter pickup and Pamba or Nilakkal as drop, compare vehicles, then pay 50% to confirm. Tolls extra unless listed."
+            "Use the form on this page. Enter pickup and Pamba or Nilakkal as drop, compare vehicles, then confirm. Tolls extra unless listed."
         }
       ],
       touristPlaces: [
@@ -88,7 +88,7 @@ const CITIES = [
         productName: "Outstation Cab to Sabarimala",
         seoTitle: "Outstation Cab Sabarimala | Pamba Taxi | Cabzii",
         seoDescription:
-          "Book outstation cabs to Sabarimala — Pamba and Nilakkal from Tamil Nadu and Kochi. Pay 50% to confirm. Tolls extra.",
+          "Book outstation cabs to Sabarimala — Pamba and Nilakkal from Tamil Nadu and Kochi. Tolls extra.",
         seoKeywords: "outstation cab sabarimala, sabarimalai taxi, pamba outstation cab, cabzii",
         intro: "Outstation to Sabarimala uses the live booking engine. Vehicles stop at Pamba or Nilakkal."
       },
@@ -97,7 +97,7 @@ const CITIES = [
         productName: "One-Way Cab to Sabarimala",
         seoTitle: "One-Way Cab Sabarimala | Book Online | Cabzii",
         seoDescription:
-          "Book one-way cabs to Sabarimala. Pamba or Nilakkal drop without a return mix-up. Pay 50% to confirm. Tolls extra.",
+          "Book one-way cabs to Sabarimala. Pamba or Nilakkal drop without a return mix-up. Tolls extra.",
         seoKeywords: "one way cab sabarimala, pamba drop taxi, cabzii",
         intro: "One-way drops to Pamba or Nilakkal. Return is a separate booking if you need it."
       },
@@ -106,7 +106,7 @@ const CITIES = [
         productName: "Tempo Traveller to Sabarimala",
         seoTitle: "Tempo Traveller Sabarimala | Group Cab | Cabzii",
         seoDescription:
-          "Book a tempo traveller to Sabarimala for group pilgrimages. Pamba or Nilakkal drop. Pay 50% to confirm. Tolls extra.",
+          "Book a tempo traveller to Sabarimala for group pilgrimages. Pamba or Nilakkal drop. Tolls extra.",
         seoKeywords: "tempo traveller sabarimala, group cab sabarimalai, 12 seater pamba, cabzii",
         intro: "Group Mandala–Makaravilakku trips. Vehicles stop at Pamba or Nilakkal."
       }
@@ -123,7 +123,7 @@ const CITIES = [
     cab: {
       seoTitle: "Cab Booking Ayyappan Kovil | Idukki Taxi | Cabzii",
       seoDescription:
-        "Book Ayyappan Kovil cabs on Cabzii — Idukki Ayyappa temple, not Sabarimala Sannidhanam. No local airport. Pay 50% to confirm. Tolls extra.",
+        "Book Ayyappan Kovil cabs on Cabzii — Idukki Ayyappa temple, not Sabarimala Sannidhanam. No local airport. Tolls extra.",
       seo: "ayyappan kovil taxi, ayyappankovil cab, idukki ayyappa temple cab, ayyappan koil taxi, cabzii",
       h1: "Cab Booking in Ayyappan Kovil — Idukki",
       lead: "Book a Cabzii cab in Ayyappan Kovil (Idukki) for the Ayyappa temple town. This is not the Sabarimala Sannidhanam trek. There is no local airport — air arrivals use Cochin (COK) or Madurai (IXM).",
@@ -143,7 +143,7 @@ const CITIES = [
         {
           question: "How do I book a cab in Ayyappan Kovil?",
           answer:
-            "Use the form on this page. Enter pickup and drop, compare vehicles, then pay 50% to confirm. Tolls extra unless listed."
+            "Use the form on this page. Enter pickup and drop, compare vehicles, then confirm. Tolls extra unless listed."
         }
       ],
       touristPlaces: [
@@ -188,7 +188,7 @@ const CITIES = [
         productName: "Outstation Cab to Ayyappan Kovil",
         seoTitle: "Outstation Cab Ayyappan Kovil | Idukki | Cabzii",
         seoDescription:
-          "Book outstation cabs to Ayyappan Kovil (Idukki). Ghat-ready cars. Not a Sabarimala Sannidhanam drop. Pay 50% to confirm. Tolls extra.",
+          "Book outstation cabs to Ayyappan Kovil (Idukki). Ghat-ready cars. Not a Sabarimala Sannidhanam drop. Tolls extra.",
         seoKeywords: "outstation cab ayyappan kovil, idukki ayyappa taxi, cabzii",
         intro: "Outstation to the Idukki temple town. For Pamba/Nilakkal use the Sabarimala hub."
       },
@@ -197,7 +197,7 @@ const CITIES = [
         productName: "One-Way Cab to Ayyappan Kovil",
         seoTitle: "One-Way Cab Ayyappan Kovil | Book Online | Cabzii",
         seoDescription:
-          "Book one-way cabs to Ayyappan Kovil. Inter-city drops without a return mix-up. Pay 50% to confirm. Tolls extra.",
+          "Book one-way cabs to Ayyappan Kovil. Inter-city drops without a return mix-up. Tolls extra.",
         seoKeywords: "one way cab ayyappan kovil, ayyappankovil one way taxi, cabzii",
         intro: "One-way drops to Ayyappan Kovil from Tamil Nadu or Kochi."
       },
@@ -206,7 +206,7 @@ const CITIES = [
         productName: "Tempo Traveller to Ayyappan Kovil",
         seoTitle: "Tempo Traveller Ayyappan Kovil | Group | Cabzii",
         seoDescription:
-          "Book a tempo traveller to Ayyappan Kovil for family temple groups. Pay 50% to confirm. Tolls extra.",
+          "Book a tempo traveller to Ayyappan Kovil for family temple groups. Tolls extra.",
         seoKeywords: "tempo traveller ayyappan kovil, group cab idukki, cabzii",
         intro: "Group temple-town trips in Idukki. Not a Sabarimala Sannidhanam drop."
       }

@@ -4,7 +4,7 @@ const { Cab } = require("../models/Cab");
 const { HttpError } = require("../utils/httpError");
 const { logAudit } = require("../services/auditService");
 const { docMatchForVendor, listFilterForVendor, applyAuthenticatedVendorOwnership } = require("../utils/vendorAccess");
-const { catalogLookupQuery } = require("../utils/catalogProductFields");
+const { catalogLookupQuery, PRODUCT_SEO_KEYS } = require("../utils/catalogProductFields");
 const { mergeFarePackages } = require("../utils/cabFarePackages");
 const {
   parseListQuery,
@@ -145,7 +145,12 @@ async function updateCab(req, res) {
     ),
     existing
   );
-  const data = await Cab.findOneAndUpdate(match, { $set: payload }, { new: true, runValidators: true });
+  const unsetSeo = Object.fromEntries(PRODUCT_SEO_KEYS.map((key) => [key, ""]));
+  const data = await Cab.findOneAndUpdate(
+    match,
+    { $set: payload, $unset: unsetSeo },
+    { new: true, runValidators: true }
+  );
   if (!data) throw new HttpError(404, "Cab not found");
   await logAudit({
     req,

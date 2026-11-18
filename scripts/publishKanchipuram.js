@@ -19,7 +19,7 @@ const cabPage = {
   citySlug: SLUG,
   seoTitle: "Cab Booking in Kanchipuram | Call Taxi Online | Cabzii",
   seoDescription:
-    "Book Kanchipuram call taxi and cab booking on Cabzii. Kamakshi, silk streets and Chennai one-way. Pay 50% to confirm. Tolls extra.",
+    "Book Kanchipuram call taxi and cab booking on Cabzii. Kamakshi, silk streets and Chennai one-way. Tolls extra.",
   seo: "cab booking kanchipuram, kanchipuram call taxi, kanchipuram taxi, outstation cab kanchipuram, cabzii",
   h1: "Cab Booking in Kanchipuram",
   lead: "Book a Cabzii cab in Kanchipuram for temple circuits, silk-street stops and the Chennai highway. Local hourly packages and outstation fares show before you pay. There is no Kanchipuram airport taxi — air arrivals use Chennai (MAA).",
@@ -35,7 +35,7 @@ const cabPage = {
     {
       question: "How do I book a cab in Kanchipuram?",
       answer:
-        "Use the form on this page. Enter pickup and drop, choose local or outstation, compare vehicles, then pay 50% to confirm. Tolls extra unless listed."
+        "Use the form on this page. Enter pickup and drop, choose local or outstation, compare vehicles, then confirm. Tolls extra unless listed."
     },
     {
       question: "What local packages work for temple days?",
@@ -92,7 +92,7 @@ const serviceSnippets = {
     productName: "Outstation Cab in Kanchipuram",
     seoTitle: "Outstation Cab Kanchipuram | Book Online | Cabzii",
     seoDescription:
-      "Book outstation cabs from Kanchipuram to Chennai, Tirupati and Tamil Nadu towns. AC cars, fares before you pay. Pay 50% to confirm. Tolls extra.",
+      "Book outstation cabs from Kanchipuram to Chennai, Tirupati and Tamil Nadu towns. AC cars, fares before you pay. Tolls extra.",
     seoKeywords: "outstation cab kanchipuram, kanchipuram to chennai cab, kanchipuram taxi, cabzii",
     intro: "Outstation from Kanchipuram uses the live booking engine — not a separate airport page."
   },
@@ -101,7 +101,7 @@ const serviceSnippets = {
     productName: "One-Way Cab in Kanchipuram",
     seoTitle: "One-Way Cab Kanchipuram | Book Online | Cabzii",
     seoDescription:
-      "Book one-way cabs from Kanchipuram. Inter-city drops without a return charge mix-up. Pay 50% to confirm. Tolls extra.",
+      "Book one-way cabs from Kanchipuram. Inter-city drops without a return charge mix-up. Tolls extra.",
     seoKeywords: "one way cab kanchipuram, kanchipuram one way taxi, cabzii",
     intro: "One-way drops from Kanchipuram to Chennai and nearby cities."
   },
@@ -110,7 +110,7 @@ const serviceSnippets = {
     productName: "Tempo Traveller in Kanchipuram",
     seoTitle: "Tempo Traveller Kanchipuram | Book Online | Cabzii",
     seoDescription:
-      "Book a tempo traveller in Kanchipuram for family temple circuits and group outstation trips. Pay 50% to confirm. Tolls extra.",
+      "Book a tempo traveller in Kanchipuram for family temple circuits and group outstation trips. Tolls extra.",
     seoKeywords: "tempo traveller kanchipuram, 12 seater kanchipuram, group cab kanchipuram, cabzii",
     intro: "Group temple days and family highway trips from Kanchipuram."
   },
